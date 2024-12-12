@@ -1,154 +1,201 @@
 <?= $this->extend('templates/header') ?>
 
 <?= $this->section('content') ?>
-<div class="container my-5">
-    <h1 class="mb-4">Petunjuk Penggunaan PHY-DA-CAT</h1>
-    
-    <!-- Pengenalan -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h3 class="card-title mb-0">Tentang PHY-DA-CAT</h3>
-        </div>
-        <div class="card-body">
-            <p>PHY-DA-CAT (Physics Dynamic Adaptive Computer-Assisted Test) adalah platform ujian adaptif untuk mata pelajaran Fisika. Sistem ini akan menyesuaikan tingkat kesulitan soal berdasarkan kemampuan peserta ujian.</p>
-        </div>
-    </div>
-
-    <!-- Langkah-langkah -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h3 class="card-title mb-0">Cara Mengikuti Ujian</h3>
-        </div>
-        <div class="card-body">
-            <div class="timeline">
-                <div class="step mb-4">
-                    <h4 class="text-success">1. Login ke Akun Anda</h4>
-                    <p>Gunakan username dan password yang telah diberikan untuk masuk ke sistem.</p>
+<div class="guide-container">
+    <div class="container py-5">
+        <h1 class="guide-title text-center mb-5">Panduan PHY-DA-CAT</h1>
+        
+        <!-- Pengenalan -->
+        <div class="guide-section">
+            <div class="guide-card">
+                <div class="card-icon">
+                    <i class="bi bi-info-circle-fill"></i>
                 </div>
+                <h2>Apa itu PHY-DA-CAT?</h2>
+                <p>PHY-DA-CAT adalah platform ujian fisika adaptif yang menyesuaikan tingkat kesulitan soal berdasarkan kemampuan Anda secara real-time, memberikan pengukuran kemampuan yang lebih akurat.</p>
+            </div>
+        </div>
 
-                <div class="step mb-4">
-                    <h4 class="text-success">2. Memasukkan Token Ujian</h4>
-                    <p>Token ujian akan diberikan oleh pengawas sebelum ujian dimulai. Token ini bersifat unik untuk setiap sesi ujian.</p>
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        Pastikan token yang dimasukkan benar dan sesuai dengan sesi ujian Anda.
+        <!-- Cara Penggunaan -->
+        <div class="guide-section">
+            <h2 class="section-title">Langkah Penggunaan</h2>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Login</h3>
+                        <p>Masuk menggunakan akun yang telah diberikan</p>
                     </div>
                 </div>
-
-                <div class="step mb-4">
-                    <h4 class="text-success">3. Mengikuti Ujian Adaptif</h4>
-                    <ul class="list-group">
-                        <li class="list-group-item">
-                            <strong>Soal Awal:</strong> Anda akan diberikan soal dengan tingkat kesulitan menengah
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Penyesuaian Tingkat:</strong> Sistem akan menyesuaikan tingkat kesulitan soal berikutnya berdasarkan jawaban Anda
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Durasi:</strong> Setiap soal memiliki batas waktu yang ditentukan
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Navigasi:</strong> Tidak dapat kembali ke soal sebelumnya
-                        </li>
-                    </ul>
+                <div class="col-md-6 col-lg-3">
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Token</h3>
+                        <p>Masukkan token ujian dari pengawas</p>
+                    </div>
                 </div>
-
-                <div class="step mb-4">
-                    <h4 class="text-success">4. Penyelesaian Ujian</h4>
-                    <p>Ujian akan berakhir ketika:</p>
-                    <ul>
-                        <li>Jumlah soal minimum telah terpenuhi dan tingkat kemampuan telah terukur dengan akurat</li>
-                        <li>Batas waktu maksimum ujian telah tercapai</li>
-                    </ul>
+                <div class="col-md-6 col-lg-3">
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>Ujian</h3>
+                        <p>Kerjakan soal sesuai waktu yang ditentukan</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="step-card">
+                        <div class="step-number">4</div>
+                        <h3>Selesai</h3>
+                        <p>Hasil akan muncul setelah ujian berakhir</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Peraturan dan Ketentuan -->
-    <div class="card mb-4">
-        <div class="card-header bg-danger text-white">
-            <h3 class="card-title mb-0">Peraturan dan Ketentuan</h3>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-danger">
-                <h5>Hal-hal yang Tidak Diperbolehkan:</h5>
-                <ul class="mb-0">
-                    <li>Membuka tab/window browser lain selama ujian berlangsung</li>
-                    <li>Menggunakan perangkat elektronik lain selain untuk ujian</li>
-                    <li>Meninggalkan halaman ujian</li>
-                    <li>Bekerja sama dengan peserta lain</li>
-                </ul>
+        <!-- Peraturan Penting -->
+        <div class="guide-section">
+            <div class="rules-card">
+                <h2 class="mb-4">Peraturan Penting</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="rule-item not-allowed">
+                            <h4><i class="bi bi-x-circle"></i> Tidak Diperbolehkan</h4>
+                            <ul>
+                                <li>Membuka tab browser lain</li>
+                                <li>Menggunakan perangkat elektronik lain</li>
+                                <li>Meninggalkan halaman ujian</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="rule-item allowed">
+                            <h4><i class="bi bi-check-circle"></i> Diperbolehkan</h4>
+                            <ul>
+                                <li>Menggunakan kalkulator scientific</li>
+                                <li>Menggunakan kertas coret-coretan</li>
+                                <li>Bertanya pada pengawas jika ada kendala</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div class="alert alert-info">
-                <h5>Hal-hal yang Diperbolehkan:</h5>
-                <ul class="mb-0">
-                    <li>Menggunakan kalkulator scientific</li>
-                    <li>Menggunakan kertas coret-coretan yang telah disediakan</li>
-                    <li>Bertanya kepada pengawas jika ada kendala teknis</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tips Mengerjakan -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h3 class="card-title mb-0">Tips Mengerjakan Ujian</h3>
-        </div>
-        <div class="card-body">
-            <ol>
-                <li class="mb-2">Pastikan koneksi internet stabil sebelum memulai ujian</li>
-                <li class="mb-2">Baca soal dengan teliti dan perhatikan satuan yang digunakan</li>
-                <li class="mb-2">Manfaatkan waktu sebaik mungkin untuk setiap soal</li>
-                <li class="mb-2">Jika ragu dengan jawaban, gunakan penalaran logis dan eliminasi pilihan yang pasti salah</li>
-                <li class="mb-2">Tetap tenang dan fokus selama ujian berlangsung</li>
-            </ol>
-        </div>
-    </div>
-
-    <!-- Bantuan Teknis -->
-    <div class="card">
-        <div class="card-header bg-secondary text-white">
-            <h3 class="card-title mb-0">Bantuan Teknis</h3>
-        </div>
-        <div class="card-body">
-            <p>Jika mengalami kendala teknis selama ujian, segera hubungi:</p>
-            <ul>
-                <li>Pengawas ujian di ruangan</li>
-                <li>Tim support teknis: <strong>support@phydacat.com</strong></li>
-                <li>Hotline: <strong>0812-3456-7890</strong> (WhatsApp)</li>
-            </ul>
         </div>
     </div>
 </div>
 
 <style>
-.timeline .step {
-    position: relative;
-    padding-left: 30px;
+.guide-container {
+    background: linear-gradient(276deg, #17376E -2.09%, #481F64 75.22%);
+    color: white;
+    min-height: 100vh;
 }
 
-.timeline .step:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
+.guide-title {
+    font-weight: bold;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.guide-section {
+    margin-bottom: 4rem;
+}
+
+.guide-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    margin-bottom: 2rem;
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: bold;
+}
+
+.step-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
     height: 100%;
-    width: 2px;
-    background-color: #28a745;
+    transition: transform 0.3s ease;
 }
 
-.timeline .step:after {
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: 8px;
-    height: 10px;
-    width: 10px;
+.step-card:hover {
+    transform: translateY(-5px);
+}
+
+.step-number {
+    background: #fff;
+    color: #481F64;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    background-color: #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.rules-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.rule-item {
+    margin-bottom: 1.5rem;
+}
+
+.rule-item h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.rule-item.not-allowed i {
+    color: #ff4d4d;
+}
+
+.rule-item.allowed i {
+    color: #4dff4d;
+}
+
+.rule-item ul {
+    list-style: none;
+    padding-left: 2rem;
+}
+
+.rule-item ul li {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.rule-item ul li::before {
+    content: "•";
+    position: absolute;
+    left: -1rem;
+}
+
+@media (max-width: 768px) {
+    .guide-title {
+        font-size: 2rem;
+    }
+    
+    .step-card {
+        margin-bottom: 1rem;
+    }
 }
 </style>
 <?= $this->endSection() ?>

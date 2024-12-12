@@ -1,5 +1,4 @@
-<!-- views/user/dashboard.php -->
-<?= $this->extend('templates/header') ?>
+<?= $this->extend('templates/user_header') ?>
 
 <?= $this->section('content') ?>
 <div class="container mt-4">
@@ -15,9 +14,6 @@
             <div class="list-group">
                 <a href="#" class="list-group-item list-group-item-action active">
                     Dashboard
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    Materi Pembelajaran
                 </a>
                 <a href="#" class="list-group-item list-group-item-action">
                     Latihan Soal
