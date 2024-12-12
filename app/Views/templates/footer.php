@@ -4,29 +4,35 @@
       <div class="col-lg-5 mb-4">
         <h5 class="footer-title">PHY-DA-CAT</h5>
         <p class="footer-description">
-          Platform asesmen diagnosis tingkat kognitif untuk pembelajaran Fisika yang adaptif dan inovatif.
+          Platform asesmen diagnosis untuk pembelajaran Fisika yang adaptif dan inovatif.
         </p>
         <div class="social-links">
-          <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
-          <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
-          <a href="#" class="social-link"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.instagram.com/jauzaamalia" class="social-link" target="_blank"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.linkedin.com/in/jauza-amalia-906070328/?originalSubdomain=id" class="social-link" target="_blank"><i class="bi bi-linkedin"></i></a>
         </div>
       </div>
       <div class="col-lg-3 col-md-6 mb-4">
         <h5 class="footer-subtitle">Tautan</h5>
         <ul class="footer-links">
-          <li><a href="<?= base_url() ?>">Beranda</a></li>
-          <li><a href="<?= base_url('about') ?>">Tentang Kami</a></li>
-          <li><a href="<?= base_url('contact') ?>">Kontak</a></li>
+          <li><a href="<?= base_url('about') ?>">Tentang Kami </a></li>
           <li><a href="<?= base_url('faq') ?>">FAQ</a></li>
+          <li><a href="<?= base_url('bantuan') ?>">Bantuan</a></li>
         </ul>
       </div>
       <div class="col-lg-4 col-md-6 mb-4">
         <h5 class="footer-subtitle">Kontak</h5>
         <ul class="footer-contact">
           <li><i class="bi bi-geo-alt"></i> Bandung, Indonesia</li>
-          <li><i class="bi bi-envelope"></i> info@phydacat.com</li>
-          <li><i class="bi bi-phone"></i> +62 123 4567 890</li>
+            <li>
+                <a href="mailto:jauzaamalia@upi.edu" style="text-decoration: none; color: inherit;">
+                <i class="bi bi-envelope"></i> jauzaamalia@upi.edu
+                </a>
+            </li>
+            <li>
+                <a href="https://wa.me/6285794124143" style="text-decoration: none; color: inherit;" target="_blank" rel="noopener noreferrer">
+                <i class="bi bi-phone"></i> +62 857 9412 4143
+                </a>
+            </li>
         </ul>
       </div>
     </div>
@@ -158,4 +164,20 @@
       margin: 10px 0;
     }
   }
+
+  .footer-contact {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-contact li {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.footer-contact li i {
+  margin-right: 10px;
+}
 </style>

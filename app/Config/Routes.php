@@ -6,6 +6,9 @@ $routes->get('/', 'Home::index');
 $routes->get('guide', 'Home::guide');
 $routes->get('profile', 'Home::profile');
 $routes->get('contact', 'Home::contact');
+$routes->get('about', 'Home::about');
+$routes->get('faq', 'Home::faq');
+$routes->get('bantuan', 'Home::bantuan');
 
 // Auth routes
 $routes->get('login', 'Auth::login');

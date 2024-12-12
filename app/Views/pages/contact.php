@@ -61,7 +61,7 @@
                                     <i class="bi bi-envelope-fill"></i>
                                 </div>
                                 <h6>Email</h6>
-                                <p>support@phydacat.com</p>
+                                <p>jauzaamalia@upi.edu</p>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -70,7 +70,7 @@
                                     <i class="bi bi-telephone-fill"></i>
                                 </div>
                                 <h6>Telepon</h6>
-                                <p>+62 812-3456-7890</p>
+                                <p>+62 857 9412 4143</p>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -79,7 +79,7 @@
                                     <i class="bi bi-geo-alt-fill"></i>
                                 </div>
                                 <h6>Lokasi</h6>
-                                <p>Yogyakarta, Indonesia</p>
+                                <p>Bandung, Indonesia</p>
                             </div>
                         </div>
                     </div>

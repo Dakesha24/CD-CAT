@@ -13,7 +13,7 @@
                         <img src="<?= base_url('assets/images/profil/albert.webp') ?>" alt="Foto Pengembang">
                     </div>
                     <div class="card-content">
-                        <h3>Nama Pengembang</h3>
+                        <h3>Jauza Amalia</h3>
                         <p class="role">Web Developer & Researcher</p>
                         <p class="institution">Universitas Pendidikan Indonesia</p>
                         <button class="view-btn" data-bs-toggle="modal" data-bs-target="#developerModal">
@@ -76,44 +76,41 @@
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <h4>Nama Pengembang</h4>
+                        <h4>Jauza Amalia</h4>
                         <p class="role-title">Web Developer & Researcher</p>
 
                         <div class="info-section">
                             <h5><i class="bi bi-person-vcard"></i> Tentang</h5>
                             <p class="description">
-                                Seorang pengembang web dan peneliti di bidang pendidikan fisika yang fokus pada pengembangan sistem asesmen adaptif. Memiliki passion dalam mengintegrasikan teknologi dengan pendidikan untuk menciptakan pengalaman pembelajaran yang lebih efektif.
+                                Seorang peneliti yang fokus pada pengembangan asesmen diagnostik yang adaptif untuk pembelajaran Fisika. Memiliki passion untuk mengintegrasikan teknologi dengan pendidikan agar dapat menciptakan pengalaman pembelajaran yang lebih terpersonalisasi.
                             </p>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-mortarboard"></i> Pendidikan</h5>
                             <ul class="custom-list">
-                                <li>S2 Pendidikan Fisika - Universitas Negeri Yogyakarta (2022-sekarang)</li>
-                                <li>S1 Pendidikan Fisika - Universitas X (2018-2022)</li>
+                                <li>S1 Pendidikan Fisika - Universitas Pendidikan Indonesia</li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-award"></i> Prestasi</h5>
                             <ul class="custom-list">
-                                <li>Juara 1 Lomba Inovasi Pembelajaran Tingkat Nasional (2023)</li>
-                                <li>Best Paper Award di Conference XYZ (2022)</li>
-                                <li>Mahasiswa Berprestasi Fakultas (2021)</li>
+                                <li>Juara 3 Video Animasi PHYFEST 8.0</li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-envelope"></i> Kontak</h5>
                             <div class="contact-links">
-                                <a href="mailto:developer@phydacat.com" class="contact-item">
-                                    <i class="bi bi-envelope-fill"></i> developer@phydacat.com
+                                <a href="mailto:jauzaamalia@upi.edu" target="_blank" class="contact-item">
+                                    <i class="bi bi-envelope-fill"></i> jauzaamalia@upi.edu
                                 </a>
-                                <a href="#" class="contact-item">
-                                    <i class="bi bi-linkedin"></i> linkedin.com/in/developer
+                                <a href="https://www.linkedin.com/in/jauza-amalia-906070328/?originalSubdomain=id" target="_blank" class="contact-item">
+                                    <i class="bi bi-linkedin"></i> linkedin.com/in/Jauza Amalia
                                 </a>
-                                <a href="#" class="contact-item">
-                                    <i class="bi bi-github"></i> github.com/developer
+                                <a href="https://wa.me/6285794124143" target="_blank" class="contact-item">
+                                    <i class="bi bi-whatsapp"></i> +62 857 9412 4143
                                 </a>
                             </div>
                         </div>
