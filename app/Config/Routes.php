@@ -20,17 +20,26 @@ $routes->get('logout', 'Auth::logout');
 // Admin routes
 $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
   $routes->get('dashboard', 'Admin::dashboard');
-  $routes->get('feedback', 'Feedback::index');
-  $routes->post('feedback/mark-read/(:num)', 'Feedback::markRead/$1');
-  $routes->post('feedback/mark-all-read', 'Feedback::markAllRead');
-  $routes->post('feedback/delete/(:num)', 'Feedback::delete/$1');
-  $routes->post('feedback/delete-selected', 'Feedback::deleteSelected');
+  // ... routes admin lainnya
 });
 
+// Guru routes
+$routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function($routes) {
+  $routes->get('dashboard', 'Guru::dashboard');
+  // ... routes guru lainnya
+});
 
-
-// User routes
-$routes->get('user/dashboard', 'User::dashboard');
-
-$routes->get('contact', 'Contact::index');
-$routes->post('contact/submit', 'Contact::submit');
+// Siswa routes
+$routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function($routes) {
+  $routes->get('dashboard', 'Siswa::dashboard');
+  $routes->get('pengumuman', 'Siswa::pengumuman');
+  $routes->get('ujian', 'Siswa::ujian');
+  $routes->get('hasil', 'Siswa::hasil');
+  $routes->get('profil', 'Siswa::profil');
+  $routes->post('profil/save', 'Siswa::saveProfil');
+  $routes->post('ujian/mulai', 'Siswa::mulaiUjian');
+  $routes->get('ujian/soal/(:num)', 'Siswa::soal/$1');
+  $routes->get('ujian/selesai/(:num)', 'Siswa::selesaiUjian/$1');
+  $routes->get('hasil/review/(:num)', 'Siswa::review/$1');
+  $routes->post('ujian/simpan-jawaban', 'Siswa::simpanJawaban');
+});

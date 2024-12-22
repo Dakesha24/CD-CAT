@@ -1,4 +1,3 @@
-<!-- auth/login.php -->
 <?= $this->extend('templates/header') ?>
 
 <?= $this->section('content') ?>

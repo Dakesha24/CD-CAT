@@ -32,7 +32,7 @@ class Auth extends Controller
         if ($user && password_verify($password, $user['password'])) {
           $session = session();
           $sessionData = [
-            'user_id' => $user['id'],
+            'user_id' => $user['user_id'],
             'username' => $user['username'],
             'role' => $user['role'],
             'logged_in' => TRUE
@@ -40,10 +40,15 @@ class Auth extends Controller
           $session->set($sessionData);
 
           // Redirect based on role
-          if ($user['role'] == 'admin') {
-            return redirect()->to('/admin/dashboard');
-          } else {
-            return redirect()->to('/user/dashboard');
+          switch ($user['role']) {
+            case 'admin':
+              return redirect()->to('/admin/dashboard');
+            case 'guru':
+              return redirect()->to('/guru/dashboard');
+            case 'siswa':
+              return redirect()->to('/siswa/dashboard');
+            default:
+              return redirect()->to('/');
           }
         }
 
@@ -56,7 +61,7 @@ class Auth extends Controller
 
   public function register()
   {
-    if ($this->request->is('post')) {  // Menggunakan is() sebagai pengganti getMethod()
+    if ($this->request->is('post')) {
       $rules = [
         'username' => 'required|min_length[4]|is_unique[users.username]',
         'email' => 'required|valid_email|is_unique[users.email]',
@@ -69,7 +74,7 @@ class Auth extends Controller
           'username' => $this->request->getPost('username'),
           'email' => $this->request->getPost('email'),
           'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-          'role' => 'user'
+          'role' => 'siswa'
         ];
 
         $this->userModel->save($data);

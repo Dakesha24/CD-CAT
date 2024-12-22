@@ -1,4 +1,3 @@
-<!-- auth/register.php -->
 <?= $this->extend('templates/header') ?>
 
 <?= $this->section('content') ?>
