@@ -18,25 +18,27 @@ $routes->post('register', 'Auth::register');
 $routes->get('logout', 'Auth::logout');
 
 // Admin routes
-$routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($routes) {
+$routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
   $routes->get('dashboard', 'Admin::dashboard');
   // ... routes admin lainnya
 });
 
 // Guru routes
-// Guru routes
-$routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function($routes) {
+$routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($routes) {
   $routes->get('dashboard', 'Guru::dashboard');
   $routes->get('ujian-aktif', 'Guru::ujianAktif');
   $routes->get('bank-soal', 'Guru::bankSoal');
+  $routes->get('daftar_soal', 'Guru::formTambahSoal');
   $routes->get('jadwal-ujian', 'Guru::jadwalUjian');
+  $routes->get('jadwal-ujian/tambah', 'Guru::jadwalUjianTambah');
+  $routes->post('jadwal-ujian/tambah', 'Guru::jadwalUjianTambahProses');
   $routes->get('hasil-ujian', 'Guru::hasilUjian');
   $routes->get('profil', 'Guru::profil');
   $routes->post('bank-soal/tambah', 'Guru::tambahSoal');
 });
 
 // Siswa routes
-$routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function($routes) {
+$routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function ($routes) {
   $routes->get('dashboard', 'Siswa::dashboard');
   $routes->get('pengumuman', 'Siswa::pengumuman');
   $routes->get('ujian', 'Siswa::ujian');

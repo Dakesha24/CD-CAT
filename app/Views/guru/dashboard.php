@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <div class="container-fluid">
     <h2 class="mb-4">Dashboard Guru</h2>
-    
+
     <div class="row g-4">
         <!-- Ujian Aktif Card -->
         <div class="col-md-6 col-lg-3">
@@ -19,10 +19,10 @@
                 </div>
             </a>
         </div>
-        
+
         <!-- Bank Soal Card -->
         <div class="col-md-6 col-lg-3">
-            <a href="<?= base_url('guru/bank-soal') ?>" class="text-decoration-none">
+            <a href="<?= base_url('/guru/daftar_soal') ?>" class="text-decoration-none">
                 <div class="card menu-card">
                     <div class="card-body text-center">
                         <div class="icon-wrapper mx-auto" style="background-color: #e8f5e9;">
@@ -34,7 +34,7 @@
                 </div>
             </a>
         </div>
-        
+
         <!-- Jadwal Ujian Card -->
         <div class="col-md-6 col-lg-3">
             <a href="<?= base_url('guru/jadwal-ujian') ?>" class="text-decoration-none">
@@ -49,7 +49,7 @@
                 </div>
             </a>
         </div>
-        
+
         <!-- Hasil Ujian Card -->
         <div class="col-md-6 col-lg-3">
             <a href="<?= base_url('guru/hasil-ujian') ?>" class="text-decoration-none">
@@ -79,14 +79,14 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-calendar-check fs-1 text-primary me-3"></i>
                         <div>
-                            <h3 class="mb-0">0</h3>
+                            <h3 class="mb-0"><?= $ujian_today ?></h3>
                             <small class="text-muted">Ujian aktif</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Siswa Sedang Ujian -->
         <div class="col-md-4">
             <div class="card">
@@ -95,14 +95,14 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-person-video3 fs-1 text-success me-3"></i>
                         <div>
-                            <h3 class="mb-0">0</h3>
+                            <h3 class="mb-0"><?= $siswa ?></h3>
                             <small class="text-muted">Siswa aktif</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Total Bank Soal -->
         <div class="col-md-4">
             <div class="card">
@@ -111,7 +111,7 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-journals fs-1 text-info me-3"></i>
                         <div>
-                            <h3 class="mb-0">0</h3>
+                            <h3 class="mb-0"><?= $soal ?></h3>
                             <small class="text-muted">Soal tersedia</small>
                         </div>
                     </div>
@@ -138,10 +138,38 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Belum ada jadwal ujian mendatang</td>
-                                </tr>
+                                <?php if (empty($upcoming_ujian)) : ?>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Belum ada jadwal ujian mendatang</td>
+                                    </tr>
+                                <?php else : ?>
+                                    <?php foreach ($upcoming_ujian as $ujian) : ?>
+                                        <tr>
+                                            <td>
+                                                <?= $ujian['nama_ujian']
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?= $ujian['nama_kelas']
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?= date('d-m-Y', strtotime($ujian['tanggal_mulai']))
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?= date('H:i', strtotime($ujian['tanggal_mulai'])) . ' - ' . date('H:i', strtotime($ujian['tanggal_selesai'])) // Format waktu 
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?= ucfirst($ujian['status'])
+                                                ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
+
                         </table>
                     </div>
                 </div>

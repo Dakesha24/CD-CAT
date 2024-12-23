@@ -17,7 +17,11 @@ class BankSoalModel extends Model
         'pilihan_c',
         'pilihan_d',
         'jawaban_benar',
-        'tingkat_kesulitan'
+        'discrimination',
+        'difficulty',
+        'guessing',
+        'daya_beda',
+        'tingkat_kesulitan_b'
     ];
 
     protected $useTimestamps = true;
@@ -28,25 +32,25 @@ class BankSoalModel extends Model
     public function getSoalWithJenisUjian()
     {
         return $this->select('bank_soal.*, jenis_ujian.nama_ujian')
-                    ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
-                    ->findAll();
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
+            ->findAll();
     }
 
     // Method to get single soal with complete data
     public function getSoalById($soalId)
     {
         return $this->select('bank_soal.*, jenis_ujian.nama_ujian')
-                    ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
-                    ->where('bank_soal.soal_id', $soalId)
-                    ->first();
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
+            ->where('bank_soal.soal_id', $soalId)
+            ->first();
     }
 
     // Method to get soal by guru
     public function getSoalByGuru($guruId)
     {
         return $this->select('bank_soal.*, jenis_ujian.nama_ujian')
-                    ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
-                    ->where('bank_soal.guru_id', $guruId)
-                    ->findAll();
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
+            ->where('bank_soal.guru_id', $guruId)
+            ->findAll();
     }
 }
