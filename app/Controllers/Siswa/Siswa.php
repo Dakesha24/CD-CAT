@@ -9,6 +9,7 @@ use App\Models\BankSoalModel;
 use App\Models\SiswaModel;
 use App\Models\KelasModel;
 use App\Models\DetailJawabanModel;
+use App\Models\CatEstimationModel;
 
 class Siswa extends Controller
 {
@@ -18,6 +19,7 @@ class Siswa extends Controller
   protected $siswaModel;
   protected $kelasModel;
   protected $detailJawabanModel;
+  protected $catEstimationModel;
 
   public function __construct()
   {
@@ -27,6 +29,7 @@ class Siswa extends Controller
     $this->siswaModel = new SiswaModel();
     $this->kelasModel = new KelasModel();
     $this->detailJawabanModel = new DetailJawabanModel();
+    $this->catEstimationModel = new CatEstimationModel();
   }
 
   public function dashboard()
@@ -137,6 +140,52 @@ class Siswa extends Controller
     return view('siswa/profil', $data);
   }
 
+  // method-method untuk CAT
+  private function hitungProbabilitas($theta, $b, $a = 1, $c = 0)
+  {
+    $exp = exp($a * ($theta - $b));
+    return $c + ((1 - $c) * ($exp / (1 + $exp)));
+  }
+
+  private function hitungInformasiSoal($theta, $b, $a = 1, $c = 0)
+  {
+    $P = $this->hitungProbabilitas($theta, $b, $a, $c);
+    $Q = 1 - $P;
+    return ($a * $a * $Q * $P) / ($P * (1 - $c));
+  }
+
+  private function hitungStandarError($informasi)
+  {
+    return 1 / sqrt(array_sum($informasi));
+  }
+
+  private function pilihSoalCAT($pesertaUjianId, $currentTheta, $jadwalId)
+  {
+    // Ambil soal yang belum dijawab
+    $answeredQuestions = $this->detailJawabanModel
+      ->select('soal_id')
+      ->where('peserta_ujian_id', $pesertaUjianId)
+      ->findAll();
+
+    // Jika belum ada soal yang dijawab, array akan kosong
+    if (empty($answeredQuestions)) {
+      $answeredIds = [0]; // Berikan nilai default agar query tidak error
+    } else {
+      $answeredIds = array_column($answeredQuestions, 'soal_id');
+    }
+
+    // Pilih soal dengan tingkat kesulitan terdekat dengan theta saat ini
+    $soal = $this->bankSoalModel
+      ->select('bank_soal.*')
+      ->join('jadwal_ujian', 'jadwal_ujian.jenis_ujian_id = bank_soal.jenis_ujian_id')
+      ->where('jadwal_ujian.jadwal_id', $jadwalId)
+      ->whereNotIn('bank_soal.soal_id', $answeredIds)
+      ->orderBy("ABS(tingkat_kesulitan - $currentTheta)")
+      ->first();
+
+    return $soal;
+  }
+
 
   public function mulaiUjian()
   {
@@ -158,17 +207,20 @@ class Siswa extends Controller
       ->first();
 
     if ($existingPeserta) {
-      // Jika ditemukan record yang belum selesai, langsung arahkan ke halaman ujian
       return redirect()->to("siswa/ujian/soal/{$existingPeserta['peserta_ujian_id']}");
     }
 
-    // Jika belum ada record, cek kode ujian
-    $jadwal = $this->jadwalUjianModel->find($jadwalId);
+    // Cek kode ujian
+    $jadwal = $this->jadwalUjianModel
+      ->select('jadwal_ujian.*, jenis_ujian.is_cat')
+      ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = jadwal_ujian.jenis_ujian_id')
+      ->find($jadwalId);
+
     if (!$jadwal || $jadwal['kode_akses'] !== $kodeUjian) {
       return redirect()->back()->with('error', 'Kode ujian tidak valid!');
     }
 
-    // Buat record baru jika belum ada
+    // Buat record peserta ujian
     $dataPeserta = [
       'jadwal_id' => $jadwalId,
       'siswa_id' => $siswa['siswa_id'],
@@ -177,25 +229,42 @@ class Siswa extends Controller
     ];
 
     $pesertaUjianId = $this->pesertaUjianModel->insert($dataPeserta);
+
+    // Inisialisasi CAT jika jenis ujian adalah CAT
+    if ($jadwal['is_cat']) {
+      $this->catEstimationModel->insert([
+        'peserta_ujian_id' => $pesertaUjianId,
+        'theta' => 0,
+        'standard_error' => 9.999,
+        'previous_se' => 9.999,
+        'jumlah_soal' => 0
+      ]);
+    }
+
     return redirect()->to("siswa/ujian/soal/$pesertaUjianId");
   }
 
   public function soal($pesertaUjianId)
   {
-    // Perbaiki query untuk mengambil data peserta ujian
+    // Inisialisasi default cat_estimation
+    $catEstimation = [
+      'theta' => 0,
+      'standard_error' => 9.999,
+      'previous_se' => 9.999,
+      'jumlah_soal' => 0,
+      'se_target' => 0.3,      // Tambahkan default SE target
+      'jumlah_soal_maksimum' => 20  // Tambahkan default jumlah soal maksimum
+    ];
+
+    // Ambil data peserta ujian
     $pesertaUjian = $this->pesertaUjianModel
       ->select('peserta_ujian.*, jadwal_ujian.durasi_menit, jadwal_ujian.tanggal_mulai, 
-                   jadwal_ujian.tanggal_selesai, jadwal_ujian.jenis_ujian_id, 
-                   jenis_ujian.nama_ujian')
+                    jadwal_ujian.tanggal_selesai, jadwal_ujian.jenis_ujian_id, 
+                    jenis_ujian.nama_ujian, jenis_ujian.is_cat')
       ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
       ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = jadwal_ujian.jenis_ujian_id')
       ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
       ->first();
-
-    // Untuk debug query
-    // $db = \Config\Database::connect();
-    // echo $db->getLastQuery();
-    // die();
 
     if (!$pesertaUjian) {
       return redirect()->to('siswa/ujian')->with('error', 'Sesi ujian tidak ditemukan!');
@@ -211,7 +280,6 @@ class Siswa extends Controller
     $waktuBerjalan = $waktuSekarang - $waktuMulai;
     $sisaWaktu = ($pesertaUjian['durasi_menit'] * 60) - $waktuBerjalan;
 
-    // Jika waktu sudah habis
     if ($sisaWaktu <= 0) {
       $this->pesertaUjianModel->update($pesertaUjianId, [
         'status' => 'selesai',
@@ -220,28 +288,67 @@ class Siswa extends Controller
       return redirect()->to('siswa/hasil')->with('error', 'Waktu ujian telah habis!');
     }
 
-    // Ambil soal
-    $soal = $this->bankSoalModel
-      ->where('jenis_ujian_id', $pesertaUjian['jenis_ujian_id'])
-      ->findAll();
+    // Tambahkan nilai default untuk se_target dan jumlah_soal_maksimum
+    $pesertaUjian['se_target'] = 0.3;  // Sesuaikan dengan kebutuhan
+    $pesertaUjian['jumlah_soal_maksimum'] = 20;  // Sesuaikan dengan kebutuhan
 
-    // Ambil jawaban siswa
-    $jawabanSiswa = $this->detailJawabanModel
-      ->where('peserta_ujian_id', $pesertaUjianId)
-      ->findAll();
+    if ($pesertaUjian['is_cat']) {
+      // Ambil estimasi kemampuan terkini
+      $catEstimationFromDb = $this->catEstimationModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->first();
 
-    // Format jawaban
-    $jawabanMap = [];
-    foreach ($jawabanSiswa as $jawaban) {
-      $jawabanMap[$jawaban['soal_id']] = $jawaban['jawaban_siswa'];
+      if ($catEstimationFromDb) {
+        $catEstimation = $catEstimationFromDb;
+      }
+
+      // Pilih soal berikutnya berdasarkan CAT
+      $soal = $this->pilihSoalCAT($pesertaUjianId, $catEstimation['theta'], $pesertaUjian['jadwal_id']);
+
+      // Jika tidak ada soal yang tersedia
+      if (!$soal) {
+        // Update status ujian menjadi selesai
+        $this->pesertaUjianModel->update($pesertaUjianId, [
+          'status' => 'selesai',
+          'waktu_selesai' => date('Y-m-d H:i:s')
+        ]);
+        return redirect()->to('siswa/hasil')->with('success', 'Ujian telah selesai!');
+      }
+
+      $data = [
+        'peserta_ujian' => $pesertaUjian,
+        'soal' => [$soal], // kirim hanya satu soal
+        'durasi_menit' => $pesertaUjian['durasi_menit'],
+        'cat_estimation' => $catEstimation
+      ];
+    } else {
+      // Logika untuk ujian non-CAT
+      $soal = $this->bankSoalModel
+        ->where('jenis_ujian_id', $pesertaUjian['jenis_ujian_id'])
+        ->findAll();
+
+      // Ambil jawaban siswa
+      $jawabanSiswa = $this->detailJawabanModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->findAll();
+
+      // Format jawaban
+      $jawabanMap = [];
+      foreach ($jawabanSiswa as $jawaban) {
+        $jawabanMap[$jawaban['soal_id']] = $jawaban['jawaban_siswa'];
+      }
+
+      $data = [
+        'peserta_ujian' => $pesertaUjian,
+        'soal' => $soal,
+        'jawaban_siswa' => $jawabanMap,
+        'durasi_menit' => $pesertaUjian['durasi_menit'],
+        'cat_estimation' => $catEstimation  // Tambahkan default cat_estimation
+      ];
     }
 
-    $data = [
-      'peserta_ujian' => $pesertaUjian,
-      'soal' => $soal,
-      'jawaban_siswa' => $jawabanMap,
-      'durasi_menit' => $pesertaUjian['durasi_menit']
-    ];
+    // Tambahkan log untuk debugging
+    log_message('info', 'Data yang dikirim ke view: ' . print_r($data, true));
 
     return view('siswa/soal_ujian', $data);
   }
@@ -258,10 +365,34 @@ class Siswa extends Controller
         throw new \Exception('Data tidak lengkap');
       }
 
-      // Ambil jawaban benar
+      // Tambahkan log untuk debugging
+      log_message('debug', 'Input data: ' . json_encode([
+        'peserta_ujian_id' => $pesertaUjianId,
+        'soal_id' => $soalId,
+        'jawaban' => $jawaban
+      ]));
+
+      // Cek apakah ujian menggunakan CAT
+      $pesertaUjian = $this->pesertaUjianModel
+        ->select('jenis_ujian.is_cat')
+        ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+        ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = jadwal_ujian.jenis_ujian_id')
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->first();
+
+      if (!$pesertaUjian) {
+        throw new \Exception('Data ujian tidak ditemukan');
+      }
+
+      // Ambil soal dan cek jawaban
       $soal = $this->bankSoalModel->find($soalId);
+      if (!$soal) {
+        throw new \Exception('Soal tidak ditemukan');
+      }
+
       $isCorrect = ($jawaban === $soal['jawaban_benar']) ? 1 : 0;
 
+      // Simpan jawaban
       $data = [
         'peserta_ujian_id' => $pesertaUjianId,
         'soal_id' => $soalId,
@@ -269,7 +400,6 @@ class Siswa extends Controller
         'is_correct' => $isCorrect
       ];
 
-      // Cek existing jawaban
       $existingJawaban = $this->detailJawabanModel
         ->where('peserta_ujian_id', $pesertaUjianId)
         ->where('soal_id', $soalId)
@@ -281,39 +411,108 @@ class Siswa extends Controller
         $this->detailJawabanModel->insert($data);
       }
 
+      // Update CAT estimation jika menggunakan CAT
+      if ($pesertaUjian['is_cat']) {
+        $catEstimation = $this->catEstimationModel
+          ->where('peserta_ujian_id', $pesertaUjianId)
+          ->first();
+
+        if (!$catEstimation) {
+          throw new \Exception('Data estimasi CAT tidak ditemukan');
+        }
+
+        // Perhitungan CAT
+        $P = $this->hitungProbabilitas(
+          $catEstimation['theta'],
+          $soal['tingkat_kesulitan'],
+          $soal['daya_beda'] ?? 1,
+          $soal['faktor_tebakan'] ?? 0
+        );
+
+        $I = $this->hitungInformasiSoal(
+          $catEstimation['theta'],
+          $soal['tingkat_kesulitan'],
+          $soal['daya_beda'] ?? 1,
+          $soal['faktor_tebakan'] ?? 0
+        );
+
+        // Hindari division by zero
+        if ($I <= 0) {
+          $I = 0.0001; // Nilai minimum untuk menghindari division by zero
+        }
+
+        $newTheta = $catEstimation['theta'] +
+          ($isCorrect ? (1 - $P) : (-$P)) / sqrt($I);
+
+        $newSE = 1 / sqrt($I);
+
+        // Update estimasi
+        $this->catEstimationModel->update($catEstimation['estimation_id'], [
+          'theta' => $newTheta,
+          'previous_se' => $catEstimation['standard_error'],
+          'standard_error' => $newSE,
+          'jumlah_soal' => $catEstimation['jumlah_soal'] + 1
+        ]);
+
+        $data['theta_saat_ini'] = $newTheta;
+        $data['se_saat_ini'] = $newSE;
+
+        if ($existingJawaban) {
+          $this->detailJawabanModel->update($existingJawaban['jawaban_id'], $data);
+        }
+      }
+
       return $this->response->setJSON([
         'success' => true,
         'message' => 'Jawaban berhasil disimpan'
       ]);
     } catch (\Exception $e) {
       log_message('error', 'Error saving answer: ' . $e->getMessage());
-      return $this->response->setJSON([
+      return $this->response->setStatusCode(500)->setJSON([
         'success' => false,
         'message' => $e->getMessage()
       ]);
     }
   }
 
+
   public function selesaiUjian($pesertaUjianId)
   {
-    $pesertaUjian = $this->pesertaUjianModel->find($pesertaUjianId);
+    $pesertaUjian = $this->pesertaUjianModel
+      ->select('peserta_ujian.*, jenis_ujian.is_cat')
+      ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+      ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = jadwal_ujian.jenis_ujian_id')
+      ->find($pesertaUjianId);
 
     if (!$pesertaUjian) {
       return redirect()->to('siswa/ujian')->with('error', 'Sesi ujian tidak ditemukan!');
     }
 
-    // Hitung total jawaban dan jawaban benar
-    $totalSoal = $this->detailJawabanModel
-      ->where('peserta_ujian_id', $pesertaUjianId)
-      ->countAllResults();
+    if ($pesertaUjian['is_cat']) {
+      // Ambil estimasi kemampuan terakhir untuk CAT
+      $catEstimation = $this->catEstimationModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->first();
 
-    $jawabanBenar = $this->detailJawabanModel
-      ->where('peserta_ujian_id', $pesertaUjianId)
-      ->where('is_correct', true)
-      ->countAllResults();
+      // Konversi theta ke skala 0-100
+      // Asumsi rentang theta normal adalah -4 hingga 4
+      $nilaiAkhir = (($catEstimation['theta'] + 4) / 8) * 100;
 
-    // Hitung nilai (skala 0-100)
-    $nilaiAkhir = $totalSoal > 0 ? ($jawabanBenar / $totalSoal) * 100 : 0;
+      // Pastikan nilai dalam rentang 0-100
+      $nilaiAkhir = max(0, min(100, $nilaiAkhir));
+    } else {
+      // Perhitungan nilai untuk non-CAT (existing logic)
+      $totalSoal = $this->detailJawabanModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->countAllResults();
+
+      $jawabanBenar = $this->detailJawabanModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->where('is_correct', true)
+        ->countAllResults();
+
+      $nilaiAkhir = $totalSoal > 0 ? ($jawabanBenar / $totalSoal) * 100 : 0;
+    }
 
     // Update status dan nilai
     $this->pesertaUjianModel->update($pesertaUjianId, [
@@ -322,16 +521,15 @@ class Siswa extends Controller
       'nilai_akhir' => $nilaiAkhir
     ]);
 
-    // Redirect ke halaman hasil dengan flashdata
     session()->setFlashdata('success', 'Ujian telah selesai! Berikut adalah hasil ujian Anda.');
     return redirect()->to("siswa/hasil/review/$pesertaUjianId");
   }
 
+
   public function review($pesertaUjianId)
   {
-    // Ambil data peserta ujian dengan detail
     $pesertaUjian = $this->pesertaUjianModel
-      ->select('peserta_ujian.*, jadwal_ujian.*, jenis_ujian.nama_ujian')
+      ->select('peserta_ujian.*, jadwal_ujian.*, jenis_ujian.nama_ujian, jenis_ujian.is_cat')
       ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
       ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = jadwal_ujian.jenis_ujian_id')
       ->where('peserta_ujian_id', $pesertaUjianId)
@@ -343,15 +541,28 @@ class Siswa extends Controller
 
     // Ambil detail jawaban siswa
     $jawabanSiswa = $this->detailJawabanModel
-      ->select('detail_jawaban.*, bank_soal.*')
+      ->select('detail_jawaban.*, bank_soal.*, detail_jawaban.theta_saat_ini, detail_jawaban.se_saat_ini')
       ->join('bank_soal', 'bank_soal.soal_id = detail_jawaban.soal_id')
       ->where('peserta_ujian_id', $pesertaUjianId)
       ->findAll();
 
-    $data = [
-      'peserta_ujian' => $pesertaUjian,
-      'jawaban_siswa' => $jawabanSiswa
-    ];
+    if ($pesertaUjian['is_cat']) {
+      // Ambil data estimasi CAT
+      $catEstimation = $this->catEstimationModel
+        ->where('peserta_ujian_id', $pesertaUjianId)
+        ->first();
+
+      $data = [
+        'peserta_ujian' => $pesertaUjian,
+        'jawaban_siswa' => $jawabanSiswa,
+        'cat_estimation' => $catEstimation
+      ];
+    } else {
+      $data = [
+        'peserta_ujian' => $pesertaUjian,
+        'jawaban_siswa' => $jawabanSiswa
+      ];
+    }
 
     return view('siswa/review_ujian', $data);
   }

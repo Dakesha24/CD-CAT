@@ -7,12 +7,17 @@
     <div class="col-12 mb-4">
       <div class="card bg-light border-0 shadow-sm">
         <div class="card-body d-flex justify-content-between align-items-center">
-          <h4 class="mb-0 text-primary"><?= $peserta_ujian['nama_ujian'] ?></h4>
-          <div class="d-flex align-items-center">
-            <i class="fas fa-clock me-2 text-primary"></i>
-            <div class="bg-white px-4 py-2 rounded shadow-sm">
-              <span class="fw-bold text-primary" id="timer">Loading...</span>
-            </div>
+          <div>
+            <h4 class="mb-0 text-primary"><?= $peserta_ujian['nama_ujian'] ?></h4>
+            <?php if ($peserta_ujian['is_cat']): ?>
+              <div class="text-muted small mt-1">
+                <span class="me-2">Soal ke-<?= $cat_estimation['jumlah_soal'] + 1 ?></span>
+                <span>|</span>
+                <span class="mx-2">θ: <?= number_format($cat_estimation['theta'], 2) ?></span>
+                <span>|</span>
+                <span class="ms-2">SE: <?= number_format($cat_estimation['standard_error'], 3) ?></span>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -20,44 +25,52 @@
 
     <!-- Card Soal -->
     <div class="col-12">
-      <?php foreach ($soal as $index => $s): ?>
-        <div class="card mb-4 shadow-sm soal-card" id="soal_<?= $index ?>" style="display: <?= $index === 0 ? 'block' : 'none' ?>;">
+      <?php if ($peserta_ujian['is_cat']): ?>
+        <!-- Tampilan untuk CAT -->
+        <div class="card mb-4 shadow-sm">
           <div class="card-header bg-white border-bottom py-3">
             <div class="d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">Soal <?= $index + 1 ?> dari <?= count($soal) ?></h5>
-              <span class="badge bg-primary px-3 py-2">
-                Sisa: <?= count($soal) - ($index + 1) ?> soal
-              </span>
+              <h5 class="mb-0">
+                Soal ke-<?= $cat_estimation['jumlah_soal'] + 1 ?>
+                <?php if ($cat_estimation['jumlah_soal'] >= $peserta_ujian['jumlah_soal_maksimum']): ?>
+                  (Terakhir)
+                <?php endif; ?>
+              </h5>
+              <div class="d-flex align-items-center">
+                <?php if ($cat_estimation['standard_error'] <= $peserta_ujian['se_target']): ?>
+                  <span class="badge bg-success me-2">Akurasi Tercapai</span>
+                <?php endif; ?>
+                <span class="badge bg-primary px-3 py-2">
+                  Level: <?= number_format($soal[0]['tingkat_kesulitan'], 2) ?>
+                </span>
+              </div>
             </div>
           </div>
           <div class="card-body p-4">
-            <!-- Pertanyaan -->
             <div class="mb-4">
-              <p class="lead mb-0"><?= $s['pertanyaan'] ?></p>
+              <p class="lead mb-0"><?= $soal[0]['pertanyaan'] ?></p>
             </div>
 
-            <!-- Pilihan Jawaban -->
             <div class="options">
               <?php
               $options = [
-                'A' => $s['pilihan_a'],
-                'B' => $s['pilihan_b'],
-                'C' => $s['pilihan_c'],
-                'D' => $s['pilihan_d']
+                'A' => $soal[0]['pilihan_a'],
+                'B' => $soal[0]['pilihan_b'],
+                'C' => $soal[0]['pilihan_c'],
+                'D' => $soal[0]['pilihan_d']
               ];
 
               foreach ($options as $key => $value):
-                $isChecked = isset($jawaban_siswa[$s['soal_id']]) && $jawaban_siswa[$s['soal_id']] === $key;
               ?>
-                <div class="card mb-3 option-card">
-                  <label class="card-body d-flex align-items-center p-3 cursor-pointer <?= $isChecked ? 'bg-light' : '' ?>">
+                <div class="card mb-3 option-card" id="option_<?= $key ?>">
+                  <label class="card-body d-flex align-items-center p-3 cursor-pointer">
                     <input
                       class="form-check-input me-3"
                       type="radio"
-                      name="soal_<?= $s['soal_id'] ?>"
+                      name="soal_<?= $soal[0]['soal_id'] ?>"
                       value="<?= $key ?>"
-                      data-soal-id="<?= $s['soal_id'] ?>"
-                      <?= $isChecked ? 'checked' : '' ?>>
+                      data-soal-id="<?= $soal[0]['soal_id'] ?>"
+                      data-tingkat-kesulitan="<?= $soal[0]['tingkat_kesulitan'] ?>">
                     <span class="option-text"><?= $key ?>. <?= $value ?></span>
                   </label>
                 </div>
@@ -67,23 +80,91 @@
           <div class="card-footer bg-white border-top py-3">
             <div class="d-flex justify-content-between align-items-center">
               <div class="text-muted small">
-                Pilih jawaban lalu klik 'Selanjutnya'
-              </div>
-              <div>
-                <?php if ($index === count($soal) - 1): ?>
-                  <button class="btn btn-danger px-4" onclick="konfirmasiSelesai()">
-                    Selesai Ujian
-                  </button>
+                <?php if ($cat_estimation['standard_error'] <= $peserta_ujian['se_target']): ?>
+                  Akurasi estimasi sudah mencukupi
                 <?php else: ?>
-                  <button class="btn btn-primary px-4" onclick="nextSoal()">
-                    Selanjutnya <i class="fas fa-arrow-right ms-2"></i>
-                  </button>
+                  Pilih jawaban untuk melanjutkan
                 <?php endif; ?>
               </div>
+              <button class="btn btn-primary px-4" id="btnJawab" disabled onclick="jawabSoalCAT()">
+                <?php if (
+                  $cat_estimation['jumlah_soal'] >= $peserta_ujian['jumlah_soal_maksimum'] ||
+                  $cat_estimation['standard_error'] <= $peserta_ujian['se_target']
+                ): ?>
+                  Selesai
+                <?php else: ?>
+                  Jawab <i class="fas fa-arrow-right ms-2"></i>
+                <?php endif; ?>
+              </button>
             </div>
           </div>
         </div>
-      <?php endforeach; ?>
+      <?php else: ?>
+        <?php foreach ($soal as $index => $s): ?>
+          <div class="card mb-4 shadow-sm soal-card" id="soal_<?= $index ?>" style="display: <?= $index === 0 ? 'block' : 'none' ?>;">
+            <div class="card-header bg-white border-bottom py-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Soal <?= $index + 1 ?> dari <?= count($soal) ?></h5>
+                <span class="badge bg-primary px-3 py-2">
+                  Sisa: <?= count($soal) - ($index + 1) ?> soal
+                </span>
+              </div>
+            </div>
+            <div class="card-body p-4">
+              <!-- Pertanyaan -->
+              <div class="mb-4">
+                <p class="lead mb-0"><?= $s['pertanyaan'] ?></p>
+              </div>
+
+              <!-- Pilihan Jawaban -->
+              <div class="options">
+                <?php
+                $options = [
+                  'A' => $s['pilihan_a'],
+                  'B' => $s['pilihan_b'],
+                  'C' => $s['pilihan_c'],
+                  'D' => $s['pilihan_d']
+                ];
+
+                foreach ($options as $key => $value):
+                  $isChecked = isset($jawaban_siswa[$s['soal_id']]) && $jawaban_siswa[$s['soal_id']] === $key;
+                ?>
+                  <div class="card mb-3 option-card">
+                    <label class="card-body d-flex align-items-center p-3 cursor-pointer <?= $isChecked ? 'bg-light' : '' ?>">
+                      <input
+                        class="form-check-input me-3"
+                        type="radio"
+                        name="soal_<?= $s['soal_id'] ?>"
+                        value="<?= $key ?>"
+                        data-soal-id="<?= $s['soal_id'] ?>"
+                        <?= $isChecked ? 'checked' : '' ?>>
+                      <span class="option-text"><?= $key ?>. <?= $value ?></span>
+                    </label>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+            <div class="card-footer bg-white border-top py-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                  Pilih jawaban lalu klik 'Selanjutnya'
+                </div>
+                <div>
+                  <?php if ($index === count($soal) - 1): ?>
+                    <button class="btn btn-danger px-4" onclick="konfirmasiSelesai()">
+                      Selesai Ujian
+                    </button>
+                  <?php else: ?>
+                    <button class="btn btn-primary px-4" onclick="nextSoal()">
+                      Selanjutnya <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                  <?php endif; ?>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
   </div>
 </div>
@@ -112,11 +193,122 @@
     background-color: #0d6efd;
     border-color: #0d6efd;
   }
+
+  .option-card.bg-light {
+    border-color: #0d6efd;
+  }
+
+  .option-card.bg-light .option-text {
+    color: #0d6efd;
+    font-weight: 500;
+  }
 </style>
 
 <script>
   let currentSoal = 0;
   const totalSoal = <?= count($soal) ?>;
+
+  async function jawabSoalCAT() {
+    const checkedInput = document.querySelector('.form-check-input:checked');
+    if (!checkedInput) {
+      alert('Silakan pilih jawaban terlebih dahulu!');
+      return;
+    }
+
+    // Tampilkan loading
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75';
+    loadingEl.style.zIndex = '9999';
+    loadingEl.innerHTML = `
+        <div class="card shadow border-0 p-4">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <div>Memproses jawaban...</div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingEl);
+
+    try {
+      const soalId = checkedInput.dataset.soalId;
+      const jawaban = checkedInput.value;
+
+      const formData = new FormData();
+      formData.append('peserta_ujian_id', '<?= $peserta_ujian['peserta_ujian_id'] ?>');
+      formData.append('soal_id', soalId);
+      formData.append('jawaban', jawaban);
+
+      const response = await fetch('<?= base_url('siswa/ujian/simpan-jawaban') ?>', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Gagal menyimpan jawaban');
+      }
+
+      // Cek kondisi berhenti
+      const shouldStop = <?= $cat_estimation['jumlah_soal'] + 1 ?> >= <?= $peserta_ujian['jumlah_soal_maksimum'] ?> ||
+        <?= $cat_estimation['standard_error'] ?> <= <?= $peserta_ujian['se_target'] ?>;
+
+      if (shouldStop) {
+        // Selesaikan ujian
+        window.location.href = '<?= base_url("siswa/ujian/selesai/{$peserta_ujian['peserta_ujian_id']}") ?>';
+      } else {
+        // Muat soal berikutnya
+        window.location.reload();
+      }
+
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Terjadi kesalahan: ' + error.message);
+    } finally {
+      document.body.removeChild(loadingEl);
+    }
+  }
+
+  // Perbaikan untuk event listener
+  document.addEventListener('DOMContentLoaded', function() {
+    // Cek apakah elemen ada sebelum menambahkan event listener
+    const radioButtons = document.querySelectorAll('.form-check-input');
+    if (radioButtons) {
+      radioButtons.forEach(radio => {
+        radio.addEventListener('change', function() {
+          const btnJawab = document.getElementById('btnJawab');
+          if (btnJawab) {
+            btnJawab.disabled = false;
+          }
+
+          // Visual feedback
+          document.querySelectorAll('.option-card').forEach(card => {
+            card.classList.remove('bg-light');
+          });
+          this.closest('.option-card').classList.add('bg-light');
+        });
+      });
+    }
+  });
+
+  // Event listener untuk radio buttons khusus CAT
+  <?php if ($peserta_ujian['is_cat']): ?>
+    document.querySelectorAll('.form-check-input').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const optionCard = this.closest('.option-card');
+        document.getElementById('btnJawab').disabled = false;
+
+        // Visual feedback
+        document.querySelectorAll('.option-card').forEach(card => {
+          card.classList.remove('bg-light');
+        });
+        optionCard.classList.add('bg-light');
+      });
+    });
+  <?php endif; ?>
 
   // Update fungsi showSoal
   function showSoal(index) {
@@ -303,22 +495,27 @@
   }
 
   // Fungsi untuk timer
+  // Perbaikan untuk timer
   function startTimer(durasiMenit) {
-    // Cek apakah ada waktu tersimpan di sessionStorage
+    const display = document.querySelector('#timer');
+    if (!display) return; // Jika elemen timer tidak ada, jangan lanjutkan
+
     let sisaDetik;
     const savedTime = sessionStorage.getItem('examTimer');
 
     if (savedTime) {
-      // Jika ada waktu tersimpan, gunakan itu
       sisaDetik = parseInt(savedTime);
     } else {
-      // Jika tidak ada, gunakan durasi penuh
       sisaDetik = durasiMenit * 60;
       sessionStorage.setItem('examTimer', sisaDetik.toString());
     }
 
-    const display = document.querySelector('#timer');
     const interval = setInterval(function() {
+      if (!display) {
+        clearInterval(interval);
+        return;
+      }
+
       const hours = Math.floor(sisaDetik / 3600);
       const minutes = Math.floor((sisaDetik % 3600) / 60);
       const seconds = sisaDetik % 60;
@@ -328,14 +525,13 @@
         (minutes < 10 ? "0" + minutes : minutes) + ":" +
         (seconds < 10 ? "0" + seconds : seconds);
 
-      // Simpan waktu tersisa ke sessionStorage setiap detik
       sessionStorage.setItem('examTimer', sisaDetik.toString());
 
       if (--sisaDetik < 0) {
         clearInterval(interval);
-        sessionStorage.removeItem('examTimer'); // Hapus timer dari sessionStorage
+        sessionStorage.removeItem('examTimer');
         alert('Waktu habis!');
-        window.location.href = '<?= base_url("siswa/ujian/selesai/{$peserta_ujian['peserta_ujian_id']}") ?>';
+        window.location.href = `<?= base_url("siswa/ujian/selesai/{$peserta_ujian['peserta_ujian_id']}") ?>`;
       }
     }, 1000);
   }
