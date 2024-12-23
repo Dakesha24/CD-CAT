@@ -135,10 +135,58 @@ class Guru extends Controller
             'ujian' => $this->jenisUjianModel->findAll(),
             'jenis_ujian' => $this->jenisUjianModel->findAll(),
             'kelas' => $this->kelasModel->getKelas(),
-
         ];
         return view('guru/tambah_jadwal_ujian', $data);
     }
+
+    public function editJadwalUjian($id)
+    {
+        $jadwal = $this->jadwalUjianModel->find($id);
+
+        if (!$jadwal) {
+            return redirect()->to('/guru/jadwal-ujian')->with('error', 'Jadwal Ujian tidak ditemukan');
+        }
+
+        $data = [
+            'title' => 'Edit Jadwal Ujian',
+            'jenis_ujian' => $this->jenisUjianModel->findAll(),
+            'kelas' => $this->kelasModel->getKelas(),
+            'jadwal' => $jadwal
+        ];
+        return view('guru/editJadwalUjian', $data);
+    }
+
+    public function jadwalUjianUpdate($id)
+    {
+        if (!$this->validate([
+            'jenis_ujian_id' => 'required',
+            'kelas_id' => 'required',
+            'tanggal_mulai' => 'required',
+            'tanggal_selesai' => 'required',
+            'durasi_menit' => 'required|integer',
+            'kode_akses' => 'required|max_length[10]',
+            'status' => 'required'
+        ])) {
+            return redirect()->back()->withInput()->with('error', $this->validator->listErrors());
+        }
+
+        $data = [
+            'jenis_ujian_id' => $this->request->getPost('jenis_ujian_id'),
+            'kelas_id' => $this->request->getPost('kelas_id'),
+            'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
+            'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
+            'durasi_menit' => $this->request->getPost('durasi_menit'),
+            'kode_akses' => $this->request->getPost('kode_akses'),
+            'status' => $this->request->getPost('status')
+        ];
+
+        if ($this->jadwalUjianModel->update($id, $data)) {
+            return redirect()->to('/guru/jadwal-ujian')->with('success', 'Jadwal ujian berhasil diubah');
+        }
+
+        return redirect()->back()->withInput()->with('error', 'Gagal mengubah jadwal ujian');
+    }
+
 
     public function jadwalUjianTambahProses()
     {
@@ -147,7 +195,9 @@ class Guru extends Controller
             'kelas_id' => 'required',
             'tanggal_mulai' => 'required',
             'tanggal_selesai' => 'required',
-            'durasi_menit' => 'required|integer'
+            'durasi_menit' => 'required|integer',
+            'kode_akses' => 'required|max_length[10]',
+            'status' => 'required'
         ])) {
             return redirect()->back()->withInput()->with('error', $this->validator->listErrors());
         }
@@ -159,7 +209,8 @@ class Guru extends Controller
             'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
             'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
             'durasi_menit' => $this->request->getPost('durasi_menit'),
-            'status' => 'belum_dimulai'
+            'status' => $this->request->getPost('status'),
+            'kode_akses' => $this->request->getPost('kode_akses')
         ];
 
         if ($this->jadwalUjianModel->insert($data)) {
