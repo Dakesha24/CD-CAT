@@ -24,9 +24,15 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function($rout
 });
 
 // Guru routes
+// Guru routes
 $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function($routes) {
   $routes->get('dashboard', 'Guru::dashboard');
-  // ... routes guru lainnya
+  $routes->get('ujian-aktif', 'Guru::ujianAktif');
+  $routes->get('bank-soal', 'Guru::bankSoal');
+  $routes->get('jadwal-ujian', 'Guru::jadwalUjian');
+  $routes->get('hasil-ujian', 'Guru::hasilUjian');
+  $routes->get('profil', 'Guru::profil');
+  $routes->post('bank-soal/tambah', 'Guru::tambahSoal');
 });
 
 // Siswa routes
@@ -43,3 +49,8 @@ $routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function($rout
   $routes->get('hasil/review/(:num)', 'Siswa::review/$1');
   $routes->post('ujian/simpan-jawaban', 'Siswa::simpanJawaban');
 });
+
+$routes->post('siswa/ujian/mulai-ujian', 'Siswa\Siswa::mulaiUjian');
+
+
+$routes->delete('guru/bank-soal/delete/(:num)', 'Guru::deleteSoal/$1');
