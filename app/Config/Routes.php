@@ -32,6 +32,8 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
   $routes->get('jadwal-ujian', 'Guru::jadwalUjian');
   $routes->get('jadwal-ujian/tambah', 'Guru::jadwalUjianTambah');
   $routes->post('jadwal-ujian/tambah', 'Guru::jadwalUjianTambahProses');
+  $routes->get('jadwal-ujian/edit/(:num)', 'Guru::editJadwalUjian/$1');
+  $routes->post('jadwal-ujian/update/(:num)', 'Guru::jadwalUjianUpdate/$1');
   $routes->get('hasil-ujian', 'Guru::hasilUjian');
   $routes->get('profil', 'Guru::profil');
   $routes->post('bank-soal/tambah', 'Guru::tambahSoal');
