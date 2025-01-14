@@ -34,7 +34,7 @@
                             <td><?= $no++ ?></td>
                             <td><?= $s['nama_ujian'] ?></td>
                             <td><?= $s['pertanyaan'] ?></td>
-                            <td><?= $s['tingkat_kesulitan_b'] ?></td>
+
                             <td><?= date('d/m/Y H:i', strtotime($s['created_at'])) ?></td>
                             <td>
                                 <button class="btn btn-sm btn-info" onclick="editSoal(<?= $s['soal_id'] ?>)">Edit</button>

@@ -1,8 +1,8 @@
 <?= $this->extend('templates/siswa/siswa_template') ?>
 
 <?= $this->section('content') ?>
-<div class="container-fluid">
-    <h2 class="mb-4">Dashboard</h2>
+<div class="container-fluid py-5">
+    <h2 class="mb-4 py-4">Dashboard</h2>
     
     <div class="row g-4">
         <!-- Pengumuman Card -->

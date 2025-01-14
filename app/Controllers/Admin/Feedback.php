@@ -2,7 +2,6 @@
 namespace App\Controllers\Admin;
 
 use CodeIgniter\Controller;
-use App\Models\FeedbackModel;
 
 class Feedback extends Controller
 {
@@ -10,7 +9,6 @@ class Feedback extends Controller
 
     public function __construct()
     {
-        $this->feedbackModel = new FeedbackModel();
         // Check if user is admin
         if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
             return redirect()->to(base_url('login'));

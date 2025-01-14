@@ -1,88 +1,65 @@
-<?= $this->extend('templates/siswa/siswa_template') ?>
+  <?= $this->extend('templates/siswa/siswa_template') ?>
+  <?= $this->section('content') ?>
 
-<?= $this->section('content') ?>
-<div class="container-fluid">
-  <div class="row mb-4">
-    <div class="col">
-      <h2>Hasil Ujian</h2>
-    </div>
-  </div>
+  <div class="container py-5">
+    <h2 class="mb-4 py-2">Riwayat Ujian</h2>
 
-  <?php if (session()->getFlashdata('success')): ?>
-    <div class="alert alert-success alert-dismissible fade show">
-      <?= session()->getFlashdata('success') ?>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <?php endif; ?>
-
-  <!-- Daftar Hasil Ujian -->
-  <div class="row">
-    <div class="col">
-      <div class="card">
-        <div class="card-header bg-primary text-white">
-          <h5 class="card-title mb-0">Riwayat Ujian</h5>
-        </div>
-        <div class="card-body">
-          <?php if (!empty($hasil_ujian)): ?>
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Nama Ujian</th>
-                    <th>Tanggal</th>
-                    <th>Waktu Mulai</th>
-                    <th>Waktu Selesai</th>
-                    <th>Nilai</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php $no = 1;
-                  foreach ($hasil_ujian as $hasil): ?>
-                    <tr>
-                      <td><?= $no++ ?></td>
-                      <td><?= $hasil['nama_ujian'] ?></td>
-                      <td><?= date('d-m-Y', strtotime($hasil['tanggal_mulai'])) ?></td>
-                      <td><?= date('H:i', strtotime($hasil['waktu_mulai'])) ?></td>
-                      <td><?= date('H:i', strtotime($hasil['waktu_selesai'])) ?></td>
-                      <td>
-                        <?php if ($hasil['nilai_akhir']): ?>
-                          <span class="badge bg-success"><?= number_format($hasil['nilai_akhir'], 2) ?></span>
-                        <?php else: ?>
-                          <span class="badge bg-warning">Belum ada nilai</span>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <?php if ($hasil['status'] == 'selesai'): ?>
-                          <span class="badge bg-success">Selesai</span>
-                        <?php elseif ($hasil['status'] == 'sedang_mengerjakan'): ?>
-                          <span class="badge bg-warning">Sedang Mengerjakan</span>
-                        <?php else: ?>
-                          <span class="badge bg-secondary">Belum Mulai</span>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <?php if ($hasil['status'] == 'selesai'): ?>
-                          <a href="<?= base_url("siswa/hasil/review/{$hasil['peserta_ujian_id']}") ?>"
-                            class="btn btn-info btn-sm">
-                            <i class="bi bi-eye"></i> Lihat Pembahasan
-                          </a>
-                        <?php endif; ?>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php else: ?>
-            <div class="alert alert-info mb-0">
-              Belum ada riwayat ujian.
-            </div>
-          <?php endif; ?>
-        </div>
+    <?php if (empty($riwayatUjian)): ?>
+      <div class="alert alert-info">
+        Anda belum mengikuti ujian apapun.
       </div>
-    </div>
+    <?php else: ?>
+      <div class="row g-4">
+        <?php foreach ($riwayatUjian as $ujian): ?>
+          <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm hover-shadow">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div>
+                    <h5 class="card-title text-primary mb-1"><?= esc($ujian['nama_ujian']) ?></h5>
+                    <small class="text-muted"><?= esc($ujian['nama_jenis']) ?></small>
+                  </div>
+                  <span class="badge bg-success">Selesai</span>
+                </div>
+
+                <div class="mb-3">
+                  <small class="text-muted d-block">
+                    <i class="bi bi-calendar-check"></i>
+                    Selesai: <?= date('d M Y H:i', strtotime($ujian['waktu_selesai'])) ?>
+                  </small>
+                  <small class="text-muted d-block">
+                    <i class="bi bi-clock-history"></i>
+                    Durasi Pengerjaan: <?= $ujian['durasi_pengerjaan'] ?>
+                  </small>
+                  <small class="text-muted d-block">
+                    <i class="bi bi-alarm"></i>
+                    Durasi Maksimal: <?= $ujian['durasi'] ?>
+                  </small>
+                </div>
+
+                <p class="card-text small text-muted mb-4"><?= esc($ujian['deskripsi']) ?></p>
+
+                <a href="<?= base_url('siswa/hasil/detail/' . $ujian['peserta_ujian_id']) ?>"
+                  class="btn btn-outline-primary">
+                  Lihat Detail
+                </a>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
   </div>
-</div>
-<?= $this->endSection() ?>
+
+  <style>
+    .hover-shadow {
+      transition: all 0.3s ease;
+    }
+
+    .hover-shadow:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+  </style>
+
+  <?= $this->endSection() ?>

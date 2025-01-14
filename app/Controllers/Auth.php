@@ -13,7 +13,7 @@ class Auth extends Controller
   {
     $this->userModel = new UserModel();
     helper(['form', 'url']);
-  }
+  } 
 
   public function login()
   {
