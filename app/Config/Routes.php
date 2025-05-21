@@ -61,6 +61,9 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
   $routes->post('profil/save', 'Guru::saveProfil');
 });
 
+$routes->get('guru/hasil-ujian/download-excel-html/(:num)', 'Guru\Guru::downloadExcelHTML/$1');
+$routes->get('guru/hasil-ujian/download-pdf-html/(:num)', 'Guru\Guru::downloadPDFHTML/$1');
+
 // Siswa routes
 $routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function ($routes) {
   $routes->get('dashboard', 'Siswa::dashboard');

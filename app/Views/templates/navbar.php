@@ -94,6 +94,15 @@
                     <a class="nav-link <?= uri_string() == 'guide' ? 'active' : '' ?>" href="<?= base_url('guide') ?>">Petunjuk Penggunaan</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <?= uri_string() == 'faq' ? 'active' : '' ?>" href="<?= base_url('faq') ?>">FAQ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= uri_string() == 'about' ? 'active' : '' ?>" href="<?= base_url('about') ?>">Tentang Kami</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= uri_string() == 'bantuan' ? 'active' : '' ?>" href="<?= base_url('bantuan') ?>">Bantuan</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link <?= uri_string() == 'profile' ? 'active' : '' ?>" href="<?= base_url('profile') ?>">Profil</a>
                 </li>
                 <li class="nav-item">

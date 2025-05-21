@@ -46,7 +46,8 @@
                 'A' => $soal['pilihan_a'],
                 'B' => $soal['pilihan_b'],
                 'C' => $soal['pilihan_c'],
-                'D' => $soal['pilihan_d']
+                'D' => $soal['pilihan_d'],
+                'E' => $soal['pilihan_e']
               ];
               foreach ($pilihan as $key => $value): ?>
                 <label class="list-group-item list-group-item-action">

@@ -121,6 +121,7 @@ class Guru extends Controller
             'pilihan_b' => $this->request->getPost('pilihan_b'),
             'pilihan_c' => $this->request->getPost('pilihan_c'),
             'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
             'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan')
         ];
@@ -136,6 +137,7 @@ class Guru extends Controller
             'pilihan_b' => $this->request->getPost('pilihan_b'),
             'pilihan_c' => $this->request->getPost('pilihan_c'),
             'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
             'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan')
         ];
@@ -158,11 +160,15 @@ class Guru extends Controller
         $data['jadwal'] = $this->jadwalUjianModel->getJadwalWithRelations();
 
         // Daftar ujian untuk modal tambah: hanya ujian yang belum memiliki jadwal
-        $data['ujian_tambah'] = $this->ujianModel
-            ->select('ujian.*')
-            ->join('jadwal_ujian', 'jadwal_ujian.ujian_id = ujian.id_ujian', 'left')
-            ->where('jadwal_ujian.jadwal_id IS NULL')
-            ->findAll();
+        // $data['ujian_tambah'] = $this->ujianModel
+        //     ->select('ujian.*')
+        //     ->join('jadwal_ujian', 'jadwal_ujian.ujian_id = ujian.id_ujian', 'left')
+        //     ->where('jadwal_ujian.jadwal_id IS NULL')
+        //     ->findAll();
+
+        // Daftar ujian untuk modal tambah: menampilkan semua ujian
+        $data['ujian_tambah'] = $this->ujianModel->findAll();
+
 
         // Daftar ujian untuk modal edit: semua ujian
         $data['ujian_edit'] = $this->ujianModel->findAll();
@@ -176,30 +182,61 @@ class Guru extends Controller
 
     public function tambahJadwal()
     {
+        $ujian_id = $this->request->getPost('ujian_id');
+        $kelas_id = $this->request->getPost('kelas_id');
+
+        // Cek apakah kombinasi ujian_id dan kelas_id sudah ada
+        $existing = $this->jadwalUjianModel
+            ->where('ujian_id', $ujian_id)
+            ->where('kelas_id', $kelas_id)
+            ->first();
+
+        if ($existing) {
+            return redirect()->to('guru/jadwal-ujian')
+                ->with('error', 'Jadwal ujian untuk kelas ini sudah ada. Pilih kelas lain atau ujian lain.');
+        }
+
         $data = [
-            'ujian_id' => $this->request->getPost('ujian_id'),
-            'kelas_id' => $this->request->getPost('kelas_id'),
+            'ujian_id' => $ujian_id,
+            'kelas_id' => $kelas_id,
             'guru_id' => $this->request->getPost('guru_id'),
             'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
             'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
             'kode_akses' => $this->request->getPost('kode_akses'),
             'status' => 'belum_mulai'
         ];
+
         $this->jadwalUjianModel->insert($data);
         return redirect()->to('guru/jadwal-ujian')->with('success', 'Jadwal ujian berhasil ditambahkan');
     }
 
     public function editJadwal($id)
     {
+        $ujian_id = $this->request->getPost('ujian_id');
+        $kelas_id = $this->request->getPost('kelas_id');
+
+        // Cek apakah kombinasi ujian_id dan kelas_id sudah ada, kecuali untuk jadwal yang sedang diedit
+        $existing = $this->jadwalUjianModel
+            ->where('ujian_id', $ujian_id)
+            ->where('kelas_id', $kelas_id)
+            ->where('jadwal_id !=', $id)
+            ->first();
+
+        if ($existing) {
+            return redirect()->to('guru/jadwal-ujian')
+                ->with('error', 'Jadwal ujian untuk kelas ini sudah ada. Pilih kelas lain atau ujian lain.');
+        }
+
         $data = [
-            'ujian_id' => $this->request->getPost('ujian_id'),
-            'kelas_id' => $this->request->getPost('kelas_id'),
+            'ujian_id' => $ujian_id,
+            'kelas_id' => $kelas_id,
             'guru_id' => $this->request->getPost('guru_id'),
             'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
             'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
             'kode_akses' => $this->request->getPost('kode_akses'),
             'status' => $this->request->getPost('status')
         ];
+
         $this->jadwalUjianModel->update($id, $data);
         return redirect()->to('guru/jadwal-ujian')->with('success', 'Jadwal ujian berhasil diupdate');
     }
@@ -440,5 +477,148 @@ class Guru extends Controller
             return redirect()->to('guru/jenis-ujian')
                 ->with('error', 'Terjadi kesalahan saat menghapus jenis ujian');
         }
+    }
+
+    //method download hasil
+    public function downloadExcelHTML($pesertaUjianId)
+    {
+        // Ambil detail hasil ujian
+        $hasil = $this->pesertaUjianModel
+            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis, 
+             siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas')
+            ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+            ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
+            ->join('siswa', 'siswa.siswa_id = peserta_ujian.siswa_id')
+            ->join('kelas', 'kelas.kelas_id = jadwal_ujian.kelas_id')
+            ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->first();
+
+        // Ambil detail jawaban
+        $detailJawaban = $this->hasilUjianModel
+            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, 
+             soal_ujian.tingkat_kesulitan')
+            ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
+            ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
+            ->findAll();
+
+        // Hitung nilai akhir
+        $lastTheta = end($detailJawaban)['theta_saat_ini'];
+        $finalScore = 50 + (16.6 * $lastTheta);
+
+        // Hitung jumlah jawaban benar
+        $jawabanBenar = array_reduce($detailJawaban, function ($carry, $item) {
+            return $carry + ($item['is_correct'] ? 1 : 0);
+        }, 0);
+
+        // Data untuk grafik
+        $thetaData = json_encode(array_map(function ($item) {
+            return $item['theta_saat_ini'];
+        }, $detailJawaban));
+
+        $seData = json_encode(array_map(function ($item) {
+            return $item['se_saat_ini'];
+        }, $detailJawaban));
+
+        $labels = json_encode(array_map(function ($i) {
+            return 'Soal ' . ($i + 1);
+        }, range(0, count($detailJawaban) - 1)));
+
+        // Data untuk view
+        $data = [
+            'hasil' => $hasil,
+            'detailJawaban' => $detailJawaban,
+            'lastTheta' => $lastTheta,
+            'finalScore' => $finalScore,
+            'jawabanBenar' => $jawabanBenar,
+            'thetaData' => $thetaData,
+            'seData' => $seData,
+            'labels' => $labels,
+            'isExcel' => true
+        ];
+
+        // Nama file
+        $filename = 'hasil_ujian_' . $hasil['nomor_peserta'] . '_' . date('dmY') . '.xls';
+
+        // Set header untuk Excel
+        header('Content-Type: application/vnd.ms-excel');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        // Load view dan keluarkan sebagai Excel
+        echo view('guru/hasil_ujian_excel', $data);
+        exit;
+    }
+
+    public function downloadPDFHTML($pesertaUjianId)
+    {
+        // Ambil detail hasil ujian
+        $hasil = $this->pesertaUjianModel
+            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis, 
+             siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas')
+            ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+            ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
+            ->join('siswa', 'siswa.siswa_id = peserta_ujian.siswa_id')
+            ->join('kelas', 'kelas.kelas_id = jadwal_ujian.kelas_id')
+            ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->first();
+
+        // Ambil detail jawaban
+        $detailJawaban = $this->hasilUjianModel
+            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, 
+             soal_ujian.tingkat_kesulitan')
+            ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
+            ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
+            ->findAll();
+
+        // Hitung nilai akhir
+        $lastTheta = end($detailJawaban)['theta_saat_ini'];
+        $finalScore = 50 + (16.6 * $lastTheta);
+
+        // Hitung jumlah jawaban benar
+        $jawabanBenar = array_reduce($detailJawaban, function ($carry, $item) {
+            return $carry + ($item['is_correct'] ? 1 : 0);
+        }, 0);
+
+        // Data untuk grafik
+        $thetaData = json_encode(array_map(function ($item) {
+            return $item['theta_saat_ini'];
+        }, $detailJawaban));
+
+        $seData = json_encode(array_map(function ($item) {
+            return $item['se_saat_ini'];
+        }, $detailJawaban));
+
+        $labels = json_encode(array_map(function ($i) {
+            return 'Soal ' . ($i + 1);
+        }, range(0, count($detailJawaban) - 1)));
+
+        // Data untuk view
+        $data = [
+            'hasil' => $hasil,
+            'detailJawaban' => $detailJawaban,
+            'lastTheta' => $lastTheta,
+            'finalScore' => $finalScore,
+            'jawabanBenar' => $jawabanBenar,
+            'thetaData' => $thetaData,
+            'seData' => $seData,
+            'labels' => $labels,
+            'isPDF' => true
+        ];
+
+        // Load view ke variabel HTML
+        $html = view('guru/hasil_ujian_pdf', $data);
+
+        // Print mode (untuk bisa disimpan sebagai PDF dari browser)
+        // Set header untuk browser
+        header('Content-Type: text/html');
+        header('Content-Disposition: inline; filename="hasil_ujian_' . $hasil['nomor_peserta'] . '.html"');
+
+        // Output HTML
+        echo $html;
+        exit;
     }
 }

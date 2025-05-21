@@ -45,7 +45,7 @@ class Siswa extends Controller
     return view('siswa/pengumuman', $data);
   }
 
-  //logic simpan profil
+  //logic simpan profil/ ubah profil
   public function saveProfil()
   {
     $userId = session()->get('user_id');
@@ -201,6 +201,10 @@ class Siswa extends Controller
   //menu awal untuk ketika masuk ke soal
   public function soal($jadwalId)
   {
+    // Simpan jadwal_id ke session untuk digunakan saat menyimpan jawaban
+    session()->set('current_jadwal_id', $jadwalId);
+
+
     // 1. Validasi akses dan session
     if (!session()->get('user_id')) {
       return redirect()->to(base_url('login'));
@@ -337,7 +341,7 @@ class Siswa extends Controller
       'ujian' => $ujianInfo,
       'soal' => $catParams['current_question'],
       'sisa_waktu' => $sisaWaktu,
-      'total_soal' => $ujianInfo['maksimal_soal_tampil'],
+      'total_soal' => 'Adaptif',
       'soal_dijawab' => count($catParams['answered_questions'])
     ];
 
@@ -366,11 +370,18 @@ class Siswa extends Controller
       return redirect()->back();
     }
 
-    // 2.1 Ambil info ujian
+    // Ambil jadwal_id dari URL (yang disimpan dalam session saat akses soal)
+    $current_jadwal_id = session()->get('current_jadwal_id');
+    if (!$current_jadwal_id) {
+      session()->setFlashdata('error', 'Data jadwal ujian tidak ditemukan');
+      return redirect()->to(base_url('siswa/ujian'));
+    }
+
+    // 2.1 Ambil info ujian dengan jadwal_id yang benar
     $ujianInfo = $this->jadwalUjianModel
       ->select('jadwal_ujian.*, ujian.*')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
-      ->where('ujian.id_ujian', $soal['ujian_id'])
+      ->where('jadwal_ujian.jadwal_id', $current_jadwal_id)
       ->first();
 
     if (!$ujianInfo) {
@@ -435,6 +446,7 @@ class Siswa extends Controller
 
         // Jika benar, cari soal lebih sulit
         $nextQuestion = $this->soalUjianModel
+          ->select('*, ABS(tingkat_kesulitan - ' . ($b + 0.01) . ') as distance')
           ->where('ujian_id', $soal['ujian_id'])
           ->where('tingkat_kesulitan >', $b);
 
@@ -448,6 +460,7 @@ class Siswa extends Controller
         // Jika salah, update theta dan cari soal lebih mudah
         $theta = $b;
         $nextQuestion = $this->soalUjianModel
+          ->select('*, ABS(tingkat_kesulitan - ' . ($b - 0.01) . ') as distance')
           ->where('ujian_id', $soal['ujian_id'])
           ->where('tingkat_kesulitan <', $b);
 
@@ -479,12 +492,14 @@ class Siswa extends Controller
       $shouldStop = false;
 
       // 1. Cek maksimal soal
-      if ($catParams['total_questions'] >= (int)$ujianInfo['maksimal_soal_tampil']) {
-        log_message('debug', 'Stopping: Reached max questions');
-        $shouldStop = true;
-      }
+      // if ($catParams['total_questions'] >= (int)$ujianInfo['maksimal_soal_tampil']) {
+      //   log_message('debug', 'Stopping: Reached max questions');
+      //   $shouldStop = true;
+      // }
+
+
       // 2. Cek SE target
-      else if ($SE_new < (float)$ujianInfo['se_minimum']) {
+      if ($SE_new < (float)$ujianInfo['se_minimum']) {
         log_message('debug', 'Stopping: SE below minimum');
         $shouldStop = true;
       }
@@ -512,6 +527,12 @@ class Siswa extends Controller
           ->where('siswa_id', $siswaId)
           ->first();
 
+        // Hitung ulang probabilitas dan fungsi informasi berdasarkan theta terbaru
+        $e = 2.71828;
+        $updated_Pi = pow($e, ($theta - $b)) / (1 + pow($e, ($theta - $b)));
+        $updated_Qi = 1 - $updated_Pi;
+        $updated_Ii = $updated_Pi * $updated_Qi;
+
         // Simpan hasil jawaban ke tabel hasil_ujian
         $dataHasil = [
           'peserta_ujian_id' => $peserta['peserta_ujian_id'],
@@ -519,6 +540,9 @@ class Siswa extends Controller
           'jawaban_siswa' => $jawaban,
           'is_correct' => $isBenar,
           'theta_saat_ini' => $theta,
+          'pi_saat_ini' => $updated_Pi,
+          'qi_saat_ini' => $updated_Qi,
+          'ii_saat_ini' => $updated_Ii,
           'se_saat_ini' => $SE_new,
           'delta_se_saat_ini' => $delta_SE
         ];

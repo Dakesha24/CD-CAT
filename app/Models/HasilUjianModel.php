@@ -15,7 +15,10 @@ class HasilUjianModel extends Model
         'is_correct',
         'theta_saat_ini',
         'se_saat_ini',
-        'delta_se_saat_ini'
+        'delta_se_saat_ini',
+        'pi_saat_ini',
+        'qi_saat_ini',
+        'ii_saat_ini'
     ];
     
     protected $useTimestamps = false;

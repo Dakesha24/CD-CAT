@@ -5,8 +5,8 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6 text-section">
-                <h1 class="display-4 mb-3 title-hero">Selamat Datang di PHY-DA-CAT</h1>
-                <p class="lead mb-4">Platform ini menyediakan asesmen diagnosis untuk pembelajaran Fisika, di mana soal-soal akan menyesuaikan dengan kemampuan peserta tes secara otomatis. Asesmen ini dirancang untuk membantu peserta tes dan guru untuk dapat mengetahui tingkat pemahaman pada materi fisika.</p>
+                <h1 class="display-4 mb-3 title-hero">Selamat Datang di PHY-FA-CAT</h1>
+                <p class="lead mb-4">Platform ini menyediakan media asesmen untuk pembelajaran Fisika yang berbasis Computerized Adaptive Test. Asesmen ini dirancang untuk membantu peserta tes dan guru untuk dapat mengetahui tingkat pemahaman pada materi Fisika..</p>
                 <div class="hero-buttons">
                     <a href="<?= base_url('login') ?>" class="btn btn-primary btn-lg mb-2">Sign In</a>
                     <a href="<?= base_url('register') ?>" class="btn btn-outline-primary btn-lg mb-2">Sign Up</a>
@@ -20,4 +20,3 @@
 </div>
 
 <?= $this->endSection() ?>
-

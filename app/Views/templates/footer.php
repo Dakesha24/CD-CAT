@@ -4,7 +4,7 @@
       <div class="col-lg-5 mb-4">
         <h5 class="footer-title">PHY-DA-CAT</h5>
         <p class="footer-description">
-          Platform asesmen diagnosis untuk pembelajaran Fisika yang adaptif dan inovatif.
+          Platform asesmen formatif untuk pembelajaran Fisika yang adaptif.
         </p>
         <div class="social-links">
           <a href="https://www.instagram.com/jauzaamalia" class="social-link" target="_blank"><i class="bi bi-instagram"></i></a>
@@ -23,16 +23,16 @@
         <h5 class="footer-subtitle">Kontak</h5>
         <ul class="footer-contact">
           <li><i class="bi bi-geo-alt"></i> Bandung, Indonesia</li>
-            <li>
-                <a href="mailto:jauzaamalia@upi.edu" style="text-decoration: none; color: inherit;">
-                <i class="bi bi-envelope"></i> jauzaamalia@upi.edu
-                </a>
-            </li>
-            <li>
-                <a href="https://wa.me/6285794124143" style="text-decoration: none; color: inherit;" target="_blank" rel="noopener noreferrer">
-                <i class="bi bi-phone"></i> +62 857 9412 4143
-                </a>
-            </li>
+          <li>
+            <a href="mailto:jauzaamalia@upi.edu" style="text-decoration: none; color: inherit;">
+              <i class="bi bi-envelope"></i> jauzaamalia@upi.edu
+            </a>
+          </li>
+          <li>
+            <a href="https://wa.me/6285794124143" style="text-decoration: none; color: inherit;" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-phone"></i> +62 857 9412 4143
+            </a>
+          </li>
         </ul>
       </div>
     </div>
@@ -166,18 +166,18 @@
   }
 
   .footer-contact {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
 
-.footer-contact li {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-}
+  .footer-contact li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+  }
 
-.footer-contact li i {
-  margin-right: 10px;
-}
+  .footer-contact li i {
+    margin-right: 10px;
+  }
 </style>
