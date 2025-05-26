@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <div class="guide-container">
     <div class="container py-5">
-        <h1 class="guide-title text-center mb-5">Panduan PHY-DA-CAT</h1>
+        <h1 class="guide-title text-center mb-5">Panduan PHY-FA-CAT</h1>
         
         <!-- Pengenalan -->
         <div class="guide-section">
@@ -11,8 +11,8 @@
                 <div class="card-icon">
                     <i class="bi bi-info-circle-fill"></i>
                 </div>
-                <h2>Apa itu PHY-DA-CAT?</h2>
-                <p>PHY-DA-CAT adalah platform ujian fisika adaptif yang menyesuaikan tingkat kesulitan soal berdasarkan kemampuan Anda secara real-time, memberikan pengukuran kemampuan yang lebih akurat.</p>
+                <h2>Apa itu PHY-FA-CAT?</h2>
+                <p>PHY-FA-CAT adalah platform ujian fisika adaptif yang menyesuaikan tingkat kesulitan soal berdasarkan kemampuan Anda secara real-time, memberikan pengukuran kemampuan yang lebih akurat.</p>
             </div>
         </div>
 

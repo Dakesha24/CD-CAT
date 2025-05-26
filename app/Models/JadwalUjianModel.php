@@ -24,7 +24,6 @@ class JadwalUjianModel extends Model
   {
     return $this->db->table('jadwal_ujian ju')
       ->select('ju.*, u.nama_ujian, u.deskripsi, u.durasi,
-                     u.maksimal_soal_tampil as jumlah_soal,
                      k.nama_kelas')
       ->join('ujian u', 'u.id_ujian = ju.ujian_id')
       ->join('kelas k', 'k.kelas_id = ju.kelas_id')

@@ -9,7 +9,7 @@
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
                             <h2 class="register-title">Create Account</h2>
-                            <p class="text-muted">Join PHY-DA-CAT today</p>
+                            <p class="text-muted">Join PHY-FA-CAT today</p>
                         </div>
 
                         <?php if(session()->getFlashdata('errors')): ?>

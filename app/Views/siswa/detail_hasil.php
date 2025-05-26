@@ -74,6 +74,13 @@
     </div>
   </div>
 
+  <!-- Tombol Unduh Laporan -->
+  <div class="mb-4">
+    <a href="<?= base_url('siswa/hasil/unduh/' . $hasil['peserta_ujian_id']) ?>" class="btn btn-primary" target="_blank">
+      <i class="bi bi-download"></i> Unduh Laporan Hasil Ujian
+    </a>
+  </div>
+
   <!-- Detail Jawaban -->
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent border-0">
@@ -85,13 +92,10 @@
           <tr>
             <th>No</th>
             <th>Pertanyaan</th>
-            <th>Tingkat Kesulitan</th> <!-- Kolom baru -->
             <th>Jawaban Anda</th>
-            <th>Jawaban Benar</th> <!-- Kolom baru -->
+            <th>Jawaban Benar</th>
             <th>Status</th>
-            <th>θ</th>
-            <th>SE</th>
-            <th>ΔSE</th>
+            <th>Pembahasan</th>
           </tr>
         </thead>
         <tbody>
@@ -99,18 +103,6 @@
             <tr>
               <td><?= $i + 1 ?></td>
               <td><?= esc($jawaban['pertanyaan']) ?></td>
-              <td>
-                <?php
-                $tingkatKesulitan = floatval($jawaban['tingkat_kesulitan']);
-                if ($tingkatKesulitan <= -2) $badge = 'bg-success';
-                elseif ($tingkatKesulitan <= 0) $badge = 'bg-info';
-                elseif ($tingkatKesulitan <= 2) $badge = 'bg-warning';
-                else $badge = 'bg-danger';
-                ?>
-                <span class="badge <?= $badge ?>">
-                  <?= number_format($tingkatKesulitan, 3) ?>
-                </span>
-              </td>
               <td><?= $jawaban['jawaban_siswa'] ?></td>
               <td><?= $jawaban['jawaban_benar'] ?></td>
               <td>
@@ -120,23 +112,36 @@
                   <span class="badge bg-danger">Salah</span>
                 <?php endif; ?>
               </td>
-              <td><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
-              <td><?= number_format($jawaban['se_saat_ini'], 3) ?></td>
-              <td><?= number_format($jawaban['delta_se_saat_ini'], 3) ?></td>
+              <td>
+                <?php if (isset($jawaban['pembahasan']) && !empty($jawaban['pembahasan'])): ?>
+                  <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#pembahasanModal<?= $i ?>">
+                    Lihat Pembahasan
+                  </button>
+                  
+                  <!-- Modal Pembahasan -->
+                  <div class="modal fade" id="pembahasanModal<?= $i ?>" tabindex="-1" aria-labelledby="pembahasanModalLabel<?= $i ?>" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="pembahasanModalLabel<?= $i ?>">Pembahasan Soal #<?= $i + 1 ?></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                          <?= $jawaban['pembahasan'] ?>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <?php else: ?>
+                  <span class="text-muted">Tidak tersedia</span>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php endforeach; ?>
         </tbody>
-        <tfoot class="table-light">
-          <tr>
-            <td colspan="3"><strong>Keterangan Tingkat Kesulitan:</strong></td>
-            <td colspan="6">
-              <span class="badge bg-success me-2">Sangat Mudah (≤ -2)</span>
-              <span class="badge bg-info me-2">Mudah (≤ 0)</span>
-              <span class="badge bg-warning me-2">Sulit (≤ 2)</span>
-              <span class="badge bg-danger">Sangat Sulit (> 2)</span>
-            </td>
-          </tr>
-        </tfoot>
       </table>
     </div>
   </div>

@@ -8,7 +8,7 @@
       <h1 class="hero-title mb-4">Frequently Asked Questions</h1>
       <div class="row justify-content-center">
         <div class="col-lg-8">
-          <p class="hero-subtitle">Temukan jawaban untuk pertanyaan yang sering diajukan tentang PHY-DA-CAT</p>
+          <p class="hero-subtitle">Temukan jawaban untuk pertanyaan yang sering diajukan tentang PHY-FA-CAT</p>
         </div>
       </div>
     </div>

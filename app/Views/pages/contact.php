@@ -11,7 +11,7 @@
                 <div class="contact-card">
                     <div class="contact-card-header">
                         <i class="bi bi-chat-quote-fill header-icon"></i>
-                        <h4>Kritik dan Saran Penggunaan Asesmen PHY-DA-CAT</h4>
+                        <h4>Kritik dan Saran Penggunaan Asesmen PHY-FA-CAT</h4>
                     </div>
 
                     <div class="contact-card-body">
@@ -85,7 +85,7 @@
         const message = document.getElementById('message').value;
 
         // Format pesan untuk WhatsApp
-        const whatsappMessage = `*Kritik dan Saran PHY-DA-CAT*%0A%0A` +
+        const whatsappMessage = `*Kritik dan Saran PHY-FA-CAT*%0A%0A` +
             `*Nama:* ${name}%0A` +
             `*Email:* ${email}%0A` +
             `*Pesan:*%0A${message}`;

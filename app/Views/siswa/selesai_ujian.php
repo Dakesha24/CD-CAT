@@ -9,22 +9,16 @@
                     <div class="display-1 text-success mb-4">
                         <i class="bi bi-check-circle"></i>
                     </div>
-                    
+
                     <h2 class="mb-4">Ujian Selesai!</h2>
-                    
+
                     <h4 class="text-muted mb-4"><?= esc($ujian['nama_ujian']) ?></h4>
-                    
+
                     <div class="row mb-4">
                         <div class="col-6">
                             <div class="border-end">
                                 <h5>Total Soal</h5>
                                 <p class="h3"><?= $total_soal ?></p>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div>
-                                <h5>Estimasi Kemampuan (θ)</h5>
-                                <p class="h3"><?= number_format($nilai_akhir, 2) ?></p>
                             </div>
                         </div>
                     </div>

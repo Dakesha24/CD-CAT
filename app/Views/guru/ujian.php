@@ -104,10 +104,6 @@
             <input type="number" name="delta_se_minimum" class="form-control" step="0.0001" value="0.0100" required>
           </div>
           <div class="mb-3">
-            <label class="form-label">Maksimal Soal Tampil</label>
-            <input type="number" name="maksimal_soal_tampil" class="form-control" value="20" required>
-          </div>
-          <div class="mb-3">
             <label class="form-label">Durasi (HH:MM:SS)</label>
             <input type="time" name="durasi" class="form-control" step="1" required>
           </div>
@@ -161,10 +157,6 @@
             <div class="mb-3">
               <label class="form-label">Delta SE Minimum</label>
               <input type="number" name="delta_se_minimum" class="form-control" step="0.0001" value="<?= $u['delta_se_minimum'] ?>" required>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Maksimal Soal Tampil</label>
-              <input type="number" name="maksimal_soal_tampil" class="form-control" value="<?= $u['maksimal_soal_tampil'] ?>" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Durasi (HH:MM:SS)</label>

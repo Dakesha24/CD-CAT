@@ -2,7 +2,7 @@
   <div class="container">
     <div class="row">
       <div class="col-lg-5 mb-4">
-        <h5 class="footer-title">PHY-DA-CAT</h5>
+        <h5 class="footer-title">PHY-FA-CAT</h5>
         <p class="footer-description">
           Platform asesmen formatif untuk pembelajaran Fisika yang adaptif.
         </p>
@@ -11,26 +11,28 @@
           <a href="https://www.linkedin.com/in/jauza-amalia-906070328/?originalSubdomain=id" class="social-link" target="_blank"><i class="bi bi-linkedin"></i></a>
         </div>
       </div>
-      <div class="col-lg-3 col-md-6 mb-4">
+      <!-- <div class="col-lg-3 col-md-6 mb-4">
         <h5 class="footer-subtitle">Tautan</h5>
         <ul class="footer-links">
           <li><a href="<?= base_url('about') ?>">Tentang Kami </a></li>
           <li><a href="<?= base_url('faq') ?>">FAQ</a></li>
           <li><a href="<?= base_url('bantuan') ?>">Bantuan</a></li>
         </ul>
-      </div>
+      </div> -->
       <div class="col-lg-4 col-md-6 mb-4">
-        <h5 class="footer-subtitle">Kontak</h5>
+        <h5 class="footer-subtitle">Alamat</h5>
         <ul class="footer-contact">
-          <li><i class="bi bi-geo-alt"></i> Bandung, Indonesia</li>
+          <li>Universitas Pendidikan Indonesia.
+            Jl. Dr. Setiabudi No.229, Isola, Kec. Sukasari, Kota Bandung, Jawa Barat 40154
+          </li>
           <li>
             <a href="mailto:jauzaamalia@upi.edu" style="text-decoration: none; color: inherit;">
               <i class="bi bi-envelope"></i> jauzaamalia@upi.edu
             </a>
           </li>
           <li>
-            <a href="https://wa.me/6285794124143" style="text-decoration: none; color: inherit;" target="_blank" rel="noopener noreferrer">
-              <i class="bi bi-phone"></i> +62 857 9412 4143
+            <a href="https://fisika.upi.edu/akademik/pendidikan-fisika/" style="text-decoration: none; color: inherit;" target="_blank" rel="noopener noreferrer">
+              <i class="bi bi-map"></i> Pendidikan Fisika UPI
             </a>
           </li>
         </ul>
@@ -39,7 +41,7 @@
     <hr class="footer-divider">
     <div class="row footer-bottom">
       <div class="col-md-6">
-        <p class="copyright">&copy; <?= date('Y') ?> PHY-DA-CAT. All rights reserved.</p>
+        <p class="copyright">&copy; <?= date('Y') ?> PHY-FA-CAT. All rights reserved.</p>
       </div>
       <div class="col-md-6 text-md-end">
         <a href="#" class="footer-bottom-link">Kebijakan Privasi</a>

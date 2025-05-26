@@ -61,7 +61,7 @@ class Guru extends Controller
             'se_awal' => $this->request->getPost('se_awal'),
             'se_minimum' => $this->request->getPost('se_minimum'),
             'delta_se_minimum' => $this->request->getPost('delta_se_minimum'),
-            'maksimal_soal_tampil' => $this->request->getPost('maksimal_soal_tampil'),
+            //'maksimal_soal_tampil' => $this->request->getPost('maksimal_soal_tampil'),
             'durasi' => $this->request->getPost('durasi')
         ];
         $this->ujianModel->insert($data);
@@ -77,7 +77,7 @@ class Guru extends Controller
             'se_awal' => $this->request->getPost('se_awal'),
             'se_minimum' => $this->request->getPost('se_minimum'),
             'delta_se_minimum' => $this->request->getPost('delta_se_minimum'),
-            'maksimal_soal_tampil' => $this->request->getPost('maksimal_soal_tampil'),
+            //'maksimal_soal_tampil' => $this->request->getPost('maksimal_soal_tampil'),
             'durasi' => $this->request->getPost('durasi')
         ];
         $this->ujianModel->update($id, $data);
@@ -114,6 +114,27 @@ class Guru extends Controller
 
     public function tambahSoal()
     {
+        // Validasi form input
+        $rules = [
+            'ujian_id' => 'required|numeric',
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'pilihan_e' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        // Jika validasi gagal, kembalikan pesan error
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+        }
+
+        // Ambil data dari form
         $data = [
             'ujian_id' => $this->request->getPost('ujian_id'),
             'pertanyaan' => $this->request->getPost('pertanyaan'),
@@ -123,14 +144,69 @@ class Guru extends Controller
             'pilihan_d' => $this->request->getPost('pilihan_d'),
             'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
-            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan')
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan')
         ];
-        $this->soalUjianModel->insert($data);
-        return redirect()->to('guru/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
+
+        // Upload foto jika ada
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            // Generate nama file unik
+            $newName = $fotoFile->getRandomName();
+
+            // Lokasi penyimpanan yang benar (relatif terhadap public/)
+            $uploadPath = 'uploads/soal';
+
+            // Buat direktori upload jika belum ada
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            // Pindahkan ke direktori upload
+            $fotoFile->move($uploadPath, $newName);
+
+            // Simpan nama file ke database
+            $data['foto'] = $newName;
+        }
+
+        // Simpan data soal ke database
+        try {
+            $this->soalUjianModel->insert($data);
+            return redirect()->to('guru/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
+        } catch (\Exception $e) {
+            log_message('error', 'Error saat menambahkan soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal.');
+        }
     }
 
     public function editSoal($id)
     {
+        // Validasi form input
+        $rules = [
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'pilihan_e' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        // Jika validasi gagal, kembalikan pesan error
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+        }
+
+        // Ambil data soal yang akan diedit
+        $soal = $this->soalUjianModel->find($id);
+        if (!$soal) {
+            return redirect()->back()->with('error', 'Soal tidak ditemukan');
+        }
+
+        // Ambil data dari form
         $data = [
             'pertanyaan' => $this->request->getPost('pertanyaan'),
             'pilihan_a' => $this->request->getPost('pilihan_a'),
@@ -139,11 +215,60 @@ class Guru extends Controller
             'pilihan_d' => $this->request->getPost('pilihan_d'),
             'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
-            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan')
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan')
         ];
-        $this->soalUjianModel->update($id, $data);
-        $ujian_id = $this->request->getPost('ujian_id');
-        return redirect()->to('guru/soal/' . $ujian_id)->with('success', 'Soal berhasil diupdate');
+
+        // Lokasi penyimpanan yang benar (relatif terhadap public/)
+        $uploadPath = 'uploads/soal';
+
+        // Upload foto jika ada
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            // Hapus foto lama jika ada
+            if (!empty($soal['foto'])) {
+                $fotoPath = $uploadPath . '/' . $soal['foto'];
+                if (file_exists($fotoPath)) {
+                    unlink($fotoPath);
+                }
+            }
+
+            // Generate nama file unik
+            $newName = $fotoFile->getRandomName();
+
+            // Buat direktori upload jika belum ada
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            // Pindahkan ke direktori upload
+            $fotoFile->move($uploadPath, $newName);
+
+            // Simpan nama file ke database
+            $data['foto'] = $newName;
+        }
+
+        // Checkbox untuk menghapus foto
+        if ($this->request->getPost('hapus_foto') == '1' && !empty($soal['foto'])) {
+            // Hapus file fisik
+            $fotoPath = $uploadPath . '/' . $soal['foto'];
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+
+            // Set nilai foto menjadi null di database
+            $data['foto'] = null;
+        }
+
+        // Update data soal di database
+        try {
+            $this->soalUjianModel->update($id, $data);
+            $ujian_id = $this->request->getPost('ujian_id');
+            return redirect()->to('guru/soal/' . $ujian_id)->with('success', 'Soal berhasil diupdate');
+        } catch (\Exception $e) {
+            log_message('error', 'Error saat mengupdate soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal.');
+        }
     }
 
     public function hapusSoal($id, $ujian_id)

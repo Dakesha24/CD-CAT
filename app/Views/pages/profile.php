@@ -3,7 +3,7 @@
 <?= $this->section('content') ?>
 <div class="profile-container">
     <div class="container py-5">
-        <h1 class="profile-title text-center mb-5">Tim Pengembang PHY-DA-CAT</h1>
+        <h1 class="profile-title text-center mb-5">Tim Pengembang PHY-FA-CAT</h1>
 
         <div class="row justify-content-center g-4">
             <!-- Pengembang -->

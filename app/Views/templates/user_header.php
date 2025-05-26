@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHY-DA-CAT User Dashboard</title>
+    <title>PHY-FA-CAT User Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- User Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-success">
         <div class="container-fluid">
-            <a class="navbar-brand" href="<?= base_url('user/dashboard') ?>">PHY-DA-CAT</a>
+            <a class="navbar-brand" href="<?= base_url('user/dashboard') ?>">PHY-FA-CAT</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#userNavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>

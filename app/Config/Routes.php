@@ -80,4 +80,6 @@ $routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function ($rou
   $routes->post('ujian/simpan-jawaban', 'Siswa::simpanJawaban');
   $routes->post('ujian/mulai', 'Siswa::mulaiUjian');
   $routes->get('ujian/soal/(:num)', 'Siswa::soal/$1');
+
+  $routes->get('hasil/unduh/(:num)', 'Siswa::unduh/$1');
 });

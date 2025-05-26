@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Siswa - CBT Adaptif</title>
+    <title>Dashboard Admin - CBT Adaptif</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +23,6 @@
             background-color: #f8f9fa;
         }
 
-        /* Navbar Styles */
         .main-navbar {
             background: var(--primary-gradient);
             height: var(--navbar-height);
@@ -46,7 +45,6 @@
             color: white;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: var(--sidebar-width);
             background: white;
@@ -84,7 +82,6 @@
             margin-right: 1rem;
         }
 
-        /* Content Wrapper */
         .content-wrapper {
             margin-left: var(--sidebar-width);
             padding: 2rem;
@@ -92,7 +89,6 @@
             transition: margin 0.3s ease;
         }
 
-        /* Menu Cards */
         .menu-card {
             border: none;
             border-radius: 1rem;
@@ -119,18 +115,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Profile Dropdown */
-        .profile-dropdown .dropdown-menu {
-            border: none;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 0.8rem;
-        }
-
-        .profile-dropdown .dropdown-item {
-            padding: 0.7rem 1.5rem;
-        }
-
-        /* Mobile Responsiveness */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -159,43 +143,20 @@
                 display: block;
             }
         }
-
-        /* Custom Scrollbar */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-
-        .profile-dropdown .dropdown-menu,
-        .panduan-dropdown .dropdown-menu {
-            border: none;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 0.8rem;
-        }
-
-        .profile-dropdown .dropdown-item,
-        .panduan-dropdown .dropdown-item {
-            padding: 0.7rem 1.5rem;
-        }
     </style>
 </head>
 
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar main-navbar fixed-top">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
                 <button class="btn text-white me-3 d-lg-none" id="sidebarToggle">
                     <i class="bi bi-list fs-4"></i>
                 </button>
-                <a class="navbar-brand" href="<?= base_url('siswa/dashboard') ?>">
+                <a class="navbar-brand" href="<?= base_url('guru/dashboard') ?>">
                     <i class="bi bi-mortarboard-fill me-2"></i>
-                    PHY-FA-CAT
+                    CBT Adaptif
                 </a>
             </div>
 
@@ -208,7 +169,7 @@
                         <i class="bi bi-person-circle fs-5"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="<?= base_url('siswa/profil') ?>">
+                        <li><a class="dropdown-item" href="<?= base_url('guru/profil') ?>">
                                 <i class="bi bi-person me-2"></i> Profil
                             </a></li>
                         <li>
@@ -219,55 +180,53 @@
                             </a></li>
                     </ul>
                 </div>
-                <!-- Dropdown Panduan -->
-                <div class="dropdown panduan-dropdown me-3">
-                    <button class="btn text-white dropdown-toggle" type="button" id="panduanDropdown" data-bs-toggle="dropdown">
-                        <i class="bi bi-question-circle fs-5"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="panduanDropdown">
-                        <li><a class="dropdown-item" href="<?= base_url('assets/docs/panduan-ujian.pdf') ?>" target="_blank">
-                                <i class="bi bi-file-earmark-text me-2"></i> Panduan Ujian
-                            </a></li>
-                    </ul>
-                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Sidebar Overlay -->
     <div class="nav-overlay" id="navOverlay"></div>
 
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <ul class="nav flex-column mt-3">
-            <li class="nav-item">
-                <a href="<?= base_url('siswa/dashboard') ?>" class="nav-link <?= current_url() == base_url('siswa/dashboard') ? 'active' : '' ?>">
-                    <i class="bi bi-house-door"></i>
-                    <span>Home</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="<?= base_url('siswa/pengumuman') ?>" class="nav-link <?= current_url() == base_url('siswa/pengumuman') ? 'active' : '' ?>">
-                    <i class="bi bi-megaphone"></i>
-                    <span>Pengumuman</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="<?= base_url('siswa/ujian') ?>" class="nav-link <?= current_url() == base_url('siswa/ujian') ? 'active' : '' ?>">
-                    <i class="bi bi-journal-text"></i>
-                    <span>Ujian</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="<?= base_url('siswa/hasil') ?>" class="nav-link <?= current_url() == base_url('siswa/hasil') ? 'active' : '' ?>">
-                    <i class="bi bi-clipboard-data"></i>
-                    <span>Hasil Ujian</span>
-                </a>
-            </li>
-        </ul>
-    </div>
+    <ul class="nav flex-column mt-3">
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('guru/dashboard') ? 'active' : '' ?>">
+                <i class="bi bi-house-door"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard/jenis-ujian') ? 'active' : '' ?>">
+                <i class="bi bi-journal-text"></i>
+                <span>Jenis Ujian</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Ujian</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
+                <i class="bi bi-calendar-event"></i>
+                <span>Jadwal Ujian</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
+                <i class="bi bi-clipboard-data"></i>
+                <span>Hasil Ujian</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
+                <i class="bi bi-megaphone"></i>
+                <span>Pengumuman</span>
+            </a>
+        </li>
+    </ul>
+</div>
 
-    <!-- Main Content -->
     <main class="content-wrapper">
         <?= $this->renderSection('content') ?>
     </main>
@@ -281,7 +240,6 @@
             const sidebarToggle = document.getElementById('sidebarToggle');
             const navOverlay = document.getElementById('navOverlay');
 
-            // Toggle sidebar
             function toggleSidebar() {
                 sidebar.classList.toggle('show');
                 navOverlay.classList.toggle('show');

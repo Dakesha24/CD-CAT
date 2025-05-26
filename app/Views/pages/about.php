@@ -11,8 +11,8 @@
                 <div class="card-icon">
                     <i class="bi bi-lightbulb-fill"></i>
                 </div>
-                <h2>Selamat Datang di PHY-DA-CAT</h2>
-                <p>PHY-DA-CAT (Physics-Diagnostic Assessment-Computerized Adaptive Test) adalah platform asesmen diagnostik berbasis Computerized Adaptive Testing (CAT) yang dirancang untuk membantu siswa, guru, dan institusi pendidikan mencapai hasil belajar yang maksimal.</p>
+                <h2>Selamat Datang di PHY-FA-CAT</h2>
+                <p>PHY-FA-CAT (Physics-Formativec Assessment-Computerized Adaptive Test) adalah platform asesmen diagnostik berbasis Computerized Adaptive Testing (CAT) yang dirancang untuk membantu siswa, guru, dan institusi pendidikan mencapai hasil belajar yang maksimal.</p>
                 <p>Platform ini memanfaatkan teknologi komputer untuk memberikan soal-soal yang secara otomatis menyesuaikan dengan kemampuan peserta tes. Dengan pendekatan adaptif ini, setiap pengguna mendapatkan pengalaman asesmen yang inovatif, menantang, dan relevan dengan tingkat pemahamannya.</p>
             </div>
         </div>

@@ -408,6 +408,7 @@ class Siswa extends Controller
       $e = 2.71828;
       $Pi = pow($e, ($theta - $b)) / (1 + pow($e, ($theta - $b)));
       $Qi = 1 - $Pi;
+      $Ii = $Pi * $Qi; // Fungsi informasi untuk soal saat ini
 
       // 7. Hitung fungsi informasi
       $totalIi = 0;
@@ -474,7 +475,7 @@ class Siswa extends Controller
 
       // Debug info sebelum update
       log_message('debug', 'Total Questions before: ' . $catParams['total_questions']);
-      log_message('debug', 'Maksimal Soal: ' . $ujianInfo['maksimal_soal_tampil']);
+      // log_message('debug', 'Maksimal Soal: ' . $ujianInfo['maksimal_soal_tampil']);
 
       // Update CAT parameters
       $catParams['theta'] = $theta;
@@ -519,6 +520,7 @@ class Siswa extends Controller
       // Update session dengan parameter terbaru
       session()->set('cat_params', $catParams);
 
+      //simpan jawaban ke database
       try {
         // Ambil peserta_ujian_id
         $siswaId = $this->siswaModel->where('user_id', session()->get('user_id'))->first()['siswa_id'];
@@ -527,12 +529,6 @@ class Siswa extends Controller
           ->where('siswa_id', $siswaId)
           ->first();
 
-        // Hitung ulang probabilitas dan fungsi informasi berdasarkan theta terbaru
-        $e = 2.71828;
-        $updated_Pi = pow($e, ($theta - $b)) / (1 + pow($e, ($theta - $b)));
-        $updated_Qi = 1 - $updated_Pi;
-        $updated_Ii = $updated_Pi * $updated_Qi;
-
         // Simpan hasil jawaban ke tabel hasil_ujian
         $dataHasil = [
           'peserta_ujian_id' => $peserta['peserta_ujian_id'],
@@ -540,9 +536,9 @@ class Siswa extends Controller
           'jawaban_siswa' => $jawaban,
           'is_correct' => $isBenar,
           'theta_saat_ini' => $theta,
-          'pi_saat_ini' => $updated_Pi,
-          'qi_saat_ini' => $updated_Qi,
-          'ii_saat_ini' => $updated_Ii,
+          'pi_saat_ini' => $Pi,
+          'qi_saat_ini' => $Qi,
+          'ii_saat_ini' => $Ii,
           'se_saat_ini' => $SE_new,
           'delta_se_saat_ini' => $delta_SE
         ];
@@ -683,7 +679,7 @@ class Siswa extends Controller
 
     // Ambil detail jawaban
     $detailJawaban = $this->hasilUjianModel
-      ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, soal_ujian.tingkat_kesulitan')
+      ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, soal_ujian.tingkat_kesulitan, soal_ujian.pembahasan') // Tambahkan pembahasan
       ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
       ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
       ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -699,5 +695,59 @@ class Siswa extends Controller
     ];
 
     return view('siswa/detail_hasil', $data);
+  }
+
+  //function unduh hasil ujian
+
+  public function unduh($pesertaUjianId)
+  {
+    if (!session()->get('user_id')) {
+      return redirect()->to(base_url('login'));
+    }
+
+    // Verifikasi apakah siswa ini berhak mengakses hasil ujian ini
+    $userId = session()->get('user_id');
+    $siswa = $this->siswaModel->where('user_id', $userId)->first();
+
+    // Ambil detail hasil ujian
+    $hasil = $this->pesertaUjianModel
+      ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis')
+      ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+      ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
+      ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
+      ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
+      ->first();
+
+    // Verifikasi hak akses
+    if (!$hasil || $hasil['siswa_id'] != $siswa['siswa_id']) {
+      session()->setFlashdata('error', 'Anda tidak memiliki akses ke laporan ini');
+      return redirect()->to(base_url('siswa/hasil'));
+    }
+
+    // Ambil detail jawaban
+    $detailJawaban = $this->hasilUjianModel
+      ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, soal_ujian.tingkat_kesulitan, soal_ujian.pembahasan')
+      ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
+      ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
+      ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
+      ->findAll();
+
+    // Hitung statistik
+    $totalSoal = count($detailJawaban);
+    $jawabanBenar = array_reduce($detailJawaban, function ($carry, $item) {
+      return $carry + ($item['is_correct'] ? 1 : 0);
+    }, 0);
+
+    // Buat data untuk view
+    $data = [
+      'hasil' => $hasil,
+      'detailJawaban' => $detailJawaban,
+      'totalSoal' => $totalSoal,
+      'jawabanBenar' => $jawabanBenar,
+      'siswa' => $siswa
+    ];
+
+    // Tampilkan halaman cetak
+    return view('siswa/cetak_hasil_ujian', $data);
   }
 }

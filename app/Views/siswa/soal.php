@@ -25,7 +25,7 @@
             </div>
             <div class="text-end">
               <h5 class="mb-0">Soal</h5>
-              <div class="h4 mb-0"><?= $soal_dijawab +1  ?>/<?= $total_soal ?></div>
+              <div class="h4 mb-0"><?= $soal_dijawab + 1  ?>/<?= $total_soal ?></div>
             </div>
           </div>
         </div>
@@ -36,6 +36,13 @@
         <div class="card-body">
           <h5 class="card-title mb-4">Pertanyaan:</h5>
           <p class="lead mb-4"><?= esc($soal['pertanyaan']) ?></p>
+
+          <?php if (!empty($soal['foto'])): ?>
+            <!-- Tampilkan foto soal jika ada -->
+            <div class="text-center mb-4">
+              <img src="<?= base_url('uploads/soal/' . $soal['foto']) ?>" alt="Gambar Soal" class="img-fluid" style="max-height: 300px;">
+            </div>
+          <?php endif; ?>
 
           <form action="<?= base_url('siswa/ujian/simpan-jawaban') ?>" method="POST">
             <input type="hidden" name="soal_id" value="<?= $soal['soal_id'] ?>">

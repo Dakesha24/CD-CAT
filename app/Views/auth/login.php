@@ -9,7 +9,7 @@
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
                             <h2 class="login-title">Sign In</h2>
-                            <p class="text-muted">Welcome back to PHY-DA-CAT</p>
+                            <p class="text-muted">Welcome back to PHY-FA-CAT</p>
                         </div>
 
                         <?php if(session()->getFlashdata('error')): ?>
