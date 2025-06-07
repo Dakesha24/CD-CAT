@@ -13,7 +13,7 @@ class Auth extends Controller
   {
     $this->userModel = new UserModel();
     helper(['form', 'url']);
-  } 
+  }
 
   public function login()
   {
@@ -29,30 +29,45 @@ class Auth extends Controller
 
         $user = $this->userModel->where('username', $username)->first();
 
-        if ($user && password_verify($password, $user['password'])) {
-          $session = session();
-          $sessionData = [
-            'user_id' => $user['user_id'],
-            'username' => $user['username'],
-            'role' => $user['role'],
-            'logged_in' => TRUE
-          ];
-          $session->set($sessionData);
-
-          // Redirect based on role
-          switch ($user['role']) {
-            case 'admin':
-              return redirect()->to('/admin/dashboard');
-            case 'guru':
-              return redirect()->to('/guru/dashboard');
-            case 'siswa':
-              return redirect()->to('/siswa/dashboard');
-            default:
-              return redirect()->to('/');
-          }
+        // Cek apakah user ditemukan
+        if (!$user) {
+          return redirect()->back()->with('error', 'Invalid username or password');
         }
 
-        return redirect()->back()->with('error', 'Invalid username or password');
+        // Cek apakah password benar
+        if (!password_verify($password, $user['password'])) {
+          return redirect()->back()->with('error', 'Invalid username or password');
+        }
+
+        // Cek status user (user ditemukan dan password benar)
+        if ($user['status'] !== 'active') {
+          return redirect()->back()->with('error', 'Akun Anda telah dinonaktifkan. Hubungi administrator.');
+        }
+
+        // Login berhasil - set session
+        $session = session();
+        $sessionData = [
+          'user_id' => $user['user_id'],
+          'username' => $user['username'],
+          'role' => $user['role'],
+          'logged_in' => TRUE
+        ];
+        $session->set($sessionData);
+
+        // Redirect based on role
+        switch ($user['role']) {
+          case 'admin':
+            return redirect()->to('/admin/dashboard');
+          case 'guru':
+            return redirect()->to('/guru/dashboard');
+          case 'siswa':
+            return redirect()->to('/siswa/dashboard');
+          default:
+            return redirect()->to('/');
+        }
+      } else {
+        // Validation failed
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
       }
     }
 

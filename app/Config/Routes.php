@@ -20,7 +20,73 @@ $routes->get('logout', 'Auth::logout');
 // Admin routes
 $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($routes) {
   $routes->get('dashboard', 'Admin::dashboard');
-  // ... routes admin lainnya
+
+  // Kelola Guru
+  $routes->get('guru', 'Admin::daftarGuru');
+  $routes->get('guru/tambah', 'Admin::formTambahGuru');
+  $routes->post('guru/tambah', 'Admin::tambahGuru');
+  $routes->get('guru/edit/(:num)', 'Admin::formEditGuru/$1');
+  $routes->post('guru/edit/(:num)', 'Admin::editGuru/$1');
+  $routes->get('guru/hapus/(:num)', 'Admin::hapusGuru/$1');
+  $routes->get('guru/restore/(:num)', 'Admin::restoreGuru/$1');
+
+  // Kelola Siswa
+  $routes->get('siswa', 'Admin::daftarSiswa');
+  $routes->get('siswa/tambah', 'Admin::formTambahSiswa');
+  $routes->post('siswa/tambah', 'Admin::tambahSiswa');
+  $routes->get('siswa/edit/(:num)', 'Admin::formEditSiswa/$1');
+  $routes->post('siswa/edit/(:num)', 'Admin::editSiswa/$1');
+  $routes->get('siswa/hapus/(:num)', 'Admin::hapusSiswa/$1');
+  $routes->get('siswa/restore/(:num)', 'Admin::restoreSiswa/$1');
+  $routes->get('siswa/batch', 'Admin::batchCreateSiswa');
+
+  // Kelola Sekolah
+  $routes->get('sekolah', 'Admin::daftarSekolah');
+  $routes->get('sekolah/tambah', 'Admin::formTambahSekolah');
+  $routes->post('sekolah/tambah', 'Admin::tambahSekolah');
+  $routes->get('sekolah/edit/(:num)', 'Admin::formEditSekolah/$1');
+  $routes->post('sekolah/edit/(:num)', 'Admin::editSekolah/$1');
+  $routes->get('sekolah/hapus/(:num)', 'Admin::hapusSekolah/$1');
+
+  // Kelola Kelas
+  $routes->get('kelas', 'Admin::daftarKelas');
+  $routes->get('kelas/tambah', 'Admin::formTambahKelas');
+  $routes->post('kelas/tambah', 'Admin::tambahKelas');
+  $routes->get('kelas/edit/(:num)', 'Admin::formEditKelas/$1');
+  $routes->post('kelas/edit/(:num)', 'Admin::editKelas/$1');
+  $routes->get('kelas/hapus/(:num)', 'Admin::hapusKelas/$1');
+
+  // Kelola Ujian
+  $routes->get('ujian', 'Admin::daftarUjian');
+  $routes->get('ujian/detail/(:num)', 'Admin::detailUjian/$1');
+  $routes->get('ujian/hapus/(:num)', 'Admin::hapusUjian/$1');
+  $routes->get('soal/detail/(:num)', 'Admin::detailSoal/$1');
+  $routes->get('soal/hapus/(:num)', 'Admin::hapusSoal/$1');
+
+  // Kelola Jadwal Ujian
+  $routes->get('jadwal', 'Admin::daftarJadwal');
+  $routes->get('jadwal/detail/(:num)', 'Admin::detailJadwal/$1');
+  $routes->get('jadwal/hapus/(:num)', 'Admin::hapusJadwal/$1');
+
+  // Kelola Hasil Ujian
+  $routes->get('hasil-ujian', 'Admin::daftarHasilUjian');
+  $routes->get('hasil-ujian/siswa/(:num)', 'Admin::hasilUjianSiswa/$1');
+  $routes->get('hasil-ujian/detail/(:num)', 'Admin::detailHasilSiswa/$1');
+  $routes->get('hasil-ujian/hapus/(:num)', 'Admin::hapusHasilSiswa/$1');
+
+  // Kelola Pengumuman
+  $routes->get('pengumuman', 'Admin::daftarPengumuman');
+  $routes->get('pengumuman/tambah', 'Admin::formTambahPengumuman');
+  $routes->post('pengumuman/tambah', 'Admin::tambahPengumuman');
+  $routes->get('pengumuman/edit/(:num)', 'Admin::formEditPengumuman/$1');
+  $routes->post('pengumuman/edit/(:num)', 'Admin::editPengumuman/$1');
+  $routes->get('pengumuman/detail/(:num)', 'Admin::detailPengumuman/$1');
+  $routes->get('pengumuman/hapus/(:num)', 'Admin::hapusPengumuman/$1');
+  $routes->get('pengumuman/toggle/(:num)', 'Admin::toggleStatusPengumuman/$1');
+
+  // debugging (bisa dihps)
+  $routes->get('debug-hasil', 'Admin::debugHasilUjian');
+  $routes->get('update-status', 'Admin::updateStatusJadwal');
 });
 
 // Guru routes

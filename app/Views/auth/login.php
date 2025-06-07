@@ -12,21 +12,48 @@
                             <p class="text-muted">Welcome back to PHY-FA-CAT</p>
                         </div>
 
+                        <!-- Flash Messages -->
                         <?php if(session()->getFlashdata('error')): ?>
                             <div class="alert alert-danger alert-dismissible fade show">
                                 <?= session()->getFlashdata('error') ?>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         <?php endif; ?>
+
+                        <?php if(session()->getFlashdata('success')): ?>
+                            <div class="alert alert-success alert-dismissible fade show">
+                                <?= session()->getFlashdata('success') ?>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Validation Errors -->
+                        <?php if(session()->getFlashdata('errors')): ?>
+                            <div class="alert alert-danger alert-dismissible fade show">
+                                <ul class="mb-0">
+                                    <?php foreach(session()->getFlashdata('errors') as $error): ?>
+                                        <li><?= $error ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        <?php endif; ?>
                         
                         <form action="<?= base_url('login') ?>" method="post">
+                            <?= csrf_field() ?>
+                            
                             <div class="form-group mb-3">
                                 <label for="username" class="form-label">Username</label>
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="bi bi-person"></i>
                                     </span>
-                                    <input type="text" class="form-control" name="username" placeholder="Enter your username" required>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="username" 
+                                           value="<?= old('username') ?>"
+                                           placeholder="Enter your username" 
+                                           required>
                                 </div>
                             </div>
                             

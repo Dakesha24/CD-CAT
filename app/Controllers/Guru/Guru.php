@@ -746,4 +746,5 @@ class Guru extends Controller
         echo $html;
         exit;
     }
+    
 }

@@ -55,6 +55,7 @@
             left: 0;
             z-index: 1025;
             transition: transform 0.3s ease;
+            overflow-y: auto;
         }
 
         .sidebar .nav-link {
@@ -80,6 +81,23 @@
         .sidebar .nav-link i {
             font-size: 1.2rem;
             margin-right: 1rem;
+        }
+
+        .sidebar-section {
+            padding: 0.5rem 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-divider {
+            border: none;
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 0.5rem 1rem;
         }
 
         .content-wrapper {
@@ -154,7 +172,7 @@
                 <button class="btn text-white me-3 d-lg-none" id="sidebarToggle">
                     <i class="bi bi-list fs-4"></i>
                 </button>
-                <a class="navbar-brand" href="<?= base_url('guru/dashboard') ?>">
+                <a class="navbar-brand" href="<?= base_url('admin/dashboard') ?>">
                     <i class="bi bi-mortarboard-fill me-2"></i>
                     CBT Adaptif
                 </a>
@@ -169,7 +187,7 @@
                         <i class="bi bi-person-circle fs-5"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="<?= base_url('guru/profil') ?>">
+                        <li><a class="dropdown-item" href="<?= base_url('admin/profil') ?>">
                                 <i class="bi bi-person me-2"></i> Profil
                             </a></li>
                         <li>
@@ -187,45 +205,92 @@
     <div class="nav-overlay" id="navOverlay"></div>
 
     <div class="sidebar" id="sidebar">
-    <ul class="nav flex-column mt-3">
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('guru/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-house-door"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard/jenis-ujian') ? 'active' : '' ?>">
-                <i class="bi bi-journal-text"></i>
-                <span>Jenis Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-file-earmark-text"></i>
-                <span>Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-calendar-event"></i>
-                <span>Jadwal Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-clipboard-data"></i>
-                <span>Hasil Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-megaphone"></i>
-                <span>Pengumuman</span>
-            </a>
-        </li>
-    </ul>
-</div>
+        <ul class="nav flex-column mt-3">
+            <!-- Dashboard -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/dashboard') ?>" class="nav-link <?= current_url() == base_url('admin/dashboard') ? 'active' : '' ?>">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-section">Kelola Pengguna</div>
+
+            <!-- Kelola Guru -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/guru') ?>" class="nav-link <?= (strpos(current_url(), 'admin/guru') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>Kelola Guru</span>
+                </a>
+            </li>
+
+            <!-- Kelola Siswa -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/siswa') ?>" class="nav-link <?= (strpos(current_url(), 'admin/siswa') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-people"></i>
+                    <span>Kelola Siswa</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-section">Kelola Institusi</div>
+
+            <!-- Kelola Sekolah -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/sekolah') ?>" class="nav-link <?= (strpos(current_url(), 'admin/sekolah') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-building"></i>
+                    <span>Kelola Sekolah</span>
+                </a>
+            </li>
+
+            <!-- Kelola Kelas -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/kelas') ?>" class="nav-link <?= (strpos(current_url(), 'admin/kelas') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-door-open"></i>
+                    <span>Kelola Kelas</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-section">Kelola Ujian</div>
+
+            <!-- Kelola Ujian -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/ujian') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Kelola Ujian</span>
+                </a>
+            </li>
+
+            <!-- Jadwal Ujian -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/jadwal') ?>" class="nav-link <?= (strpos(current_url(), 'admin/jadwal') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Jadwal Ujian</span>
+                </a>
+            </li>
+
+            <!-- Hasil Ujian -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/hasil-ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/hasil-ujian') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Hasil Ujian</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-section">Komunikasi</div>
+
+            <!-- Kelola Pengumuman -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/pengumuman') ?>" class="nav-link <?= (strpos(current_url(), 'admin/pengumuman') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-megaphone"></i>
+                    <span>Kelola Pengumuman</span>
+                </a>
+            </li>
+        </ul>
+    </div>
 
     <main class="content-wrapper">
         <?= $this->renderSection('content') ?>
