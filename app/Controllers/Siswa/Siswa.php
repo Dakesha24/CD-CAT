@@ -9,6 +9,8 @@ use App\Models\SiswaModel;
 use App\Models\KelasModel;
 use App\Models\SoalUjianModel;
 use App\Models\HasilUjianModel;
+use App\Models\SekolahModel;
+
 
 class Siswa extends Controller
 {
@@ -18,6 +20,7 @@ class Siswa extends Controller
   protected $kelasModel;
   protected $soalUjianModel;
   protected $hasilUjianModel;
+  protected $sekolahModel;
 
   public function __construct()
   {
@@ -27,6 +30,7 @@ class Siswa extends Controller
     $this->kelasModel = new KelasModel();
     $this->soalUjianModel = new SoalUjianModel();
     $this->hasilUjianModel = new HasilUjianModel();
+    $this->sekolahModel = new SekolahModel();
   }
 
   //dashboard
@@ -45,6 +49,18 @@ class Siswa extends Controller
     return view('siswa/pengumuman', $data);
   }
 
+  public function profil()
+  {
+    $userId = session()->get('user_id');
+    $data = [
+      'siswa' => $this->siswaModel->where('user_id', $userId)->first(),
+      'sekolah' => $this->sekolahModel->findAll(), // Tambahkan ini
+      'kelas' => [], // Kosongkan karena akan di-load via AJAX
+      'isNewUser' => !$this->siswaModel->checkSiswaExists($userId)
+    ];
+    return view('siswa/profil', $data);
+  }
+
   //logic simpan profil/ ubah profil
   public function saveProfil()
   {
@@ -53,11 +69,14 @@ class Siswa extends Controller
       'user_id' => $userId,
       'nomor_peserta' => $this->request->getPost('nomor_peserta'),
       'nama_lengkap' => $this->request->getPost('nama_lengkap'),
+      'sekolah_id' => $this->request->getPost('sekolah_id'), // Tambahkan ini
       'kelas_id' => $this->request->getPost('kelas_id')
     ];
+
     $rules = [
       'nomor_peserta' => 'required|min_length[5]',
       'nama_lengkap' => 'required|min_length[3]',
+      'sekolah_id' => 'required|numeric', // Tambahkan ini
       'kelas_id' => 'required|numeric'
     ];
 
@@ -87,16 +106,27 @@ class Siswa extends Controller
     }
   }
 
-  public function profil()
+  // Method API baru untuk get kelas berdasarkan sekolah
+  public function getKelasBySekolah($sekolahId)
   {
-    $userId = session()->get('user_id');
-    $data = [
-      'siswa' => $this->siswaModel->where('user_id', $userId)->first(),
-      'kelas' => $this->kelasModel->findAll(),
-      'isNewUser' => !$this->siswaModel->checkSiswaExists($userId)
-    ];
-    return view('siswa/profil', $data);
+    try {
+      $kelas = $this->kelasModel
+        ->where('sekolah_id', $sekolahId)
+        ->orderBy('nama_kelas', 'ASC')
+        ->findAll();
+
+      return $this->response->setJSON([
+        'success' => true,
+        'kelas' => $kelas
+      ]);
+    } catch (\Exception $e) {
+      return $this->response->setJSON([
+        'success' => false,
+        'message' => 'Error memuat data kelas'
+      ]);
+    }
   }
+
 
   //Tampilan awal ujian
   public function ujian()
@@ -627,6 +657,33 @@ class Siswa extends Controller
     return view('siswa/selesai_ujian', $data);
   }
 
+  private function hitungDurasiPerSoal($detailJawaban, $waktuMulaiUjian)
+  {
+    $hasilDenganDurasi = [];
+    $waktuSebelumnya = $waktuMulaiUjian;
+
+    foreach ($detailJawaban as $index => $jawaban) {
+      $waktuMenjawab = $jawaban['waktu_menjawab'];
+
+      // Hitung durasi dalam detik
+      $durasiDetik = strtotime($waktuMenjawab) - strtotime($waktuSebelumnya);
+
+      // Konversi ke menit dan detik
+      $menit = floor($durasiDetik / 60);
+      $detik = $durasiDetik % 60;
+
+      $jawaban['durasi_pengerjaan_detik'] = $durasiDetik;
+      $jawaban['durasi_pengerjaan_format'] = sprintf('%d menit %d detik', $menit, $detik);
+      $jawaban['nomor_soal'] = $index + 1;
+
+      $hasilDenganDurasi[] = $jawaban;
+      $waktuSebelumnya = $waktuMenjawab;
+    }
+
+    return $hasilDenganDurasi;
+  }
+
+
   public function hasil()
   {
     if (!session()->get('user_id')) {
@@ -636,7 +693,7 @@ class Siswa extends Controller
     $userId = session()->get('user_id');
     $siswa = $this->siswaModel->where('user_id', $userId)->first();
 
-    // Tambahkan kolom durasi dari tabel ujian
+    // Tambahkan lebih banyak informasi waktu
     $riwayatUjian = $this->pesertaUjianModel
       ->select('
             peserta_ujian.*, 
@@ -645,7 +702,10 @@ class Siswa extends Controller
             ujian.deskripsi, 
             ujian.durasi,
             jenis_ujian.nama_jenis,
-            TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_pengerjaan
+            TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_pengerjaan,
+            TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_detik,
+            DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+            DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format
         ')
       ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
@@ -655,6 +715,22 @@ class Siswa extends Controller
       ->orderBy('peserta_ujian.waktu_selesai', 'DESC')
       ->findAll();
 
+    // Tambahkan informasi jumlah soal untuk setiap ujian
+    foreach ($riwayatUjian as &$ujian) {
+      $jumlahSoal = $this->hasilUjianModel
+        ->where('peserta_ujian_id', $ujian['peserta_ujian_id'])
+        ->countAllResults();
+      $ujian['jumlah_soal'] = $jumlahSoal;
+
+      // Format durasi menjadi jam:menit:detik
+      if ($ujian['durasi_detik']) {
+        $jam = floor($ujian['durasi_detik'] / 3600);
+        $menit = floor(($ujian['durasi_detik'] % 3600) / 60);
+        $detik = $ujian['durasi_detik'] % 60;
+        $ujian['durasi_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+      }
+    }
+
     $data = [
       'riwayatUjian' => $riwayatUjian
     ];
@@ -662,36 +738,95 @@ class Siswa extends Controller
     return view('siswa/hasil', $data);
   }
 
+
   public function detailHasil($pesertaUjianId)
   {
     if (!session()->get('user_id')) {
       return redirect()->to(base_url('login'));
     }
 
-    // Ambil detail hasil ujian
+    // Ambil detail hasil ujian dengan informasi waktu
     $hasil = $this->pesertaUjianModel
-      ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis')
+      ->select('
+            peserta_ujian.*, 
+            jadwal_ujian.*, 
+            ujian.*, 
+            jenis_ujian.nama_jenis,
+            TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+            TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+            DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+            DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format
+        ')
       ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
       ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
       ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
       ->first();
 
-    // Ambil detail jawaban
+    // Ambil detail jawaban dengan waktu
     $detailJawaban = $this->hasilUjianModel
-      ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, soal_ujian.tingkat_kesulitan, soal_ujian.pembahasan') // Tambahkan pembahasan
+      ->select('
+            hasil_ujian.*, 
+            soal_ujian.pertanyaan, 
+            soal_ujian.jawaban_benar, 
+            soal_ujian.tingkat_kesulitan, 
+            soal_ujian.pembahasan,
+            DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format
+        ')
       ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
       ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
       ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
       ->findAll();
 
+    // Hitung durasi per soal
+    $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
+
+    // Hitung statistik tambahan
+    $totalSoal = count($detailJawabanDenganDurasi);
+    $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
+      return $carry + ($item['is_correct'] ? 1 : 0);
+    }, 0);
+
+    // **TAMBAHAN: Hitung skor berdasarkan theta terakhir**
+    $lastResult = $this->hasilUjianModel
+      ->select('theta_saat_ini, se_saat_ini')
+      ->where('peserta_ujian_id', $pesertaUjianId)
+      ->orderBy('waktu_menjawab', 'DESC')
+      ->limit(1)
+      ->first();
+
+    $skor = 0;
+    if ($lastResult) {
+      $theta = $lastResult['theta_saat_ini'];
+      $skor = 50 + (16.6 * $theta);
+      $skor = round($skor, 1); // Bulatkan 1 desimal
+    }
+
+    // Hitung rata-rata waktu per soal
+    $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+    $rataRataMenit = floor($rataRataWaktu / 60);
+    $rataRataDetik = $rataRataWaktu % 60;
+
+    // Format durasi total
+    if ($hasil['durasi_total_detik']) {
+      $jam = floor($hasil['durasi_total_detik'] / 3600);
+      $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
+      $detik = $hasil['durasi_total_detik'] % 60;
+      $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+    }
+
     $data = [
       'hasil' => $hasil,
-      'detailJawaban' => $detailJawaban,
-      'totalSoal' => count($detailJawaban),
-      'jawabanBenar' => array_reduce($detailJawaban, function ($carry, $item) {
-        return $carry + ($item['is_correct'] ? 1 : 0);
-      }, 0)
+      'detailJawaban' => $detailJawabanDenganDurasi,
+      'totalSoal' => $totalSoal,
+      'jawabanBenar' => $jawabanBenar,
+      'skor' => $skor, // **TAMBAHAN: Kirim skor ke view**
+      'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
+      'statistikWaktu' => [
+        'waktu_tercepat' => min(array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik')),
+        'waktu_terlama' => max(array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik')),
+        'rata_rata' => $rataRataWaktu
+      ]
     ];
 
     return view('siswa/detail_hasil', $data);
@@ -705,13 +840,22 @@ class Siswa extends Controller
       return redirect()->to(base_url('login'));
     }
 
-    // Verifikasi apakah siswa ini berhak mengakses hasil ujian ini
+    // Verifikasi akses
     $userId = session()->get('user_id');
     $siswa = $this->siswaModel->where('user_id', $userId)->first();
 
-    // Ambil detail hasil ujian
+    // Ambil detail hasil ujian dengan informasi waktu lengkap
     $hasil = $this->pesertaUjianModel
-      ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis')
+      ->select('
+            peserta_ujian.*, 
+            jadwal_ujian.*, 
+            ujian.*, 
+            jenis_ujian.nama_jenis,
+            TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+            TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+            DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+            DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format
+        ')
       ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
       ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -726,28 +870,66 @@ class Siswa extends Controller
 
     // Ambil detail jawaban
     $detailJawaban = $this->hasilUjianModel
-      ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, soal_ujian.tingkat_kesulitan, soal_ujian.pembahasan')
+      ->select('
+            hasil_ujian.*, 
+            soal_ujian.pertanyaan, 
+            soal_ujian.jawaban_benar, 
+            soal_ujian.tingkat_kesulitan, 
+            soal_ujian.pembahasan,
+            DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format
+        ')
       ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
       ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
       ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
       ->findAll();
 
+    // Hitung durasi per soal
+    $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
+
     // Hitung statistik
-    $totalSoal = count($detailJawaban);
-    $jawabanBenar = array_reduce($detailJawaban, function ($carry, $item) {
+    $totalSoal = count($detailJawabanDenganDurasi);
+    $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
       return $carry + ($item['is_correct'] ? 1 : 0);
     }, 0);
 
-    // Buat data untuk view
+    // **TAMBAHAN: Hitung skor berdasarkan theta terakhir**
+    $lastResult = $this->hasilUjianModel
+      ->select('theta_saat_ini, se_saat_ini')
+      ->where('peserta_ujian_id', $pesertaUjianId)
+      ->orderBy('waktu_menjawab', 'DESC')
+      ->limit(1)
+      ->first();
+
+    $skor = 0;
+    if ($lastResult) {
+      $theta = $lastResult['theta_saat_ini'];
+      $skor = 50 + (16.6 * $theta);
+      $skor = round($skor, 1); // Bulatkan 1 desimal
+    }
+
+    // Format durasi total
+    if ($hasil['durasi_total_detik']) {
+      $jam = floor($hasil['durasi_total_detik'] / 3600);
+      $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
+      $detik = $hasil['durasi_total_detik'] % 60;
+      $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+    }
+
+    // Hitung rata-rata waktu per soal
+    $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+    $rataRataMenit = floor($rataRataWaktu / 60);
+    $rataRataDetik = $rataRataWaktu % 60;
+
     $data = [
       'hasil' => $hasil,
-      'detailJawaban' => $detailJawaban,
+      'detailJawaban' => $detailJawabanDenganDurasi,
       'totalSoal' => $totalSoal,
       'jawabanBenar' => $jawabanBenar,
-      'siswa' => $siswa
+      'siswa' => $siswa,
+      'skor' => $skor, // **TAMBAHAN: Kirim skor ke view**
+      'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik)
     ];
 
-    // Tampilkan halaman cetak
     return view('siswa/cetak_hasil_ujian', $data);
   }
 }

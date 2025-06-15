@@ -21,7 +21,7 @@
         <div class="about-section">
             <h2 class="section-title">Fitur Utama</h2>
             <div class="row g-4">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="bi bi-cpu-fill"></i>
@@ -30,16 +30,7 @@
                         <p>Sistem yang menyesuaikan tingkat kesulitan soal dengan kemampuan peserta secara real-time.</p>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="bi bi-graph-up-arrow"></i>
-                        </div>
-                        <h3>Diagnostik</h3>
-                        <p>Analisis mendalam tentang pemahaman konsep fisika untuk identifikasi area yang perlu ditingkatkan.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
                             <i class="bi bi-lightning-fill"></i>

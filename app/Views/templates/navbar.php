@@ -2,7 +2,7 @@
     .navbar {
         background: linear-gradient(90deg, #17376E 0%, #481F64 100%);
         padding: 15px 0;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .navbar-brand {
@@ -20,11 +20,12 @@
     }
 
     .navbar-nav .nav-item {
-        margin: 0 15px; /* Tambah jarak antar menu */
+        margin: 0 15px;
+        /* Tambah jarak antar menu */
     }
 
     .navbar-nav .nav-link {
-        color: rgba(255,255,255,0.7) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
         font-weight: 500;
         transition: all 0.3s ease;
         position: relative;
@@ -84,20 +85,20 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
                     <a class="nav-link <?= uri_string() == '' ? 'active' : '' ?>" href="<?= base_url() ?>">Beranda</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= uri_string() == 'guide' ? 'active' : '' ?>" href="<?= base_url('guide') ?>">Petunjuk Penggunaan</a>
+                    <a class="nav-link <?= uri_string() == 'about' ? 'active' : '' ?>" href="<?= base_url('about') ?>">Tentang Kami</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= uri_string() == 'faq' ? 'active' : '' ?>" href="<?= base_url('faq') ?>">FAQ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= uri_string() == 'about' ? 'active' : '' ?>" href="<?= base_url('about') ?>">Tentang Kami</a>
+                    <a class="nav-link <?= uri_string() == 'guide' ? 'active' : '' ?>" href="<?= base_url('guide') ?>">Petunjuk Penggunaan</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?= uri_string() == 'bantuan' ? 'active' : '' ?>" href="<?= base_url('bantuan') ?>">Bantuan</a>
@@ -106,10 +107,10 @@
                     <a class="nav-link <?= uri_string() == 'profile' ? 'active' : '' ?>" href="<?= base_url('profile') ?>">Profil</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= uri_string() == 'contact' ? 'active' : '' ?>" href="<?= base_url('contact') ?>">Kontak</a>
+                    <a class="nav-link <?= uri_string() == 'contact' ? 'active' : '' ?>" href="<?= base_url('contact') ?>">Saran</a>
                 </li>
             </ul>
-            
+
         </div>
     </div>
 </nav>

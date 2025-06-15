@@ -46,7 +46,15 @@ class Admin extends Controller
 
     public function dashboard()
     {
-        $data['stats'] = $this->userModel->getDashboardStats();
+        $db = \Config\Database::connect();
+
+        $data['stats'] = [
+            'total_guru' => $db->table('guru')->countAllResults(),
+            'total_siswa' => $db->table('siswa')->countAllResults(),
+            'total_sekolah' => $db->table('sekolah')->countAllResults(),
+            'total_kelas' => $db->table('kelas')->countAllResults()
+        ];
+
         return view('admin/dashboard', $data);
     }
 
@@ -54,7 +62,25 @@ class Admin extends Controller
 
     public function daftarGuru()
     {
-        $data['guru'] = $this->userModel->getGuruWithDetails();
+        $db = \Config\Database::connect();
+
+        // Query untuk mengambil data guru dengan detail sekolah dan jumlah kelas yang diajar
+        $data['guru'] = $db->table('users u')
+            ->select('u.user_id, u.username, u.email, u.status, u.created_at,
+                 g.guru_id, g.nip, g.nama_lengkap, g.mata_pelajaran, g.sekolah_id,
+                 s.nama_sekolah,
+                 COUNT(DISTINCT kg.kelas_id) as total_kelas')
+            ->join('guru g', 'g.user_id = u.user_id', 'left')
+            ->join('sekolah s', 's.sekolah_id = g.sekolah_id', 'left')
+            ->join('kelas_guru kg', 'kg.guru_id = g.guru_id', 'left')
+            ->where('u.role', 'guru')
+            ->groupBy('u.user_id, u.username, u.email, u.status, u.created_at,
+                  g.guru_id, g.nip, g.nama_lengkap, g.mata_pelajaran, g.sekolah_id,
+                  s.nama_sekolah')
+            ->orderBy('g.nama_lengkap', 'ASC')
+            ->get()
+            ->getResultArray();
+
         return view('admin/guru/daftar', $data);
     }
 
@@ -62,6 +88,16 @@ class Admin extends Controller
     {
         $sekolahModel = new \App\Models\SekolahModel();
         $data['sekolah'] = $sekolahModel->findAll();
+
+        // Ambil semua kelas dengan info sekolah untuk JavaScript
+        $db = \Config\Database::connect();
+        $data['kelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, k.sekolah_id, s.nama_sekolah')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->orderBy('s.nama_sekolah', 'ASC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
 
         return view('admin/guru/tambah', $data);
     }
@@ -85,6 +121,9 @@ class Admin extends Controller
         }
 
         try {
+            $db = \Config\Database::connect();
+            $db->transStart();
+
             // Insert ke tabel users
             $userData = [
                 'username' => $this->request->getPost('username'),
@@ -106,7 +145,37 @@ class Admin extends Controller
                     'mata_pelajaran' => $this->request->getPost('mata_pelajaran')
                 ];
 
-                $this->guruModel->insert($guruData);
+                $guruId = $this->guruModel->insert($guruData);
+
+                // Handle assignment kelas jika ada
+                $kelasIds = $this->request->getPost('kelas_ids');
+                if (!empty($kelasIds) && is_array($kelasIds)) {
+                    $sekolahId = $this->request->getPost('sekolah_id');
+
+                    foreach ($kelasIds as $kelasId) {
+                        // Validasi kelas berada di sekolah yang sama
+                        $kelas = $db->table('kelas')
+                            ->where('kelas_id', $kelasId)
+                            ->where('sekolah_id', $sekolahId)
+                            ->get()
+                            ->getRowArray();
+
+                        if ($kelas) {
+                            // Insert ke tabel kelas_guru
+                            $db->table('kelas_guru')->insert([
+                                'kelas_id' => $kelasId,
+                                'guru_id' => $guruId,
+                                'created_at' => date('Y-m-d H:i:s')
+                            ]);
+                        }
+                    }
+                }
+
+                $db->transComplete();
+
+                if ($db->transStatus() === FALSE) {
+                    throw new \Exception('Transaction failed');
+                }
 
                 session()->setFlashdata('success', 'Guru berhasil ditambahkan!');
                 return redirect()->to(base_url('admin/guru'));
@@ -120,13 +189,13 @@ class Admin extends Controller
 
     public function formEditGuru($userId)
     {
-        // Gunakan Database service langsung
         $db = \Config\Database::connect();
 
+        // Ambil data guru
         $guru = $db->table('users u')
             ->select('u.user_id, u.username, u.email, u.status, u.created_at, 
-                     g.guru_id, g.nip, g.nama_lengkap, g.mata_pelajaran, g.sekolah_id,
-                     s.nama_sekolah')
+                 g.guru_id, g.nip, g.nama_lengkap, g.mata_pelajaran, g.sekolah_id,
+                 s.nama_sekolah')
             ->join('guru g', 'g.user_id = u.user_id', 'left')
             ->join('sekolah s', 's.sekolah_id = g.sekolah_id', 'left')
             ->where('u.user_id', $userId)
@@ -134,15 +203,12 @@ class Admin extends Controller
             ->get()
             ->getRowArray();
 
-        // Debug: tampilkan data untuk troubleshooting
-        log_message('debug', 'Guru data: ' . print_r($guru, true));
-
         if (!$guru) {
             session()->setFlashdata('error', 'Data guru tidak ditemukan');
             return redirect()->to(base_url('admin/guru'));
         }
 
-        // Pastikan semua field ada dengan nilai default
+        // Set default values
         $defaultFields = [
             'user_id' => '',
             'username' => '',
@@ -158,12 +224,31 @@ class Admin extends Controller
 
         $guru = array_merge($defaultFields, $guru ?: []);
 
+        // Ambil data sekolah
         $sekolahModel = new \App\Models\SekolahModel();
-        $data['guru'] = $guru;
         $data['sekolah'] = $sekolahModel->findAll();
+
+        // Ambil kelas yang sudah diajar oleh guru ini
+        $data['kelasGuru'] = $db->table('kelas_guru kg')
+            ->select('kg.*, k.nama_kelas, k.tahun_ajaran, k.kelas_id')
+            ->join('kelas k', 'k.kelas_id = kg.kelas_id')
+            ->where('kg.guru_id', $guru['guru_id'])
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil semua kelas untuk JavaScript (untuk assignment baru)
+        $data['allKelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, k.sekolah_id')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $data['guru'] = $guru;
 
         return view('admin/guru/edit', $data);
     }
+
 
     public function editGuru($userId)
     {
@@ -214,20 +299,6 @@ class Admin extends Controller
 
             $db->query($sqlGuru, $paramsGuru);
 
-            // Cek apakah ada baris yang terpengaruh
-            $affectedRows = $db->affectedRows();
-
-            log_message('debug', "Update guru - Affected rows: {$affectedRows}");
-            log_message('debug', "Update data: " . json_encode([
-                'username' => $username,
-                'email' => $email,
-                'nama_lengkap' => $namaLengkap,
-                'nip' => $nip,
-                'mata_pelajaran' => $mataPelajaran,
-                'sekolah_id' => $sekolahId,
-                'user_id' => $userId
-            ]));
-
             session()->setFlashdata('success', 'Data guru berhasil diperbarui!');
             return redirect()->to(base_url('admin/guru'));
         } catch (\Exception $e) {
@@ -236,6 +307,92 @@ class Admin extends Controller
             return redirect()->back()->withInput();
         }
     }
+
+    // Method untuk assign kelas ke guru
+    public function assignKelas()
+    {
+        $guruId = $this->request->getPost('guru_id');
+        $kelasId = $this->request->getPost('kelas_id');
+
+        if (!$guruId || !$kelasId) {
+            session()->setFlashdata('error', 'Data tidak lengkap');
+            return redirect()->back();
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            // Ambil info guru untuk validasi sekolah
+            $guru = $db->table('guru')->where('guru_id', $guruId)->get()->getRowArray();
+            if (!$guru) {
+                session()->setFlashdata('error', 'Guru tidak ditemukan');
+                return redirect()->back();
+            }
+
+            // Validasi kelas dari sekolah yang sama
+            $kelas = $db->table('kelas')
+                ->where('kelas_id', $kelasId)
+                ->where('sekolah_id', $guru['sekolah_id'])
+                ->get()
+                ->getRowArray();
+
+            if (!$kelas) {
+                session()->setFlashdata('error', 'Kelas tidak valid atau tidak berada di sekolah yang sama');
+                return redirect()->back();
+            }
+
+            // Cek apakah guru sudah mengajar di kelas ini
+            $existing = $db->table('kelas_guru')
+                ->where('kelas_id', $kelasId)
+                ->where('guru_id', $guruId)
+                ->countAllResults();
+
+            if ($existing > 0) {
+                session()->setFlashdata('error', 'Guru sudah mengajar di kelas ini');
+                return redirect()->back();
+            }
+
+            // Insert ke tabel kelas_guru
+            $db->table('kelas_guru')->insert([
+                'kelas_id' => $kelasId,
+                'guru_id' => $guruId,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            session()->setFlashdata('success', 'Kelas berhasil ditambahkan ke guru!');
+        } catch (\Exception $e) {
+            log_message('error', 'Error assigning kelas: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menambahkan kelas.');
+        }
+
+        return redirect()->back();
+    }
+
+    // Method untuk remove kelas dari guru
+    public function removeKelas($guruId, $kelasId)
+    {
+        try {
+            $db = \Config\Database::connect();
+
+            // Hapus dari tabel kelas_guru
+            $affected = $db->table('kelas_guru')
+                ->where('kelas_id', $kelasId)
+                ->where('guru_id', $guruId)
+                ->delete();
+
+            if ($affected > 0) {
+                session()->setFlashdata('success', 'Guru berhasil dikeluarkan dari kelas!');
+            } else {
+                session()->setFlashdata('warning', 'Tidak ada data yang dihapus');
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error removing kelas: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat mengeluarkan guru dari kelas.');
+        }
+
+        return redirect()->back();
+    }
+
 
     public function hapusGuru($userId)
     {
@@ -265,13 +422,40 @@ class Admin extends Controller
 
     public function daftarSiswa()
     {
-        $data['siswa'] = $this->userModel->getSiswaWithDetails();
+        $db = \Config\Database::connect();
+
+        // Query untuk mengambil data siswa dengan detail sekolah dan kelas
+        $data['siswa'] = $db->table('users u')
+            ->select('u.user_id, u.username, u.email, u.status, u.created_at,
+                 s.siswa_id, s.nomor_peserta, s.nama_lengkap, s.kelas_id,
+                 k.nama_kelas, k.tahun_ajaran,
+                 sk.sekolah_id, sk.nama_sekolah')
+            ->join('siswa s', 's.user_id = u.user_id', 'left')
+            ->join('kelas k', 'k.kelas_id = s.kelas_id', 'left')
+            ->join('sekolah sk', 'sk.sekolah_id = k.sekolah_id', 'left')
+            ->where('u.role', 'siswa')
+            ->orderBy('s.nama_lengkap', 'ASC')
+            ->get()
+            ->getResultArray();
+
         return view('admin/siswa/daftar', $data);
     }
 
     public function formTambahSiswa()
     {
-        $data['kelas'] = $this->kelasModel->findAll();
+        $sekolahModel = new \App\Models\SekolahModel();
+        $data['sekolah'] = $sekolahModel->findAll();
+
+        // Ambil semua kelas dengan info sekolah untuk JavaScript
+        $db = \Config\Database::connect();
+        $data['kelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, k.sekolah_id, s.nama_sekolah')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->orderBy('s.nama_sekolah', 'ASC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
         return view('admin/siswa/tambah', $data);
     }
 
@@ -283,6 +467,7 @@ class Admin extends Controller
             'password' => 'required|min_length[6]',
             'nama_lengkap' => 'required|min_length[3]',
             'nomor_peserta' => 'required|is_unique[siswa.nomor_peserta]',
+            'sekolah_id' => 'required|numeric', // Validasi sekolah
             'kelas_id' => 'required|numeric'
         ];
 
@@ -293,6 +478,23 @@ class Admin extends Controller
         }
 
         try {
+            $db = \Config\Database::connect();
+
+            // Validasi kelas berada di sekolah yang dipilih
+            $sekolahId = $this->request->getPost('sekolah_id');
+            $kelasId = $this->request->getPost('kelas_id');
+
+            $kelas = $db->table('kelas')
+                ->where('kelas_id', $kelasId)
+                ->where('sekolah_id', $sekolahId)
+                ->get()
+                ->getRowArray();
+
+            if (!$kelas) {
+                session()->setFlashdata('error', 'Kelas yang dipilih tidak valid untuk sekolah tersebut.');
+                return redirect()->back()->withInput();
+            }
+
             // Insert ke tabel users
             $userData = [
                 'username' => $this->request->getPost('username'),
@@ -308,7 +510,7 @@ class Admin extends Controller
                 // Insert ke tabel siswa
                 $siswaData = [
                     'user_id' => $userId,
-                    'kelas_id' => $this->request->getPost('kelas_id'),
+                    'kelas_id' => $kelasId,
                     'nomor_peserta' => $this->request->getPost('nomor_peserta'),
                     'nama_lengkap' => $this->request->getPost('nama_lengkap')
                 ];
@@ -331,10 +533,12 @@ class Admin extends Controller
 
         $siswa = $db->table('users u')
             ->select('u.user_id, u.username, u.email, u.status, u.created_at, 
-                     s.siswa_id, s.nomor_peserta, s.nama_lengkap, s.kelas_id,
-                     k.nama_kelas, k.tahun_ajaran')
+                 s.siswa_id, s.nomor_peserta, s.nama_lengkap, s.kelas_id,
+                 k.nama_kelas, k.tahun_ajaran, k.sekolah_id,
+                 sk.nama_sekolah')
             ->join('siswa s', 's.user_id = u.user_id', 'left')
             ->join('kelas k', 'k.kelas_id = s.kelas_id', 'left')
+            ->join('sekolah sk', 'sk.sekolah_id = k.sekolah_id', 'left')
             ->where('u.user_id', $userId)
             ->where('u.role', 'siswa')
             ->get()
@@ -356,34 +560,56 @@ class Admin extends Controller
             'nomor_peserta' => '',
             'nama_lengkap' => '',
             'nama_kelas' => '',
-            'tahun_ajaran' => ''
+            'tahun_ajaran' => '',
+            'sekolah_id' => '',
+            'nama_sekolah' => ''
         ];
 
         $siswa = array_merge($defaultFields, $siswa ?: []);
 
+        // Ambil data sekolah
+        $sekolahModel = new \App\Models\SekolahModel();
+        $data['sekolah'] = $sekolahModel->findAll();
+
+        // Ambil semua kelas dengan info sekolah untuk JavaScript
+        $data['kelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, k.sekolah_id, s.nama_sekolah')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->orderBy('s.nama_sekolah', 'ASC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
         $data['siswa'] = $siswa;
-        $data['kelas'] = $this->kelasModel->findAll();
 
         return view('admin/siswa/edit', $data);
     }
 
     public function editSiswa($userId)
     {
+        // Debug: Log input data
+        log_message('debug', 'Edit siswa called with userId: ' . $userId);
+        log_message('debug', 'POST data: ' . json_encode($this->request->getPost()));
+
         $siswa = $this->siswaModel->where('user_id', $userId)->first();
         if (!$siswa) {
             session()->setFlashdata('error', 'Data siswa tidak ditemukan');
             return redirect()->to(base_url('admin/siswa'));
         }
 
+        log_message('debug', 'Found siswa: ' . json_encode($siswa));
+
         $rules = [
             'username' => "required|min_length[4]|is_unique[users.username,user_id,{$userId}]",
             'email'    => "required|valid_email|is_unique[users.email,user_id,{$userId}]",
             'nama_lengkap' => 'required|min_length[3]',
             'nomor_peserta' => "required|is_unique[siswa.nomor_peserta,siswa_id,{$siswa['siswa_id']}]",
+            'sekolah_id' => 'required|numeric', // Validasi sekolah
             'kelas_id' => 'required|numeric'
         ];
 
         if (!$this->validate($rules)) {
+            log_message('debug', 'Validation failed: ' . json_encode($this->validator->getErrors()));
             return redirect()->back()
                 ->withInput()
                 ->with('errors', $this->validator->getErrors());
@@ -391,41 +617,83 @@ class Admin extends Controller
 
         try {
             $db = \Config\Database::connect();
-            $db->transStart();
 
-            // Update tabel users
-            $userData = [
-                'username' => $this->request->getPost('username'),
-                'email' => $this->request->getPost('email')
-            ];
+            // Validasi kelas berada di sekolah yang dipilih
+            $sekolahId = $this->request->getPost('sekolah_id');
+            $kelasId = $this->request->getPost('kelas_id');
 
-            // Update password jika diisi
-            if ($this->request->getPost('password')) {
-                $userData['password'] = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
+            $kelas = $db->table('kelas')
+                ->where('kelas_id', $kelasId)
+                ->where('sekolah_id', $sekolahId)
+                ->get()
+                ->getRowArray();
+
+            if (!$kelas) {
+                session()->setFlashdata('error', 'Kelas yang dipilih tidak valid untuk sekolah tersebut.');
+                return redirect()->back()->withInput();
             }
 
-            $this->userModel->update($userId, $userData);
+            // Ambil data input
+            $username = $this->request->getPost('username');
+            $email = $this->request->getPost('email');
+            $password = $this->request->getPost('password');
+            $namaLengkap = $this->request->getPost('nama_lengkap');
+            $nomorPeserta = $this->request->getPost('nomor_peserta');
 
-            // Update tabel siswa
-            $siswaData = [
-                'kelas_id' => $this->request->getPost('kelas_id'),
-                'nomor_peserta' => $this->request->getPost('nomor_peserta'),
-                'nama_lengkap' => $this->request->getPost('nama_lengkap')
-            ];
+            log_message('debug', 'Processing update with data: ' . json_encode([
+                'username' => $username,
+                'email' => $email,
+                'password_provided' => !empty($password),
+                'nama_lengkap' => $namaLengkap,
+                'nomor_peserta' => $nomorPeserta,
+                'kelas_id' => $kelasId
+            ]));
 
-            $this->siswaModel->update($siswa['siswa_id'], $siswaData);
+            // Update tabel users dengan raw query
+            $sqlUser = "UPDATE users SET username = ?, email = ?";
+            $paramsUser = [$username, $email];
 
-            $db->transComplete();
+            if (!empty($password)) {
+                $sqlUser .= ", password = ?";
+                $paramsUser[] = password_hash($password, PASSWORD_DEFAULT);
+                log_message('debug', 'Password will be updated');
+            }
 
-            if ($db->transStatus() === FALSE) {
-                throw new \Exception('Transaction failed');
+            $sqlUser .= " WHERE user_id = ?";
+            $paramsUser[] = $userId;
+
+            log_message('debug', 'User SQL: ' . $sqlUser);
+            log_message('debug', 'User Params: ' . json_encode($paramsUser));
+
+            $result = $db->query($sqlUser, $paramsUser);
+            $userAffectedRows = $db->affectedRows();
+            log_message('debug', "User update - Affected rows: {$userAffectedRows}");
+
+            if (!$result) {
+                throw new \Exception('User update failed: ' . $db->error()['message']);
+            }
+
+            // Update tabel siswa dengan raw query
+            $sqlSiswa = "UPDATE siswa SET nama_lengkap = ?, nomor_peserta = ?, kelas_id = ? WHERE user_id = ?";
+            $paramsSiswa = [$namaLengkap, $nomorPeserta, $kelasId, $userId];
+
+            log_message('debug', 'Siswa SQL: ' . $sqlSiswa);
+            log_message('debug', 'Siswa Params: ' . json_encode($paramsSiswa));
+
+            $result = $db->query($sqlSiswa, $paramsSiswa);
+            $siswaAffectedRows = $db->affectedRows();
+            log_message('debug', "Siswa update - Affected rows: {$siswaAffectedRows}");
+
+            if (!$result) {
+                throw new \Exception('Siswa update failed: ' . $db->error()['message']);
             }
 
             session()->setFlashdata('success', 'Data siswa berhasil diperbarui!');
             return redirect()->to(base_url('admin/siswa'));
         } catch (\Exception $e) {
             log_message('error', 'Error updating siswa: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui data siswa.');
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            session()->setFlashdata('error', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
@@ -547,17 +815,60 @@ class Admin extends Controller
 
     public function daftarSekolah()
     {
-        // Ambil data sekolah dengan semua field dan jumlah guru
+        // Ambil data sekolah dengan semua field, jumlah guru, dan jumlah kelas
         $db = \Config\Database::connect();
         $data['sekolah'] = $db->table('sekolah s')
-            ->select('s.sekolah_id, s.nama_sekolah, s.alamat, s.telepon, s.email, COUNT(g.guru_id) as total_guru')
+            ->select('s.sekolah_id, s.nama_sekolah, s.alamat, s.telepon, s.email, 
+                 COUNT(DISTINCT g.guru_id) as total_guru,
+                 COUNT(DISTINCT k.kelas_id) as total_kelas')
             ->join('guru g', 'g.sekolah_id = s.sekolah_id', 'left')
+            ->join('kelas k', 'k.sekolah_id = s.sekolah_id', 'left')
             ->groupBy('s.sekolah_id, s.nama_sekolah, s.alamat, s.telepon, s.email')
             ->orderBy('s.nama_sekolah', 'ASC')
             ->get()
             ->getResultArray();
 
         return view('admin/sekolah/daftar', $data);
+    }
+
+    // Method untuk menampilkan kelas berdasarkan sekolah
+    public function daftarKelasBySekolah($sekolahId)
+    {
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        $db = \Config\Database::connect();
+
+        // Ambil data kelas dengan jumlah siswa dan guru
+        $kelas = $db->table('kelas k')
+            ->select('k.*, 
+                 COUNT(DISTINCT s.siswa_id) as total_siswa,
+                 COUNT(DISTINCT kg.guru_id) as total_guru')
+            ->join('siswa s', 's.kelas_id = k.kelas_id', 'left')
+            ->join('kelas_guru kg', 'kg.kelas_id = k.kelas_id', 'left')
+            ->where('k.sekolah_id', $sekolahId)
+            ->groupBy('k.kelas_id')
+            ->orderBy('k.tahun_ajaran', 'DESC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Hitung total guru sekolah
+        $sekolah['total_guru'] = $db->table('guru')
+            ->where('sekolah_id', $sekolahId)
+            ->countAllResults();
+
+        $data = [
+            'sekolah' => $sekolah,
+            'kelas' => $kelas
+        ];
+
+        return view('admin/sekolah/kelas', $data);
     }
 
     public function formTambahSekolah()
@@ -679,33 +990,45 @@ class Admin extends Controller
 
     // ===== KELOLA KELAS =====
 
-    public function daftarKelas()
-    {
-        // Ambil data kelas dengan jumlah siswa
-        $db = \Config\Database::connect();
-        $data['kelas'] = $db->table('kelas k')
-            ->select('k.*, COUNT(s.siswa_id) as total_siswa')
-            ->join('siswa s', 's.kelas_id = k.kelas_id', 'left')
-            ->groupBy('k.kelas_id')
-            ->orderBy('k.tahun_ajaran', 'DESC')
-            ->orderBy('k.nama_kelas', 'ASC')
-            ->get()
-            ->getResultArray();
+    //Method untuk form tambah kelas dalam sekolah
 
-        return view('admin/kelas/daftar', $data);
-    }
-
-    public function formTambahKelas()
+    public function formTambahKelasSekolah($sekolahId)
     {
         $sekolahModel = new \App\Models\SekolahModel();
-        $data['sekolah'] = $sekolahModel->findAll();
-        return view('admin/kelas/tambah', $data);
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        $data = [
+            'sekolah' => $sekolah,
+            'sekolah_id' => $sekolahId
+        ];
+
+        return view('admin/sekolah/tambah_kelas', $data);
     }
 
-    public function tambahKelas()
+    // Form edit kelas via sekolah
+    public function editKelasSekolah($sekolahId, $kelasId)
     {
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        $kelas = $this->kelasModel->find($kelasId);
+
+        if (!$kelas || $kelas['sekolah_id'] != $sekolahId) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan atau tidak berada di sekolah ini');
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+        }
+
         $rules = [
-            'sekolah_id' => 'required|numeric',
             'nama_kelas' => 'required|min_length[2]',
             'tahun_ajaran' => 'required|regex_match[/^\d{4}\/\d{4}$/]'
         ];
@@ -718,68 +1041,14 @@ class Admin extends Controller
 
         try {
             $data = [
-                'sekolah_id' => $this->request->getPost('sekolah_id'),
                 'nama_kelas' => $this->request->getPost('nama_kelas'),
                 'tahun_ajaran' => $this->request->getPost('tahun_ajaran')
-            ];
-
-            $this->kelasModel->insert($data);
-            session()->setFlashdata('success', 'Kelas berhasil ditambahkan!');
-            return redirect()->to(base_url('admin/kelas'));
-        } catch (\Exception $e) {
-            log_message('error', 'Error adding kelas: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah kelas.');
-            return redirect()->back()->withInput();
-        }
-    }
-
-    public function formEditKelas($kelasId)
-    {
-        $kelas = $this->kelasModel->find($kelasId);
-
-        if (!$kelas) {
-            session()->setFlashdata('error', 'Data kelas tidak ditemukan');
-            return redirect()->to(base_url('admin/kelas'));
-        }
-
-        $sekolahModel = new \App\Models\SekolahModel();
-        $data['kelas'] = $kelas;
-        $data['sekolah'] = $sekolahModel->findAll();
-
-        return view('admin/kelas/edit', $data);
-    }
-
-    public function editKelas($kelasId)
-    {
-        $kelas = $this->kelasModel->find($kelasId);
-
-        if (!$kelas) {
-            session()->setFlashdata('error', 'Data kelas tidak ditemukan');
-            return redirect()->to(base_url('admin/kelas'));
-        }
-
-        $rules = [
-            'sekolah_id' => 'required|numeric',
-            'nama_kelas' => 'required|min_length[2]',
-            'tahun_ajaran' => 'required|regex_match[/^\d{4}\/\d{4}$/]'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
-        }
-
-        try {
-            $data = [
-                'sekolah_id' => $this->request->getPost('sekolah_id'),
-                'nama_kelas' => $this->request->getPost('nama_kelas'),
-                'tahun_ajaran' => $this->request->getPost('tahun_ajaran')
+                // sekolah_id tetap sama, tidak berubah
             ];
 
             $this->kelasModel->update($kelasId, $data);
             session()->setFlashdata('success', 'Data kelas berhasil diperbarui!');
-            return redirect()->to(base_url('admin/kelas'));
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
         } catch (\Exception $e) {
             log_message('error', 'Error updating kelas: ' . $e->getMessage());
             session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui kelas.');
@@ -787,15 +1056,67 @@ class Admin extends Controller
         }
     }
 
-    public function hapusKelas($kelasId)
+    // Tambahkan method ini di controller Admin.php (sekitar line 800-an, setelah method formTambahKelasSekolah)
+
+    public function formEditKelasSekolah($sekolahId, $kelasId)
+    {
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        $kelas = $this->kelasModel->find($kelasId);
+
+        if (!$kelas || $kelas['sekolah_id'] != $sekolahId) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan atau tidak berada di sekolah ini');
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+        }
+
+        $data = [
+            'sekolah' => $sekolah,
+            'kelas' => $kelas
+        ];
+
+        return view('admin/sekolah/edit_kelas', $data);
+    }
+
+    // Hapus kelas via sekolah
+    public function hapusKelasSekolah($sekolahId, $kelasId)
     {
         try {
+            $sekolahModel = new \App\Models\SekolahModel();
+            $sekolah = $sekolahModel->find($sekolahId);
+
+            if (!$sekolah) {
+                session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+                return redirect()->to(base_url('admin/sekolah'));
+            }
+
+            $kelas = $this->kelasModel->find($kelasId);
+
+            if (!$kelas || $kelas['sekolah_id'] != $sekolahId) {
+                session()->setFlashdata('error', 'Kelas tidak ditemukan atau tidak berada di sekolah ini');
+                return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+            }
+
             // Cek apakah kelas masih memiliki siswa
             $totalSiswa = $this->siswaModel->where('kelas_id', $kelasId)->countAllResults();
 
+            // Cek apakah kelas masih memiliki guru
+            $db = \Config\Database::connect();
+            $totalGuru = $db->table('kelas_guru')->where('kelas_id', $kelasId)->countAllResults();
+
             if ($totalSiswa > 0) {
                 session()->setFlashdata('error', "Tidak dapat menghapus kelas karena masih memiliki {$totalSiswa} siswa.");
-                return redirect()->to(base_url('admin/kelas'));
+                return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+            }
+
+            if ($totalGuru > 0) {
+                session()->setFlashdata('error', "Tidak dapat menghapus kelas karena masih memiliki {$totalGuru} guru pengajar.");
+                return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
             }
 
             $this->kelasModel->delete($kelasId);
@@ -805,8 +1126,303 @@ class Admin extends Controller
             session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus kelas.');
         }
 
-        return redirect()->to(base_url('admin/kelas'));
+        return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
     }
+
+    // Detail kelas via sekolah (sama seperti detailKelas tapi dengan parameter sekolah)
+    public function detailKelasSekolah($sekolahId, $kelasId)
+    {
+        $db = \Config\Database::connect();
+
+        // Validasi sekolah
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        // Ambil detail kelas
+        $kelas = $db->table('kelas k')
+            ->select('k.*, s.nama_sekolah, s.sekolah_id')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->where('k.kelas_id', $kelasId)
+            ->where('k.sekolah_id', $sekolahId)
+            ->get()
+            ->getRowArray();
+
+        if (!$kelas) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan atau tidak berada di sekolah ini');
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+        }
+
+        // Ambil daftar guru yang mengajar di kelas ini (dengan info kelas lain yang diajar)
+        $daftarGuru = $db->table('kelas_guru kg')
+            ->select('kg.*, g.guru_id, g.nama_lengkap, g.nip, g.mata_pelajaran, 
+                 u.user_id, u.username, u.status,
+                 GROUP_CONCAT(DISTINCT CASE 
+                    WHEN k2.kelas_id != kg.kelas_id THEN k2.nama_kelas 
+                    END ORDER BY k2.nama_kelas SEPARATOR ", ") as kelas_lain')
+            ->join('guru g', 'g.guru_id = kg.guru_id')
+            ->join('users u', 'u.user_id = g.user_id')
+            ->join('kelas_guru kg2', 'kg2.guru_id = g.guru_id', 'left')
+            ->join('kelas k2', 'k2.kelas_id = kg2.kelas_id', 'left')
+            ->where('kg.kelas_id', $kelasId)
+            ->groupBy('kg.kelas_guru_id, kg.kelas_id, kg.guru_id, kg.created_at, kg.updated_at, 
+                  g.guru_id, g.nama_lengkap, g.nip, g.mata_pelajaran, 
+                  u.user_id, u.username, u.status')
+            ->orderBy('g.nama_lengkap', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil daftar siswa di kelas ini
+        $daftarSiswa = $db->table('siswa s')
+            ->select('s.*, u.user_id, u.username, u.status')
+            ->join('users u', 'u.user_id = s.user_id')
+            ->where('s.kelas_id', $kelasId)
+            ->orderBy('s.nama_lengkap', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil daftar guru yang tersedia untuk di-assign (HANYA dari sekolah yang sama)
+        $assignedGuruIds = array_column($daftarGuru, 'guru_id');
+        $whereNotIn = !empty($assignedGuruIds) ? $assignedGuruIds : [0];
+
+        $availableGuru = $db->table('guru g')
+            ->select('g.guru_id, g.nama_lengkap, g.mata_pelajaran,
+                 GROUP_CONCAT(DISTINCT k.nama_kelas ORDER BY k.nama_kelas SEPARATOR ", ") as kelas_diajar')
+            ->join('users u', 'u.user_id = g.user_id')
+            ->join('kelas_guru kg', 'kg.guru_id = g.guru_id', 'left')
+            ->join('kelas k', 'k.kelas_id = kg.kelas_id', 'left')
+            ->where('g.sekolah_id', $sekolahId) // Filter sekolah
+            ->where('u.status', 'active')
+            ->whereNotIn('g.guru_id', $whereNotIn)
+            ->groupBy('g.guru_id, g.nama_lengkap, g.mata_pelajaran')
+            ->orderBy('g.nama_lengkap', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $data = [
+            'sekolah' => $sekolah,
+            'kelas' => $kelas,
+            'daftarGuru' => $daftarGuru,
+            'daftarSiswa' => $daftarSiswa,
+            'availableGuru' => $availableGuru
+        ];
+
+        return view('admin/sekolah/detail_kelas', $data);
+    }
+
+    public function assignGuruKelasSekolah($sekolahId, $kelasId)
+    {
+        $guruId = $this->request->getPost('guru_id');
+
+        if (!$guruId) {
+            session()->setFlashdata('error', 'Guru harus dipilih');
+            return redirect()->back();
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            // Validasi guru dari sekolah yang sama
+            $guru = $db->table('guru')->where('guru_id', $guruId)->where('sekolah_id', $sekolahId)->get()->getRowArray();
+
+            if (!$guru) {
+                session()->setFlashdata('error', 'Guru tidak ditemukan atau tidak berada di sekolah ini');
+                return redirect()->back();
+            }
+
+            // Cek apakah guru sudah mengajar di kelas ini
+            $existing = $db->table('kelas_guru')
+                ->where('kelas_id', $kelasId)
+                ->where('guru_id', $guruId)
+                ->countAllResults();
+
+            if ($existing > 0) {
+                session()->setFlashdata('error', 'Guru sudah mengajar di kelas ini');
+                return redirect()->back();
+            }
+
+            // Insert ke tabel kelas_guru
+            $db->table('kelas_guru')->insert([
+                'kelas_id' => $kelasId,
+                'guru_id' => $guruId,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            session()->setFlashdata('success', 'Guru berhasil di-assign ke kelas!');
+        } catch (\Exception $e) {
+            log_message('error', 'Error assigning guru: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat assign guru.');
+        }
+
+        return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas/' . $kelasId . '/detail'));
+    }
+
+    // Remove guru dari kelas via sekolah
+    public function removeGuruKelasSekolah($sekolahId, $kelasId, $guruId)
+    {
+        try {
+            $db = \Config\Database::connect();
+
+            $db->table('kelas_guru')
+                ->where('kelas_id', $kelasId)
+                ->where('guru_id', $guruId)
+                ->delete();
+
+            session()->setFlashdata('success', 'Guru berhasil dikeluarkan dari kelas!');
+        } catch (\Exception $e) {
+            log_message('error', 'Error removing guru: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat mengeluarkan guru.');
+        }
+
+        return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas/' . $kelasId . '/detail'));
+    }
+
+    // Transfer siswa via sekolah
+    public function transferSiswaSekolah($sekolahId, $kelasId, $siswaId)
+    {
+        $db = \Config\Database::connect();
+
+        // Validasi sekolah
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        // Ambil info siswa dan kelas
+        $siswa = $db->table('siswa s')
+            ->select('s.*, u.username, k.nama_kelas, k.sekolah_id, sk.nama_sekolah')
+            ->join('users u', 'u.user_id = s.user_id')
+            ->join('kelas k', 'k.kelas_id = s.kelas_id')
+            ->join('sekolah sk', 'sk.sekolah_id = k.sekolah_id')
+            ->where('s.siswa_id', $siswaId)
+            ->where('s.kelas_id', $kelasId)
+            ->where('k.sekolah_id', $sekolahId)
+            ->get()
+            ->getRowArray();
+
+        if (!$siswa) {
+            session()->setFlashdata('error', 'Siswa tidak ditemukan atau tidak berada di kelas/sekolah ini');
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas/' . $kelasId . '/detail'));
+        }
+
+        // Ambil daftar kelas lain di sekolah yang sama
+        $kelasLain = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, COUNT(s.siswa_id) as jumlah_siswa')
+            ->join('siswa s', 's.kelas_id = k.kelas_id', 'left')
+            ->where('k.sekolah_id', $sekolahId)
+            ->where('k.kelas_id !=', $kelasId)
+            ->groupBy('k.kelas_id, k.nama_kelas, k.tahun_ajaran')
+            ->orderBy('k.tahun_ajaran', 'DESC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $data = [
+            'sekolah' => $sekolah,
+            'siswa' => $siswa,
+            'kelasAsal' => $kelasId,
+            'kelasLain' => $kelasLain
+        ];
+
+        return view('admin/sekolah/transfer_siswa', $data);
+    }
+
+    // Proses transfer siswa via sekolah
+    public function prosesTransferSiswaSekolah()
+    {
+        $siswaId = $this->request->getPost('siswa_id');
+        $sekolahId = $this->request->getPost('sekolah_id');
+        $kelasAsalId = $this->request->getPost('kelas_asal_id');
+        $kelasTujuanId = $this->request->getPost('kelas_tujuan_id');
+
+        if (!$siswaId || !$sekolahId || !$kelasAsalId || !$kelasTujuanId) {
+            session()->setFlashdata('error', 'Data tidak lengkap');
+            return redirect()->back();
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            // Validasi kelas tujuan di sekolah yang sama
+            $kelasTujuan = $db->table('kelas')->where('kelas_id', $kelasTujuanId)->where('sekolah_id', $sekolahId)->get()->getRowArray();
+
+            if (!$kelasTujuan) {
+                session()->setFlashdata('error', 'Kelas tujuan tidak valid');
+                return redirect()->back();
+            }
+
+            // Ambil info untuk log
+            $siswa = $db->table('siswa')->select('nama_lengkap')->where('siswa_id', $siswaId)->get()->getRowArray();
+            $kelasAsal = $db->table('kelas')->select('nama_kelas')->where('kelas_id', $kelasAsalId)->get()->getRowArray();
+
+            // Update kelas siswa
+            $affected = $db->table('siswa')
+                ->where('siswa_id', $siswaId)
+                ->update(['kelas_id' => $kelasTujuanId]);
+
+            if ($affected > 0) {
+                session()->setFlashdata(
+                    'success',
+                    "Siswa <strong>{$siswa['nama_lengkap']}</strong> berhasil dipindahkan dari " .
+                        "<strong>{$kelasAsal['nama_kelas']}</strong> ke <strong>{$kelasTujuan['nama_kelas']}</strong>."
+                );
+            } else {
+                session()->setFlashdata('warning', 'Tidak ada perubahan yang dilakukan');
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error transferring siswa: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat memindahkan siswa: ' . $e->getMessage());
+        }
+
+        return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas/' . $kelasAsalId . '/detail'));
+    }
+
+    // Method untuk tambah kelas dalam sekolah
+    public function tambahKelasSekolah($sekolahId)
+    {
+        $sekolahModel = new \App\Models\SekolahModel();
+        $sekolah = $sekolahModel->find($sekolahId);
+
+        if (!$sekolah) {
+            session()->setFlashdata('error', 'Sekolah tidak ditemukan');
+            return redirect()->to(base_url('admin/sekolah'));
+        }
+
+        $rules = [
+            'nama_kelas' => 'required|min_length[2]',
+            'tahun_ajaran' => 'required|regex_match[/^\d{4}\/\d{4}$/]'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        try {
+            $data = [
+                'sekolah_id' => $sekolahId,
+                'nama_kelas' => $this->request->getPost('nama_kelas'),
+                'tahun_ajaran' => $this->request->getPost('tahun_ajaran')
+            ];
+
+            $this->kelasModel->insert($data);
+            session()->setFlashdata('success', 'Kelas berhasil ditambahkan!');
+            return redirect()->to(base_url('admin/sekolah/' . $sekolahId . '/kelas'));
+        } catch (\Exception $e) {
+            log_message('error', 'Error adding kelas: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah kelas.');
+            return redirect()->back()->withInput();
+        }
+    }
+
 
     // ===== KELOLA UJIAN =====
 
@@ -1075,39 +1691,106 @@ class Admin extends Controller
 
     // ===== KELOLA HASIL UJIAN =====
 
+    private function hitungDurasiPerSoal($detailJawaban, $waktuMulaiUjian)
+    {
+        $hasilDenganDurasi = [];
+        $waktuSebelumnya = $waktuMulaiUjian;
+
+        foreach ($detailJawaban as $index => $jawaban) {
+            $waktuMenjawab = $jawaban['waktu_menjawab'];
+
+            // Hitung durasi dalam detik
+            $durasiDetik = strtotime($waktuMenjawab) - strtotime($waktuSebelumnya);
+
+            // Konversi ke menit dan detik
+            $menit = floor($durasiDetik / 60);
+            $detik = $durasiDetik % 60;
+
+            $jawaban['durasi_pengerjaan_detik'] = $durasiDetik;
+            $jawaban['durasi_pengerjaan_format'] = sprintf('%d menit %d detik', $menit, $detik);
+            $jawaban['nomor_soal'] = $index + 1;
+
+            $hasilDenganDurasi[] = $jawaban;
+            $waktuSebelumnya = $waktuMenjawab;
+        }
+
+        return $hasilDenganDurasi;
+    }
+
     public function daftarHasilUjian()
     {
         $db = \Config\Database::connect();
 
-        // Query untuk mengambil daftar ujian yang sudah selesai dengan hasil
+        // Query untuk mengambil daftar ujian yang sudah selesai dengan hasil dan informasi waktu
         $data['daftarUjian'] = $db->table('jadwal_ujian ju')
             ->select('ju.jadwal_id, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
-                     s.nama_sekolah, g.nama_lengkap as nama_guru, ju.tanggal_mulai, ju.tanggal_selesai,
-                     COUNT(DISTINCT pu.peserta_ujian_id) as jumlah_peserta,
-                     COUNT(DISTINCT CASE WHEN pu.status = "selesai" THEN pu.peserta_ujian_id END) as peserta_selesai')
+                 s.nama_sekolah, g.nama_lengkap as nama_guru, ju.tanggal_mulai, ju.tanggal_selesai,
+                 COUNT(DISTINCT pu.peserta_ujian_id) as jumlah_peserta,
+                 COUNT(DISTINCT CASE WHEN pu.status = "selesai" THEN pu.peserta_ujian_id END) as peserta_selesai,
+                 AVG(TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai))) as rata_rata_durasi_detik,
+                 MIN(TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai))) as durasi_tercepat_detik,
+                 MAX(TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai))) as durasi_terlama_detik,
+                 DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
+                 DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
             ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
             ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
-            ->join('peserta_ujian pu', 'pu.jadwal_id = ju.jadwal_id', 'left')
+            ->join('peserta_ujian pu', 'pu.jadwal_id = ju.jadwal_id AND pu.status = "selesai"', 'left')
             ->where('ju.status', 'selesai')
             ->groupBy('ju.jadwal_id, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, g.nama_lengkap, ju.tanggal_mulai, ju.tanggal_selesai')
             ->orderBy('ju.tanggal_selesai', 'DESC')
             ->get()
             ->getResultArray();
 
+        // Format durasi untuk setiap ujian
+        foreach ($data['daftarUjian'] as &$ujian) {
+            // Format rata-rata durasi
+            if ($ujian['rata_rata_durasi_detik']) {
+                $jam = floor($ujian['rata_rata_durasi_detik'] / 3600);
+                $menit = floor(($ujian['rata_rata_durasi_detik'] % 3600) / 60);
+                $detik = $ujian['rata_rata_durasi_detik'] % 60;
+                $ujian['rata_rata_durasi_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+            } else {
+                $ujian['rata_rata_durasi_format'] = '-';
+            }
+
+            // Format durasi tercepat
+            if ($ujian['durasi_tercepat_detik']) {
+                $jam = floor($ujian['durasi_tercepat_detik'] / 3600);
+                $menit = floor(($ujian['durasi_tercepat_detik'] % 3600) / 60);
+                $detik = $ujian['durasi_tercepat_detik'] % 60;
+                $ujian['durasi_tercepat_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+            } else {
+                $ujian['durasi_tercepat_format'] = '-';
+            }
+
+            // Format durasi terlama
+            if ($ujian['durasi_terlama_detik']) {
+                $jam = floor($ujian['durasi_terlama_detik'] / 3600);
+                $menit = floor(($ujian['durasi_terlama_detik'] % 3600) / 60);
+                $detik = $ujian['durasi_terlama_detik'] % 60;
+                $ujian['durasi_terlama_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+            } else {
+                $ujian['durasi_terlama_format'] = '-';
+            }
+        }
+
         return view('admin/hasil/daftar', $data);
     }
+
 
     public function hasilUjianSiswa($jadwalId)
     {
         $db = \Config\Database::connect();
 
-        // Ambil info ujian
+        // Ambil info ujian dengan informasi waktu
         $ujian = $db->table('jadwal_ujian ju')
             ->select('ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
-                     s.nama_sekolah, g.nama_lengkap as nama_guru')
+                 s.nama_sekolah, g.nama_lengkap as nama_guru,
+                 DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
+                 DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
@@ -1122,11 +1805,15 @@ class Admin extends Controller
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // Ambil hasil siswa dengan perhitungan nilai
+        // Ambil hasil siswa dengan perhitungan nilai dan informasi waktu
         $hasilSiswa = $db->table('peserta_ujian pu')
             ->select('pu.peserta_ujian_id, pu.status, pu.waktu_mulai, pu.waktu_selesai,
-                     siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
-                     u.username')
+                 siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
+                 u.username,
+                 TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
+                 TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
+                 DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                 DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('siswa', 'siswa.siswa_id = pu.siswa_id', 'left')
             ->join('users u', 'u.user_id = siswa.user_id', 'left')
             ->where('pu.jadwal_id', $jadwalId)
@@ -1137,11 +1824,11 @@ class Admin extends Controller
         // Hitung nilai untuk setiap siswa
         foreach ($hasilSiswa as &$siswa) {
             if ($siswa['status'] === 'selesai') {
-                // Ambil theta terakhir
-                $lastResult = $db->table('hasil_ujian hu')
-                    ->select('hu.theta_saat_ini, hu.se_saat_ini')
-                    ->where('hu.peserta_ujian_id', $siswa['peserta_ujian_id'])
-                    ->orderBy('hu.jawaban_id', 'DESC')
+                // SIMPLE FIX: Gunakan waktu_menjawab sebagai pengganti hasil_id untuk ordering
+                $lastResult = $db->table('hasil_ujian')
+                    ->select('theta_saat_ini, se_saat_ini')
+                    ->where('peserta_ujian_id', $siswa['peserta_ujian_id'])
+                    ->orderBy('waktu_menjawab', 'DESC')
                     ->limit(1)
                     ->get()
                     ->getRowArray();
@@ -1174,6 +1861,27 @@ class Admin extends Controller
 
                 $siswa['jawaban_benar'] = $jawabanBenar;
                 $siswa['total_soal'] = $totalSoal;
+
+                // Format durasi
+                if ($siswa['durasi_detik']) {
+                    $jam = floor($siswa['durasi_detik'] / 3600);
+                    $menit = floor(($siswa['durasi_detik'] % 3600) / 60);
+                    $detik = $siswa['durasi_detik'] % 60;
+                    $siswa['durasi_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+
+                    // Hitung rata-rata per soal
+                    if ($totalSoal > 0) {
+                        $rataRataDetik = $siswa['durasi_detik'] / $totalSoal;
+                        $rataRataMenit = floor($rataRataDetik / 60);
+                        $rataRataDetikSisa = $rataRataDetik % 60;
+                        $siswa['rata_rata_per_soal'] = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetikSisa);
+                    } else {
+                        $siswa['rata_rata_per_soal'] = '-';
+                    }
+                } else {
+                    $siswa['durasi_format'] = '-';
+                    $siswa['rata_rata_per_soal'] = '-';
+                }
             } else {
                 $siswa['theta_akhir'] = null;
                 $siswa['skor'] = null;
@@ -1181,6 +1889,8 @@ class Admin extends Controller
                 $siswa['se_akhir'] = null;
                 $siswa['jawaban_benar'] = 0;
                 $siswa['total_soal'] = 0;
+                $siswa['durasi_format'] = '-';
+                $siswa['rata_rata_per_soal'] = '-';
             }
         }
 
@@ -1196,12 +1906,16 @@ class Admin extends Controller
     {
         $db = \Config\Database::connect();
 
-        // Ambil detail peserta dan ujian
+        // Ambil detail peserta dan ujian dengan informasi waktu
         $hasil = $db->table('peserta_ujian pu')
             ->select('pu.*, ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, 
-                     siswa.nama_lengkap, siswa.nomor_peserta,
-                     k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
-                     g.nama_lengkap as nama_guru')
+                 siswa.nama_lengkap, siswa.nomor_peserta,
+                 k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
+                 g.nama_lengkap as nama_guru,
+                 TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
+                 TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
+                 DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                 DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian ju', 'ju.jadwal_id = pu.jadwal_id', 'left')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
@@ -1218,19 +1932,67 @@ class Admin extends Controller
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // Ambil detail jawaban
-        $detailJawaban = $db->table('hasil_ujian hu')
-            ->select('hu.*, s.pertanyaan, s.pilihan_a, s.pilihan_b, s.pilihan_c, s.pilihan_d, 
-                     s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan')
-            ->join('soal_ujian s', 's.soal_id = hu.soal_id', 'left')
-            ->where('hu.peserta_ujian_id', $pesertaUjianId)
-            ->orderBy('hu.jawaban_id', 'ASC')
+        // FIX: Ambil detail jawaban dengan waktu - hapus alias dan gunakan waktu_menjawab untuk ordering
+        $detailJawaban = $db->table('hasil_ujian')
+            ->select('hasil_ujian.*, s.pertanyaan, s.pilihan_a, s.pilihan_b, s.pilihan_c, s.pilihan_d, 
+                 s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan,
+                 DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+            ->join('soal_ujian s', 's.soal_id = hasil_ujian.soal_id', 'left')
+            ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
             ->get()
             ->getResultArray();
 
+        // Hitung durasi per soal
+        $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
+
+        // Hitung statistik
+        $totalSoal = count($detailJawabanDenganDurasi);
+        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
+            return $carry + ($item['is_correct'] ? 1 : 0);
+        }, 0);
+
+        // Format durasi total
+        if ($hasil['durasi_total_detik']) {
+            $jam = floor($hasil['durasi_total_detik'] / 3600);
+            $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
+            $detik = $hasil['durasi_total_detik'] % 60;
+            $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+        }
+
+        // Hitung rata-rata waktu per soal
+        if ($totalSoal > 0) {
+            $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+            $rataRataMenit = floor($rataRataWaktu / 60);
+            $rataRataDetik = $rataRataWaktu % 60;
+            $rataRataWaktuFormat = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik);
+        } else {
+            $rataRataWaktuFormat = '-';
+        }
+
+        // Hitung statistik waktu pengerjaan per soal
+        $statistikWaktu = [
+            'waktu_tercepat' => 0,
+            'waktu_terlama' => 0,
+            'rata_rata' => 0
+        ];
+
+        if ($totalSoal > 0) {
+            $durasiArray = array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik');
+            $statistikWaktu = [
+                'waktu_tercepat' => min($durasiArray),
+                'waktu_terlama' => max($durasiArray),
+                'rata_rata' => $rataRataWaktu
+            ];
+        }
+
         $data = [
             'hasil' => $hasil,
-            'detailJawaban' => $detailJawaban
+            'detailJawaban' => $detailJawabanDenganDurasi,
+            'totalSoal' => $totalSoal,
+            'jawabanBenar' => $jawabanBenar,
+            'rataRataWaktuFormat' => $rataRataWaktuFormat,
+            'statistikWaktu' => $statistikWaktu
         ];
 
         return view('admin/hasil/detail', $data);

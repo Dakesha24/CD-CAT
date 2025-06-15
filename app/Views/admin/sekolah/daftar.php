@@ -40,13 +40,14 @@
                                     <th>Telepon</th>
                                     <th>Email</th>
                                     <th>Total Guru</th>
+                                    <th>Total Kelas</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($sekolah)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center">Tidak ada data sekolah</td>
+                                        <td colspan="8" class="text-center">Tidak ada data sekolah</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($sekolah as $index => $s): ?>
@@ -60,13 +61,24 @@
                                                 <span class="badge bg-primary"><?= $s['total_guru'] ?> Guru</span>
                                             </td>
                                             <td>
+                                                <span class="badge bg-warning"><?= $s['total_kelas'] ?? 0 ?> Kelas</span>
+                                            </td>
+                                            <td>
                                                 <div class="btn-group" role="group">
+                                                    <!-- Tombol Kelola Kelas -->
+                                                    <a href="<?= base_url('admin/sekolah/' . $s['sekolah_id'] . '/kelas') ?>" 
+                                                       class="btn btn-sm btn-outline-success" title="Kelola Kelas">
+                                                        <i class="bi bi-building"></i>
+                                                    </a>
+                                                    
+                                                    <!-- Tombol Edit -->
                                                     <a href="<?= base_url('admin/sekolah/edit/' . $s['sekolah_id']) ?>" 
                                                        class="btn btn-sm btn-outline-primary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
                                                     
-                                                    <?php if ($s['total_guru'] == 0): ?>
+                                                    <!-- Tombol Hapus -->
+                                                    <?php if ($s['total_guru'] == 0 && ($s['total_kelas'] ?? 0) == 0): ?>
                                                         <a href="<?= base_url('admin/sekolah/hapus/' . $s['sekolah_id']) ?>" 
                                                            class="btn btn-sm btn-outline-danger" 
                                                            title="Hapus"
@@ -75,7 +87,7 @@
                                                         </a>
                                                     <?php else: ?>
                                                         <button class="btn btn-sm btn-outline-secondary" 
-                                                                title="Tidak dapat dihapus karena masih memiliki guru" disabled>
+                                                                title="Tidak dapat dihapus karena masih memiliki guru atau kelas" disabled>
                                                             <i class="bi bi-lock"></i>
                                                         </button>
                                                     <?php endif; ?>
@@ -86,6 +98,27 @@
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Keterangan Aksi -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6>Keterangan Tombol Aksi:</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <span class="btn btn-sm btn-outline-success me-2"><i class="bi bi-building"></i></span>
+                            <span>Kelola Kelas & Anggota</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-pencil"></i></span>
+                            <span>Edit Data Sekolah</span>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="btn btn-sm btn-outline-danger me-2"><i class="bi bi-trash"></i></span>
+                            <span>Hapus Sekolah</span>
+                        </div>
                     </div>
                 </div>
             </div>

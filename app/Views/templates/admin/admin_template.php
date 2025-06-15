@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin - CBT Adaptif</title>
+    <title>Dashboard Admin - Phy-FA-CAT</title>
+
+    <link rel="icon" type="image/png" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="apple-touch-icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="shortcut icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -174,7 +178,7 @@
                 </button>
                 <a class="navbar-brand" href="<?= base_url('admin/dashboard') ?>">
                     <i class="bi bi-mortarboard-fill me-2"></i>
-                    CBT Adaptif
+                    Phy-FA-CAT
                 </a>
             </div>
 
@@ -240,15 +244,7 @@
             <li class="nav-item">
                 <a href="<?= base_url('admin/sekolah') ?>" class="nav-link <?= (strpos(current_url(), 'admin/sekolah') !== false) ? 'active' : '' ?>">
                     <i class="bi bi-building"></i>
-                    <span>Kelola Sekolah</span>
-                </a>
-            </li>
-
-            <!-- Kelola Kelas -->
-            <li class="nav-item">
-                <a href="<?= base_url('admin/kelas') ?>" class="nav-link <?= (strpos(current_url(), 'admin/kelas') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-door-open"></i>
-                    <span>Kelola Kelas</span>
+                    <span>Kelola Sekolah & Kelas</span>
                 </a>
             </li>
 

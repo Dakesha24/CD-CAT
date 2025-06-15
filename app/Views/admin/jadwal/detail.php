@@ -142,7 +142,7 @@
             <!-- Filter Peserta -->
             <div class="row mb-3">
               <div class="col-md-4">
-                <input type="text" class="form-control" id="searchPeserta" placeholder="Cari nama/nomor peserta...">
+                <input type="text" class="form-control" id="searchPeserta" placeholder="Cari nama/nis...">
               </div>
               <div class="col-md-3">
                 <select class="form-select" id="filterStatusPeserta">
@@ -164,7 +164,7 @@
                 <thead class="table-success">
                   <tr>
                     <th>No</th>
-                    <th>Nomor Peserta</th>
+                    <th>NIS</th>
                     <th>Nama Lengkap</th>
                     <th>Username</th>
                     <th>Status</th>

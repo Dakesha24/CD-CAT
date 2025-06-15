@@ -22,6 +22,22 @@
                     </div>
                 </div>
 
+                <!-- Bank Soal Card - BARU -->
+                <div class="col-md-4">
+                    <div class="card menu-card h-100">
+                        <div class="card-body text-center">
+                            <div class="icon-wrapper bg-purple-subtle mx-auto">
+                                <i class="bi bi-bank text-purple fs-1"></i>
+                            </div>
+                            <h5 class="card-title">Bank Soal</h5>
+                            <p class="card-text">Kelola koleksi soal yang dapat digunakan untuk berbagai ujian</p>
+                            <a href="<?= base_url('guru/bank-soal') ?>" class="btn btn-outline-purple">
+                                <i class="bi bi-collection me-2"></i>Kelola Bank Soal
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Ujian Card -->
                 <div class="col-md-4">
                     <div class="card menu-card h-100">
@@ -56,7 +72,7 @@
 
                 <!-- Hasil Ujian Card -->
                 <div class="col-md-4">
-                    <div class="card menu-card h-100 mt-4">
+                    <div class="card menu-card h-100">
                         <div class="card-body text-center">
                             <div class="icon-wrapper bg-danger-subtle mx-auto">
                                 <i class="bi bi-clipboard-data text-danger fs-1"></i>
@@ -72,7 +88,7 @@
 
                 <!-- Pengumuman Card -->
                 <div class="col-md-4">
-                    <div class="card menu-card h-100 mt-4">
+                    <div class="card menu-card h-100">
                         <div class="card-body text-center">
                             <div class="icon-wrapper bg-warning-subtle mx-auto">
                                 <i class="bi bi-megaphone text-warning fs-1"></i>
@@ -89,4 +105,48 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Custom purple color untuk Bank Soal */
+    .bg-purple-subtle {
+        background-color: rgba(138, 43, 226, 0.1) !important;
+    }
+
+    .text-purple {
+        color: #8a2be2 !important;
+    }
+
+    .btn-outline-purple {
+        color: #8a2be2;
+        border-color: #8a2be2;
+    }
+
+    .btn-outline-purple:hover {
+        color: #fff;
+        background-color: #8a2be2;
+        border-color: #8a2be2;
+    }
+
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .menu-card {
+        transition: transform 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
 <?= $this->endSection() ?>

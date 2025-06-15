@@ -14,8 +14,7 @@
                             <i class="bi bi-key-fill"></i>
                         </div>
                         <h3>Masalah Login</h3>
-                        <p>Pastikan email dan kata sandi yang Anda masukkan benar. Gunakan fitur Lupa Kata Sandi jika diperlukan.</p>
-                        <a href="<?= base_url('login') ?>" class="btn btn-outline-light btn-sm mt-3">Ke Halaman Login</a>
+                        <p>Apabila lupa password, silahkan hubungi admin untuk mereset password anda.</p>
                     </div>
                 </div>
 
@@ -84,7 +83,7 @@
                 <a href="mailto:jauzaamalia@upi.edu" class="btn btn-outline-light me-2">
                     <i class="bi bi-envelope"></i> Email
                 </a>
-                <a href="<?= base_url('contact') ?>" class="btn btn-outline-light">
+                <a href="https://wa.me/6285794124143" target="_blank" class="btn btn-outline-light">
                     <i class="bi bi-chat-dots"></i> Kontak
                 </a>
             </div>

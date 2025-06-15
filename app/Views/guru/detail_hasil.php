@@ -8,10 +8,10 @@
       <p class="text-muted mb-0">
         <?= esc($hasil['nama_ujian']) ?> - <?= esc($hasil['nama_jenis']) ?>
       </p>
-      <?php 
-        // Generate kode soal dari tahun dan ID
-        $tahunPembuatan = date('Y', strtotime($hasil['tanggal_mulai']));
-        $kode_soal = $tahunPembuatan . str_pad($hasil['ujian_id'], 4, '0', STR_PAD_LEFT);
+      <?php
+      // Generate kode soal dari tahun dan ID
+      $tahunPembuatan = date('Y', strtotime($hasil['tanggal_mulai']));
+      $kode_soal = $tahunPembuatan . str_pad($hasil['ujian_id'], 4, '0', STR_PAD_LEFT);
       ?>
       <p class="text-muted mb-0">
         Kode Soal: <strong><?= $kode_soal ?></strong>
@@ -28,7 +28,7 @@
           <li><a class="dropdown-item" href="<?= base_url('guru/hasil-ujian/download-pdf-html/' . $hasil['peserta_ujian_id']) ?>">PDF</a></li>
         </ul>
       </div>
-      
+
       <a href="<?= base_url('guru/hasil-ujian/siswa/' . $hasil['jadwal_id']) ?>"
         class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Kembali
@@ -47,7 +47,7 @@
               <td>: <?= esc($hasil['nama_lengkap']) ?></td>
             </tr>
             <tr>
-              <td>Nomor Peserta</td>
+              <td>NIS</td>
               <td>: <?= esc($hasil['nomor_peserta']) ?></td>
             </tr>
             <tr>
@@ -60,15 +60,19 @@
           <table class="table table-borderless mb-0">
             <tr>
               <td style="width: 150px">Waktu Mulai</td>
-              <td>: <?= date('d/m/Y H:i', strtotime($hasil['waktu_mulai'])) ?></td>
+              <td>: <?= $hasil['waktu_mulai_format'] ?></td>
             </tr>
             <tr>
               <td>Waktu Selesai</td>
-              <td>: <?= date('d/m/Y H:i', strtotime($hasil['waktu_selesai'])) ?></td>
+              <td>: <?= $hasil['waktu_selesai_format'] ?></td>
             </tr>
             <tr>
-              <td>Durasi</td>
-              <td>: <?= date('H:i:s', strtotime($hasil['waktu_selesai']) - strtotime($hasil['waktu_mulai'])) ?></td>
+              <td>Total Durasi</td>
+              <td>: <?= $hasil['durasi_total_format'] ?></td>
+            </tr>
+            <tr>
+              <td>Rata-rata/Soal</td>
+              <td>: <?= $rataRataWaktuFormat ?></td>
             </tr>
           </table>
         </div>
@@ -77,13 +81,13 @@
   </div>
 
   <!-- Hasil Akhir -->
-  <?php 
-    // Ambil theta terakhir (dari jawaban terakhir)
-    $lastTheta = end($detailJawaban)['theta_saat_ini'];
-    // Hitung nilai akhir: 50 + 16.6 * theta
-    $finalScore = 50 + (16.6 * $lastTheta);
-    // Nilai dalam skala 0-100
-    $finalGrade = min(100, max(0, round(($finalScore / 100) * 100)));
+  <?php
+  // Ambil theta terakhir (dari jawaban terakhir)
+  $lastTheta = end($detailJawaban)['theta_saat_ini'];
+  // Hitung nilai akhir: 50 + 16.6 * theta
+  $finalScore = 50 + (16.6 * $lastTheta);
+  // Nilai dalam skala 0-100
+  $finalGrade = min(100, max(0, round(($finalScore / 100) * 100)));
   ?>
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent">
@@ -115,16 +119,12 @@
             <tr>
               <td width="200">Total Soal</td>
               <td width="20">:</td>
-              <td><strong><?= count($detailJawaban) ?></strong> soal</td>
+              <td><strong><?= $totalSoal ?></strong> soal</td>
             </tr>
             <tr>
               <td>Jawaban Benar</td>
               <td>:</td>
-              <td>
-                <strong><?= array_reduce($detailJawaban, function ($carry, $item) {
-                  return $carry + ($item['is_correct'] ? 1 : 0);
-                }, 0) ?></strong> soal
-              </td>
+              <td><strong><?= $jawabanBenar ?></strong> soal</td>
             </tr>
             <tr>
               <td>Standard Error Akhir</td>
@@ -145,7 +145,7 @@
         <i class="bi bi-info-circle"></i> Info Kolom
       </button>
     </div>
-    
+
     <div class="collapse" id="additionalInfoHelp">
       <div class="card-body bg-light">
         <h6 class="fw-bold">Penjelasan Kolom:</h6>
@@ -156,10 +156,12 @@
           <li><strong>SE</strong>: Standard Error</li>
           <li><strong>ΔSE</strong>: Perubahan Standard Error</li>
           <li><strong>θ</strong>: Theta/Kemampuan setelah menjawab soal</li>
+          <li><strong>Waktu Jawab</strong>: Jam berapa soal dijawab</li>
+          <li><strong>Durasi</strong>: Lama mengerjakan soal tersebut</li>
         </ul>
       </div>
     </div>
-    
+
     <div class="table-responsive">
       <table class="table mb-0">
         <thead>
@@ -170,6 +172,8 @@
             <th>Tingkat Kesulitan</th>
             <th>Jawaban</th>
             <th>Status</th>
+            <th>Waktu Jawab</th>
+            <th>Durasi</th>
             <th>Pi</th>
             <th>Qi</th>
             <th>Ii</th>
@@ -181,7 +185,7 @@
         <tbody>
           <?php foreach ($detailJawaban as $i => $jawaban): ?>
             <tr>
-              <td><?= $i + 1 ?></td>
+              <td><?= $jawaban['nomor_soal'] ?></td>
               <td><?= $jawaban['soal_id'] ?></td>
               <td><?= esc($jawaban['pertanyaan']) ?></td>
               <td><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
@@ -192,6 +196,12 @@
                 <?php else: ?>
                   <span class="badge bg-danger">Salah</span>
                 <?php endif; ?>
+              </td>
+              <td>
+                <small class="text-muted"><?= $jawaban['waktu_menjawab_format'] ?></small>
+              </td>
+              <td>
+                <small class="fw-bold text-info"><?= $jawaban['durasi_pengerjaan_format'] ?></small>
               </td>
               <td><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
               <td><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
@@ -206,7 +216,7 @@
     </div>
   </div>
 
-  <!-- Grafik Perkembangan -->
+  <!-- Grafik Perkembangan (tetap sama seperti sebelumnya) -->
   <div class="row mt-4">
     <div class="col-md-6">
       <div class="card border-0 shadow-sm">
@@ -230,21 +240,6 @@
     </div>
   </div>
 
-  <!-- Grafik Informasi -->
-  <div class="row mt-4">
-    <div class="col-md-12">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-transparent">
-          <h5 class="card-title mb-0">Fungsi Informasi Soal</h5>
-        </div>
-        <div class="card-body">
-          <canvas id="infoChart" height="300"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // Data untuk grafik theta dan SE
@@ -259,11 +254,7 @@
   const labels = <?= json_encode(array_map(function ($i) {
                     return 'Soal ' . ($i + 1);
                   }, range(0, count($detailJawaban) - 1))) ?>;
-  
-  // Data untuk grafik Fungsi Informasi
-  const infoData = <?= json_encode(array_map(function ($item) {
-                      return isset($item['ii_saat_ini']) ? $item['ii_saat_ini'] : null;
-                    }, $detailJawaban)) ?>;
+
 
   // Grafik Theta
   new Chart(document.getElementById('thetaChart'), {
@@ -330,38 +321,6 @@
       }
     }
   });
-  
-  // Grafik Fungsi Informasi
-  new Chart(document.getElementById('infoChart'), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Fungsi Informasi Soal',
-        data: infoData,
-        backgroundColor: '#36b9cc',
-        borderColor: '#2c9faf',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Fungsi Informasi Tiap Soal'
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: {
-            display: true,
-            text: 'Informasi'
-          }
-        }
-      }
-    }
-  });
+
 </script>
 <?= $this->endSection() ?>

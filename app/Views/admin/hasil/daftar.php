@@ -52,12 +52,12 @@
                             <div class="col-md-3">
                                 <select class="form-select" id="filterSekolah">
                                     <option value="">Semua Sekolah</option>
-                                    <?php 
+                                    <?php
                                     $sekolahUnique = array_unique(array_column($daftarUjian, 'nama_sekolah'));
-                                    foreach ($sekolahUnique as $sekolah): 
+                                    foreach ($sekolahUnique as $sekolah):
                                         if ($sekolah): ?>
                                             <option value="<?= esc($sekolah) ?>"><?= esc($sekolah) ?></option>
-                                        <?php endif;
+                                    <?php endif;
                                     endforeach; ?>
                                 </select>
                             </div>
@@ -80,11 +80,26 @@
                                                 </div>
                                                 <span class="badge bg-info"><?= esc($ujian['nama_kelas']) ?></span>
                                             </div>
-                                            
+
                                             <p class="card-text text-muted small">
                                                 <?= strlen($ujian['deskripsi']) > 100 ? substr(esc($ujian['deskripsi']), 0, 100) . '...' : esc($ujian['deskripsi']) ?>
                                             </p>
-                                            
+
+                                            <!-- Informasi Waktu -->
+                                            <div class="mb-3">
+                                                <div class="text-muted small">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span><i class="fas fa-calendar me-1"></i>Mulai:</span>
+                                                        <span><?= $ujian['tanggal_mulai_format'] ?></span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span><i class="fas fa-calendar-check me-1"></i>Selesai:</span>
+                                                        <span><?= $ujian['tanggal_selesai_format'] ?></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Statistik Peserta -->
                                             <div class="row text-center mb-3">
                                                 <div class="col-4">
                                                     <div class="border-end">
@@ -106,14 +121,33 @@
                                                 </div>
                                             </div>
 
+                                            <!-- Statistik Waktu -->
+                                            <?php if ($ujian['peserta_selesai'] > 0): ?>
+                                                <div class="mb-3">
+                                                    <div class="text-muted small">
+                                                        <div class="d-flex justify-content-between">
+                                                            <span><i class="fas fa-clock me-1"></i>Rata-rata:</span>
+                                                            <span class="fw-bold"><?= $ujian['rata_rata_durasi_format'] ?></span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span><i class="fas fa-lightning me-1"></i>Tercepat:</span>
+                                                            <span><?= $ujian['durasi_tercepat_format'] ?></span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span><i class="fas fa-hourglass me-1"></i>Terlama:</span>
+                                                            <span><?= $ujian['durasi_terlama_format'] ?></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+
                                             <div class="text-muted small mb-3">
                                                 <div><i class="fas fa-user me-1"></i> <?= esc($ujian['nama_guru']) ?></div>
                                                 <div><i class="fas fa-school me-1"></i> <?= esc($ujian['nama_sekolah']) ?></div>
-                                                <div><i class="fas fa-calendar me-1"></i> <?= date('d M Y', strtotime($ujian['tanggal_mulai'])) ?></div>
                                             </div>
-                                            
+
                                             <a href="<?= base_url('admin/hasil-ujian/siswa/' . $ujian['jadwal_id']) ?>"
-                                               class="btn btn-primary">
+                                                class="btn btn-primary">
                                                 <i class="fas fa-eye me-1"></i>Lihat Hasil
                                             </a>
                                         </div>
@@ -129,52 +163,52 @@
 </div>
 
 <script>
-// Filter functionality
-document.getElementById('searchUjian').addEventListener('keyup', filterCards);
-document.getElementById('filterSekolah').addEventListener('change', filterCards);
+    // Filter functionality
+    document.getElementById('searchUjian').addEventListener('keyup', filterCards);
+    document.getElementById('filterSekolah').addEventListener('change', filterCards);
 
-function filterCards() {
-    const searchText = document.getElementById('searchUjian').value.toLowerCase();
-    const sekolahFilter = document.getElementById('filterSekolah').value;
-    const cards = document.querySelectorAll('.col-md-6[data-sekolah]');
+    function filterCards() {
+        const searchText = document.getElementById('searchUjian').value.toLowerCase();
+        const sekolahFilter = document.getElementById('filterSekolah').value;
+        const cards = document.querySelectorAll('.col-md-6[data-sekolah]');
 
-    cards.forEach(card => {
-        const namaUjian = card.querySelector('.card-title').textContent.toLowerCase();
-        const sekolah = card.getAttribute('data-sekolah');
-        
-        const textMatch = !searchText || namaUjian.includes(searchText);
-        const sekolahMatch = !sekolahFilter || sekolah === sekolahFilter;
-        
-        card.style.display = (textMatch && sekolahMatch) ? '' : 'none';
-    });
-}
+        cards.forEach(card => {
+            const namaUjian = card.querySelector('.card-title').textContent.toLowerCase();
+            const sekolah = card.getAttribute('data-sekolah');
 
-function resetFilter() {
-    document.getElementById('searchUjian').value = '';
-    document.getElementById('filterSekolah').value = '';
-    filterCards();
-}
+            const textMatch = !searchText || namaUjian.includes(searchText);
+            const sekolahMatch = !sekolahFilter || sekolah === sekolahFilter;
+
+            card.style.display = (textMatch && sekolahMatch) ? '' : 'none';
+        });
+    }
+
+    function resetFilter() {
+        document.getElementById('searchUjian').value = '';
+        document.getElementById('filterSekolah').value = '';
+        filterCards();
+    }
 </script>
 
 <style>
-.border-end {
-    border-right: 1px solid #dee2e6 !important;
-}
-
-@media (max-width: 768px) {
     .border-end {
-        border-right: none !important;
-        border-bottom: 1px solid #dee2e6 !important;
-        margin-bottom: 0.5rem;
-        padding-bottom: 0.5rem;
+        border-right: 1px solid #dee2e6 !important;
     }
-    
-    .border-end:last-child {
-        border-bottom: none !important;
-        margin-bottom: 0;
-        padding-bottom: 0;
+
+    @media (max-width: 768px) {
+        .border-end {
+            border-right: none !important;
+            border-bottom: 1px solid #dee2e6 !important;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+
+        .border-end:last-child {
+            border-bottom: none !important;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
     }
-}
 </style>
 
 <?= $this->endSection() ?>

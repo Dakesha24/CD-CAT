@@ -7,7 +7,7 @@
           Platform asesmen formatif untuk pembelajaran Fisika yang adaptif.
         </p>
         <div class="social-links">
-          <a href="https://www.instagram.com/jauzaamalia" class="social-link" target="_blank"><i class="bi bi-instagram"></i></a>
+          <a href="https://www.instagram.com/phyfacat/" class="social-link" target="_blank"><i class="bi bi-instagram"></i></a>
           <a href="https://www.linkedin.com/in/jauza-amalia-906070328/?originalSubdomain=id" class="social-link" target="_blank"><i class="bi bi-linkedin"></i></a>
         </div>
       </div>

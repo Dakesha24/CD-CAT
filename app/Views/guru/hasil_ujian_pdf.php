@@ -184,20 +184,24 @@
                         <td>: <?= esc($hasil['nama_lengkap']) ?></td>
                     </tr>
                     <tr>
-                        <td>Nomor Peserta</td>
+                        <td>NIS</td>
                         <td>: <?= esc($hasil['nomor_peserta']) ?></td>
                     </tr>
                     <tr>
                         <td>Waktu Mulai</td>
-                        <td>: <?= date('d/m/Y H:i', strtotime($hasil['waktu_mulai'])) ?></td>
+                        <td>: <?= $hasil['waktu_mulai_format'] ?></td>
                     </tr>
                     <tr>
                         <td>Waktu Selesai</td>
-                        <td>: <?= date('d/m/Y H:i', strtotime($hasil['waktu_selesai'])) ?></td>
+                        <td>: <?= $hasil['waktu_selesai_format'] ?></td>
                     </tr>
                     <tr>
-                        <td>Durasi</td>
-                        <td>: <?= date('H:i:s', strtotime($hasil['waktu_selesai']) - strtotime($hasil['waktu_mulai'])) ?></td>
+                        <td>Total Durasi</td>
+                        <td>: <?= $hasil['durasi_total_format'] ?></td>
+                    </tr>
+                    <tr>
+                        <td>Rata-rata/Soal</td>
+                        <td>: <?= $rataRataWaktuFormat ?></td>
                     </tr>
                 </table>
             </div>
@@ -237,9 +241,7 @@
                     </tr>
                     <tr>
                         <td>Jawaban Benar</td>
-                        <td>: <b><?= array_reduce($detailJawaban, function ($carry, $item) {
-                            return $carry + ($item['is_correct'] ? 1 : 0);
-                          }, 0) ?></b> soal</td>
+                        <td>: <b><?= $jawabanBenar ?></b> soal</td>
                     </tr>
                     <tr>
                         <td>Standard Error Akhir</td>
@@ -267,16 +269,6 @@
             </div>
         </div>
         
-        <div class="chart-row">
-            <div class="chart-col">
-                <h3>Grafik Fungsi Informasi</h3>
-                <div class="chart-container">
-                    <canvas id="infoChart"></canvas>
-                </div>
-                <div id="infoChartImage"></div>
-            </div>
-        </div>
-        
         <h2>Detail Jawaban</h2>
         <table class="detail">
             <thead>
@@ -287,6 +279,8 @@
                     <th>Tingkat Kesulitan</th>
                     <th>Jawaban</th>
                     <th>Status</th>
+                    <th>Waktu Jawab</th>
+                    <th>Durasi</th>
                     <th>Pi</th>
                     <th>Qi</th>
                     <th>Ii</th>
@@ -298,7 +292,7 @@
             <tbody>
                 <?php foreach ($detailJawaban as $i => $jawaban): ?>
                 <tr>
-                    <td class="text-center"><?= $i + 1 ?></td>
+                    <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
                     <td class="text-center"><?= $jawaban['soal_id'] ?></td>
                     <td><?= esc($jawaban['pertanyaan']) ?></td>
                     <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
@@ -306,6 +300,8 @@
                     <td class="text-center <?= $jawaban['is_correct'] ? 'text-success' : 'text-danger' ?>">
                         <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
                     </td>
+                    <td class="text-center"><?= $jawaban['waktu_menjawab_format'] ?></td>
+                    <td class="text-center"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
                     <td class="text-center"><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
                     <td class="text-center"><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
                     <td class="text-center"><?= isset($jawaban['ii_saat_ini']) ? number_format($jawaban['ii_saat_ini'], 3) : '-' ?></td>
@@ -328,9 +324,9 @@
     
     <script>
         // Data untuk grafik
-        const labels = <?= json_encode(array_map(function ($i) {
-                        return 'Soal ' . ($i + 1);
-                      }, range(0, count($detailJawaban) - 1))) ?>;
+        const labels = <?= json_encode(array_map(function ($item) {
+                        return 'Soal ' . $item['nomor_soal'];
+                      }, $detailJawaban)) ?>;
         
         const thetaData = <?= json_encode(array_map(function ($item) {
                             return $item['theta_saat_ini'];
@@ -339,11 +335,7 @@
         const seData = <?= json_encode(array_map(function ($item) {
                           return $item['se_saat_ini'];
                         }, $detailJawaban)) ?>;
-                        
-        // Data untuk grafik Fungsi Informasi
-        const infoData = <?= json_encode(array_map(function ($item) {
-                          return isset($item['ii_saat_ini']) ? $item['ii_saat_ini'] : null;
-                        }, $detailJawaban)) ?>;
+                    
 
         // Fungsi untuk membuat grafik Theta
         function createThetaChart() {
@@ -416,82 +408,35 @@
                 }
             });
         }
-        
-        // Fungsi untuk membuat grafik Informasi
-        function createInfoChart() {
-            const ctx = document.getElementById('infoChart').getContext('2d');
-            return new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Fungsi Informasi Soal',
-                        data: infoData,
-                        backgroundColor: '#36b9cc',
-                        borderColor: '#2c9faf',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Fungsi Informasi Tiap Soal'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Informasi'
-                            }
-                        }
-                    }
-                }
-            });
-        }
 
         // Fungsi untuk mengkonversi chart ke gambar
         async function chartToImage(chart, containerId) {
-            // Pastikan chart selesai dirender
             await new Promise(resolve => setTimeout(resolve, 100));
             
-            // Konversi canvas chart ke gambar
             const canvas = chart.canvas;
             
-            // Gunakan html2canvas untuk membuat gambar dari canvas
             html2canvas(canvas).then(canvas => {
                 const container = document.getElementById(containerId);
                 
-                // Tambahkan gambar ke div
                 const img = document.createElement('img');
                 img.src = canvas.toDataURL('image/png');
                 img.style.width = '100%';
                 img.style.maxWidth = '100%';
                 container.appendChild(img);
                 
-                // Sembunyikan canvas asli saat mencetak
                 chart.canvas.parentNode.style.display = 'none';
             });
         }
 
         // Jalankan saat window load
         window.onload = async function() {
-            // Buat chart
             const thetaChart = createThetaChart();
             const seChart = createSEChart();
-            const infoChart = createInfoChart();
             
-            // Konversi chart ke gambar untuk printing
             await chartToImage(thetaChart, 'thetaChartImage');
             await chartToImage(seChart, 'seChartImage');
-            await chartToImage(infoChart, 'infoChartImage');
             
-            // Tunggu sedikit untuk memastikan gambar sudah dimuat
             setTimeout(() => {
-                // Otomatis print saat halaman dimuat
                 window.print();
             }, 1000);
         }

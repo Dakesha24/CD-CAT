@@ -10,12 +10,12 @@
                 <!-- Contact Form Card -->
                 <div class="contact-card">
                     <div class="contact-card-header">
-                        <i class="bi bi-chat-quote-fill header-icon"></i>
+                        <i class="bi bi-envelope-fill header-icon"></i>
                         <h4>Kritik dan Saran Penggunaan Asesmen PHY-FA-CAT</h4>
                     </div>
 
                     <div class="contact-card-body">
-                        <form id="contactForm" onsubmit="sendToWhatsApp(event)">
+                        <form id="contactForm" onsubmit="sendEmail(event)">
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control custom-input" id="name" name="name" placeholder="Nama" required>
                                 <label for="name"><i class="bi bi-person"></i> Nama</label>
@@ -32,9 +32,18 @@
                             </div>
 
                             <button type="submit" class="custom-button">
-                                <i class="bi bi-whatsapp"></i> Kirim via WhatsApp
+                                <i class="bi bi-envelope-paper"></i> Kirim Email
                             </button>
                         </form>
+
+                        <!-- Alternative: Direct Email Button -->
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">atau</small>
+                            <br>
+                            <a href="mailto:jauzaamalia@upi.edu?subject=Kritik dan Saran PHY-FA-CAT" class="btn btn-outline-light btn-sm mt-2">
+                                <i class="bi bi-envelope"></i> Email Langsung
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -76,7 +85,7 @@
 </div>
 
 <script>
-    function sendToWhatsApp(e) {
+    function sendEmail(e) {
         e.preventDefault();
 
         // Ambil nilai dari form
@@ -84,20 +93,52 @@
         const email = document.getElementById('email').value;
         const message = document.getElementById('message').value;
 
-        // Format pesan untuk WhatsApp
-        const whatsappMessage = `*Kritik dan Saran PHY-FA-CAT*%0A%0A` +
-            `*Nama:* ${name}%0A` +
-            `*Email:* ${email}%0A` +
-            `*Pesan:*%0A${message}`;
+        // Format subjek dan body email
+        const subject = encodeURIComponent('Kritik dan Saran PHY-FA-CAT');
+        const body = encodeURIComponent(
+            `Nama: ${name}\n` +
+            `Email: ${email}\n\n` +
+            `Pesan:\n${message}\n\n` +
+            `---\n` +
+            `Dikirim melalui form kontak PHY-FA-CAT`
+        );
 
-        // Nomor WhatsApp (gunakan nomor yang ada di contact info)
-        const phoneNumber = '6285794124143'; // Sesuaikan dengan nomor yang ditampilkan (tanpa +)
+        // Email tujuan
+        const toEmail = 'jauzaamalia@upi.edu';
 
-        // Buat URL WhatsApp
-        const whatsappURL = `https://wa.me/${phoneNumber}?text=${whatsappMessage}`;
+        // Buat mailto URL
+        const mailtoURL = `mailto:${toEmail}?subject=${subject}&body=${body}`;
 
-        // Buka WhatsApp di tab baru
-        window.open(whatsappURL, '_blank');
+        // Buka email client default
+        window.location.href = mailtoURL;
+
+        // Tampilkan pesan konfirmasi
+        showAlert('Email client Anda akan terbuka. Silakan kirim email dari aplikasi email Anda.', 'success');
+    }
+
+    function showAlert(message, type) {
+        // Hapus alert sebelumnya jika ada
+        const existingAlert = document.querySelector('.custom-alert');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+
+        // Buat alert baru
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert custom-alert alert-${type} mt-3`;
+        alertDiv.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+            ${message}
+        `;
+
+        // Tambahkan alert setelah form
+        const form = document.getElementById('contactForm');
+        form.parentNode.insertBefore(alertDiv, form.nextSibling);
+
+        // Hapus alert setelah 5 detik
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
     }
 </script>
 
@@ -174,11 +215,24 @@
         border-radius: 50px;
         transition: all 0.3s ease;
         width: 100%;
+        font-weight: 500;
     }
 
     .custom-button:hover {
         background: rgba(255, 255, 255, 0.3);
         transform: translateY(-2px);
+        color: white;
+    }
+
+    .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
     }
 
     .info-card {
@@ -222,14 +276,21 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        border-radius: 10px;
     }
 
     .alert-success {
         background: rgba(25, 135, 84, 0.2);
+        border-left: 4px solid #198754;
     }
 
     .alert-danger {
         background: rgba(220, 53, 69, 0.2);
+        border-left: 4px solid #dc3545;
+    }
+
+    .text-muted {
+        color: rgba(255, 255, 255, 0.6) !important;
     }
 
     @media (max-width: 768px) {

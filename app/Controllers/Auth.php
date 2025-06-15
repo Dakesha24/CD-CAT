@@ -89,11 +89,18 @@ class Auth extends Controller
           'username' => $this->request->getPost('username'),
           'email' => $this->request->getPost('email'),
           'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-          'role' => 'siswa'
+          'role' => 'siswa',
+          'status' => 'active'  // Tambahkan ini
         ];
 
-        $this->userModel->save($data);
-        return redirect()->to('/login')->with('success', 'Registration successful! Please login.');
+        // Cek apakah save berhasil
+        if ($this->userModel->save($data)) {
+          return redirect()->to('/login')->with('success', 'Registration successful! Please login.');
+        } else {
+          // Jika gagal, ambil error dari model
+          $errors = $this->userModel->errors();
+          return redirect()->back()->withInput()->with('errors', $errors);
+        }
       } else {
         return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
       }

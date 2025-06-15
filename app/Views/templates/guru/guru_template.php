@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Guru - CBT Adaptif</title>
+    <title>Dashboard Guru - Phy-FA-CAT</title>
+
+    <link rel="icon" type="image/png" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="apple-touch-icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="shortcut icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -156,7 +160,7 @@
                 </button>
                 <a class="navbar-brand" href="<?= base_url('guru/dashboard') ?>">
                     <i class="bi bi-mortarboard-fill me-2"></i>
-                    CBT Adaptif
+                    Phy-FA-CAT
                 </a>
             </div>
 
@@ -187,45 +191,51 @@
     <div class="nav-overlay" id="navOverlay"></div>
 
     <div class="sidebar" id="sidebar">
-    <ul class="nav flex-column mt-3">
-        <li class="nav-item">
-            <a href="<?= base_url('guru/dashboard') ?>" class="nav-link <?= current_url() == base_url('guru/dashboard') ? 'active' : '' ?>">
-                <i class="bi bi-house-door"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('guru/jenis-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/jenis-ujian') ? 'active' : '' ?>">
-                <i class="bi bi-journal-text"></i>
-                <span>Jenis Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('guru/ujian') ?>" class="nav-link <?= current_url() == base_url('guru/ujian') ? 'active' : '' ?>">
-                <i class="bi bi-file-earmark-text"></i>
-                <span>Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('guru/jadwal-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/jadwal-ujian') ? 'active' : '' ?>">
-                <i class="bi bi-calendar-event"></i>
-                <span>Jadwal Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('guru/hasil-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/hasil-ujian') ? 'active' : '' ?>">
-                <i class="bi bi-clipboard-data"></i>
-                <span>Hasil Ujian</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="<?= base_url('guru/pengumuman') ?>" class="nav-link <?= current_url() == base_url('guru/pengumuman') ? 'active' : '' ?>">
-                <i class="bi bi-megaphone"></i>
-                <span>Pengumuman</span>
-            </a>
-        </li>
-    </ul>
-</div>
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a href="<?= base_url('guru/dashboard') ?>" class="nav-link <?= current_url() == base_url('guru/dashboard') ? 'active' : '' ?>">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/jenis-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/jenis-ujian') ? 'active' : '' ?>">
+                    <i class="bi bi-journal-text"></i>
+                    <span>Jenis Ujian</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/bank-soal') ?>" class="nav-link <?= current_url() == base_url('guru/bank-soal') ? 'active' : '' ?>">
+                    <i class="bi bi-bank"></i>
+                    <span>Bank Soal</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/ujian') ?>" class="nav-link <?= current_url() == base_url('guru/ujian') ? 'active' : '' ?>">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Ujian</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/jadwal-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/jadwal-ujian') ? 'active' : '' ?>">
+                    <i class="bi bi-calendar-event"></i>
+                    <span>Jadwal Ujian</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/hasil-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/hasil-ujian') ? 'active' : '' ?>">
+                    <i class="bi bi-clipboard-data"></i>
+                    <span>Hasil Ujian</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= base_url('guru/pengumuman') ?>" class="nav-link <?= current_url() == base_url('guru/pengumuman') ? 'active' : '' ?>">
+                    <i class="bi bi-megaphone"></i>
+                    <span>Pengumuman</span>
+                </a>
+            </li>
+        </ul>
+    </div>
 
     <main class="content-wrapper">
         <?= $this->renderSection('content') ?>

@@ -68,17 +68,6 @@
         .incorrect {
             color: red;
         }
-
-        .chart-container {
-            width: 600px;
-            height: 400px;
-            margin: 20px auto;
-        }
-
-        .chart-image {
-            width: 100%;
-            height: auto;
-        }
     </style>
 </head>
 
@@ -108,7 +97,7 @@
             <td>Jenis Ujian</td>
             <td>:</td>
             <td><?= esc($hasil['nama_jenis']) ?></td>
-            <td>Nomor Peserta</td>
+            <td>NIS</td>
             <td>:</td>
             <td><?= esc($hasil['nomor_peserta']) ?></td>
         </tr>
@@ -118,7 +107,7 @@
             <td><?= esc($hasil['nama_kelas']) ?></td>
             <td>Waktu Mulai</td>
             <td>:</td>
-            <td><?= date('d/m/Y H:i', strtotime($hasil['waktu_mulai'])) ?></td>
+            <td><?= $hasil['waktu_mulai_format'] ?></td>
         </tr>
         <tr>
             <td></td>
@@ -126,15 +115,23 @@
             <td></td>
             <td>Waktu Selesai</td>
             <td>:</td>
-            <td><?= date('d/m/Y H:i', strtotime($hasil['waktu_selesai'])) ?></td>
+            <td><?= $hasil['waktu_selesai_format'] ?></td>
         </tr>
         <tr>
             <td></td>
             <td></td>
             <td></td>
-            <td>Durasi</td>
+            <td>Total Durasi</td>
             <td>:</td>
-            <td><?= date('H:i:s', strtotime($hasil['waktu_selesai']) - strtotime($hasil['waktu_mulai'])) ?></td>
+            <td><?= $hasil['durasi_total_format'] ?></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>Rata-rata/Soal</td>
+            <td>:</td>
+            <td><?= $rataRataWaktuFormat ?></td>
         </tr>
     </table>
 
@@ -163,9 +160,7 @@
             <td class="highlight"><?= number_format($finalScore, 1) ?></td>
             <td>Jawaban Benar</td>
             <td>:</td>
-            <td><?= array_reduce($detailJawaban, function ($carry, $item) {
-                    return $carry + ($item['is_correct'] ? 1 : 0);
-                }, 0) ?> soal</td>
+            <td><?= $jawabanBenar ?> soal</td>
         </tr>
         <tr>
             <td>Nilai (Skala 0-100)</td>
@@ -187,6 +182,8 @@
                 <th width="60">Tingkat Kesulitan</th>
                 <th width="50">Jawaban</th>
                 <th width="60">Status</th>
+                <th width="80">Waktu Jawab</th>
+                <th width="80">Durasi</th>
                 <th width="50">Pi</th>
                 <th width="50">Qi</th>
                 <th width="50">Ii</th>
@@ -196,11 +193,9 @@
             </tr>
         </thead>
         <tbody>
-            <?php
-            foreach ($detailJawaban as $i => $jawaban):
-            ?>
+            <?php foreach ($detailJawaban as $i => $jawaban): ?>
                 <tr>
-                    <td class="text-center"><?= $i + 1 ?></td>
+                    <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
                     <td class="text-center"><?= $jawaban['soal_id'] ?></td>
                     <td><?= esc($jawaban['pertanyaan']) ?></td>
                     <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
@@ -208,6 +203,8 @@
                     <td class="text-center <?= $jawaban['is_correct'] ? 'correct' : 'incorrect' ?>">
                         <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
                     </td>
+                    <td class="text-center"><?= $jawaban['waktu_menjawab_format'] ?></td>
+                    <td class="text-center"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
                     <td class="text-center"><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
                     <td class="text-center"><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
                     <td class="text-center"><?= isset($jawaban['ii_saat_ini']) ? number_format($jawaban['ii_saat_ini'], 3) : '-' ?></td>
@@ -220,97 +217,60 @@
     </table>
 
     <h2>GRAFIK PERKEMBANGAN</h2>
-    <div class="chart-container">
-        <h3>Grafik Theta (θ)</h3>
-        <!-- Kita perlu membuat chart dengan Canvas API -->
-        <div id="thetaChartContainer" style="width: 100%; height: 300px;">
-            <?php
-            // Data untuk grafik
-            $thetaValues = array_map(function ($item) {
-                return $item['theta_saat_ini'];
-            }, $detailJawaban);
+    <div style="margin: 20px 0;">
+        <h3>Data Theta (θ)</h3>
+        <?php
+        // Data untuk grafik
+        $thetaValues = array_map(function ($item) {
+            return $item['theta_saat_ini'];
+        }, $detailJawaban);
 
-            $labelValues = array_map(function ($i) {
-                return 'Soal ' . ($i + 1);
-            }, range(0, count($detailJawaban) - 1));
+        $labelValues = array_map(function ($item) {
+            return 'Soal ' . $item['nomor_soal'];
+        }, $detailJawaban);
 
-            // Buat tabel representasi data untuk Excel
-            echo "<table class='detail'>";
-            echo "<tr><th>Soal</th>";
-            foreach ($labelValues as $label) {
-                echo "<th>$label</th>";
-            }
-            echo "</tr>";
+        // Buat tabel representasi data untuk Excel
+        echo "<table class='detail'>";
+        echo "<tr><th>Soal</th>";
+        foreach ($labelValues as $label) {
+            echo "<th>$label</th>";
+        }
+        echo "</tr>";
 
-            echo "<tr><td>Theta (θ)</td>";
-            foreach ($thetaValues as $value) {
-                echo "<td>" . number_format($value, 3) . "</td>";
-            }
-            echo "</tr>";
-            echo "</table>";
-            ?>
-        </div>
-        <h3>Grafik Standard Error (SE)</h3>
-        <div id="seChartContainer" style="width: 100%; height: 300px;">
-            <?php
-            // Data untuk grafik
-            $seValues = array_map(function ($item) {
-                return $item['se_saat_ini'];
-            }, $detailJawaban);
+        echo "<tr><td>Theta (θ)</td>";
+        foreach ($thetaValues as $value) {
+            echo "<td>" . number_format($value, 3) . "</td>";
+        }
+        echo "</tr>";
 
-            // Buat tabel representasi data untuk Excel
-            echo "<table class='detail'>";
-            echo "<tr><th>Soal</th>";
-            foreach ($labelValues as $label) {
-                echo "<th>$label</th>";
-            }
-            echo "</tr>";
+        echo "<tr><td>Durasi (detik)</td>";
+        foreach ($detailJawaban as $jawaban) {
+            echo "<td>" . $jawaban['durasi_pengerjaan_detik'] . "</td>";
+        }
+        echo "</tr>";
+        echo "</table>";
+        ?>
 
-            echo "<tr><td>Standard Error (SE)</td>";
-            foreach ($seValues as $value) {
-                echo "<td>" . number_format($value, 3) . "</td>";
-            }
-            echo "</tr>";
-            echo "</table>";
-            ?>
-        </div>
+        <h3>Data Standard Error (SE)</h3>
+        <?php
+        $seValues = array_map(function ($item) {
+            return $item['se_saat_ini'];
+        }, $detailJawaban);
 
-        <h3>Grafik Fungsi Informasi</h3>
-        <div id="infoChartContainer" style="width: 100%; height: 300px;">
-            <?php
-            // Data untuk grafik info
-            $infoValues = [];
-            foreach ($detailJawaban as $jawaban) {
-                if (isset($jawaban['ii_saat_ini'])) {
-                    $infoValues[] = $jawaban['ii_saat_ini'];
-                } else {
-                    // Jika ii_saat_ini tidak ada, hitung secara manual
-                    $e = 2.71828;
-                    $theta = $jawaban['theta_saat_ini'];
-                    $b = $jawaban['tingkat_kesulitan'];
-                    $Pi = round(pow($e, ($theta - $b)) / (1 + pow($e, ($theta - $b))), 3);
-                    $Qi = round(1 - $Pi, 3);
-                    $Ii = round($Pi * $Qi, 3);
-                    $infoValues[] = $Ii;
-                }
-            }
+        echo "<table class='detail'>";
+        echo "<tr><th>Soal</th>";
+        foreach ($labelValues as $label) {
+            echo "<th>$label</th>";
+        }
+        echo "</tr>";
 
-            // Buat tabel representasi data untuk Excel
-            echo "<table class='detail'>";
-            echo "<tr><th>Soal</th>";
-            foreach ($labelValues as $label) {
-                echo "<th>$label</th>";
-            }
-            echo "</tr>";
-
-            echo "<tr><td>Fungsi Informasi</td>";
-            foreach ($infoValues as $value) {
-                echo "<td>" . number_format($value, 3) . "</td>";
-            }
-            echo "</tr>";
-            echo "</table>";
-            ?>
-        </div>
+        echo "<tr><td>Standard Error (SE)</td>";
+        foreach ($seValues as $value) {
+            echo "<td>" . number_format($value, 3) . "</td>";
+        }
+        echo "</tr>";
+        echo "</table>";
+        ?>
     </div>
 
     <div style="text-align: right; margin-top: 30px;">

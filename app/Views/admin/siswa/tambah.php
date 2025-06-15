@@ -78,16 +78,24 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="kelas_id" class="form-label">Kelas *</label>
-                  <select class="form-select" id="kelas_id" name="kelas_id" required>
-                    <option value="">Pilih Kelas</option>
-                    <?php foreach ($kelas as $k): ?>
-                      <option value="<?= $k['kelas_id'] ?>"
-                        <?= (old('kelas_id') == $k['kelas_id']) ? 'selected' : '' ?>>
-                        <?= esc($k['nama_kelas'] . ' - ' . $k['tahun_ajaran']) ?>
+                  <label for="sekolah_id" class="form-label">Sekolah *</label>
+                  <select class="form-select" id="sekolah_id" name="sekolah_id" required onchange="filterKelas()">
+                    <option value="">Pilih Sekolah</option>
+                    <?php foreach ($sekolah as $s): ?>
+                      <option value="<?= $s['sekolah_id'] ?>"
+                        <?= (old('sekolah_id') == $s['sekolah_id']) ? 'selected' : '' ?>>
+                        <?= esc($s['nama_sekolah']) ?>
                       </option>
                     <?php endforeach; ?>
                   </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="kelas_id" class="form-label">Kelas *</label>
+                  <select class="form-select" id="kelas_id" name="kelas_id" required disabled>
+                    <option value="">Pilih Sekolah Terlebih Dahulu</option>
+                  </select>
+                  <div class="form-text">Pilih sekolah terlebih dahulu untuk melihat kelas yang tersedia</div>
                 </div>
               </div>
             </div>
@@ -116,22 +124,28 @@
 
           <form id="batchForm">
             <div class="row">
-              <div class="col-md-4">
-                <label for="batch_kelas" class="form-label">Kelas</label>
-                <select class="form-select" id="batch_kelas" required>
-                  <option value="">Pilih Kelas</option>
-                  <?php foreach ($kelas as $k): ?>
-                    <option value="<?= $k['kelas_id'] ?>">
-                      <?= esc($k['nama_kelas'] . ' - ' . $k['tahun_ajaran']) ?>
+              <div class="col-md-3">
+                <label for="batch_sekolah" class="form-label">Sekolah</label>
+                <select class="form-select" id="batch_sekolah" required onchange="filterKelasBatch()">
+                  <option value="">Pilih Sekolah</option>
+                  <?php foreach ($sekolah as $s): ?>
+                    <option value="<?= $s['sekolah_id'] ?>">
+                      <?= esc($s['nama_sekolah']) ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
+                <label for="batch_kelas" class="form-label">Kelas</label>
+                <select class="form-select" id="batch_kelas" required disabled>
+                  <option value="">Pilih Sekolah Dulu</option>
+                </select>
+              </div>
+              <div class="col-md-3">
                 <label for="batch_jumlah" class="form-label">Jumlah Siswa</label>
                 <input type="number" class="form-control" id="batch_jumlah" min="1" max="50" value="10">
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="batch_prefix" class="form-label">Prefix No. Peserta</label>
                 <input type="text" class="form-control" id="batch_prefix" value="SISWA" maxlength="10">
               </div>
@@ -171,27 +185,88 @@
 </div>
 
 <script>
-  function generateBatch() {
+// Data kelas dari PHP
+const kelasData = <?= json_encode($kelas) ?>;
+
+function filterKelas() {
+    const sekolahId = document.getElementById('sekolah_id').value;
+    const kelasSelect = document.getElementById('kelas_id');
+    
+    // Clear existing options
+    kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
+    
+    if (sekolahId) {
+        kelasSelect.disabled = false;
+        
+        // Filter kelas berdasarkan sekolah yang dipilih
+        const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
+        
+        filteredKelas.forEach(kelas => {
+            const option = new Option(
+                `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
+                kelas.kelas_id
+            );
+            kelasSelect.add(option);
+        });
+        
+        // Restore selected value if exists (for edit form)
+        const oldKelasId = '<?= old('kelas_id') ?>';
+        if (oldKelasId) {
+            kelasSelect.value = oldKelasId;
+        }
+    } else {
+        kelasSelect.disabled = true;
+        kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
+    }
+}
+
+function filterKelasBatch() {
+    const sekolahId = document.getElementById('batch_sekolah').value;
+    const kelasSelect = document.getElementById('batch_kelas');
+    
+    // Clear existing options
+    kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
+    
+    if (sekolahId) {
+        kelasSelect.disabled = false;
+        
+        // Filter kelas berdasarkan sekolah yang dipilih
+        const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
+        
+        filteredKelas.forEach(kelas => {
+            const option = new Option(
+                `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
+                kelas.kelas_id
+            );
+            kelasSelect.add(option);
+        });
+    } else {
+        kelasSelect.disabled = true;
+        kelasSelect.innerHTML = '<option value="">Pilih Sekolah Dulu</option>';
+    }
+}
+
+function generateBatch() {
     const kelas = document.getElementById('batch_kelas').value;
     const jumlah = parseInt(document.getElementById('batch_jumlah').value);
     const prefix = document.getElementById('batch_prefix').value;
 
     if (!kelas || !jumlah || !prefix) {
-      alert('Harap lengkapi semua field');
-      return;
+        alert('Harap lengkapi semua field');
+        return;
     }
 
     const tableBody = document.getElementById('batchTable');
     tableBody.innerHTML = '';
 
     for (let i = 1; i <= jumlah; i++) {
-      const num = i.toString().padStart(3, '0');
-      const username = `${prefix.toLowerCase()}${num}`;
-      const email = `${username}@sekolah.com`;
-      const nama = `${prefix} ${num}`;
-      const noPeserta = `${prefix}${num}`;
+        const num = i.toString().padStart(3, '0');
+        const username = `${prefix.toLowerCase()}${num}`;
+        const email = `${username}@sekolah.com`;
+        const nama = `${prefix} ${num}`;
+        const noPeserta = `${prefix}${num}`;
 
-      const row = `
+        const row = `
             <tr>
                 <td>${username}</td>
                 <td>${email}</td>
@@ -199,23 +274,31 @@
                 <td>${noPeserta}</td>
             </tr>
         `;
-      tableBody.innerHTML += row;
+        tableBody.innerHTML += row;
     }
 
     document.getElementById('batchPreview').style.display = 'block';
-  }
+}
 
-  function createBatch() {
+function createBatch() {
     const kelas = document.getElementById('batch_kelas').value;
     const jumlah = parseInt(document.getElementById('batch_jumlah').value);
     const prefix = document.getElementById('batch_prefix').value;
 
     if (confirm(`Yakin ingin membuat ${jumlah} siswa sekaligus?`)) {
-      // Implementasi AJAX untuk create batch
-      // Untuk sementara, redirect ke halaman dengan parameter
-      window.location.href = `<?= base_url('admin/siswa/batch') ?>?kelas=${kelas}&jumlah=${jumlah}&prefix=${prefix}`;
+        // Implementasi AJAX untuk create batch
+        // Untuk sementara, redirect ke halaman dengan parameter
+        window.location.href = `<?= base_url('admin/siswa/batch') ?>?kelas=${kelas}&jumlah=${jumlah}&prefix=${prefix}`;
     }
-  }
+}
+
+// Trigger filter when page loads if sekolah is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    const sekolahId = document.getElementById('sekolah_id').value;
+    if (sekolahId) {
+        filterKelas();
+    }
+});
 </script>
 
 <?= $this->endSection() ?>

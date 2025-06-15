@@ -1,64 +1,381 @@
 <?= $this->extend('templates/guru/guru_template') ?>
 
-<?= $this->section('content') ?>
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 py-5">
-        <div>
-            <h2 class="mb-1"><?= esc($ujian['nama_ujian']) ?></h2>
-            <p class="text-muted mb-0">
-                <?= esc($ujian['nama_jenis']) ?> - <?= esc($ujian['nama_kelas']) ?>
-            </p>
-        </div>
-        <a href="<?= base_url('guru/hasil-ujian') ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Kembali
-        </a>
-    </div>
+<?= $this->section('title') ?>Hasil Ujian Siswa<?= $this->endSection() ?>
 
-    <div class="card border-0 shadow-sm">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Nama Siswa</th>
-                        <th>No. Peserta</th>
-                        <th>Waktu Selesai</th>
-                        <th>Durasi</th>
-                        <th>Soal Dikerjakan</th>
-                        <th>Jawaban Benar</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($daftarSiswa as $i => $siswa): ?>
-                        <tr>
-                            <td><?= $i + 1 ?></td>
-                            <td><?= esc($siswa['nama_lengkap']) ?></td>
-                            <td><?= esc($siswa['nomor_peserta']) ?></td>
-                            <td><?= date('d/m/Y H:i', strtotime($siswa['waktu_selesai'])) ?></td>
-                            <td><?= date('H:i:s', strtotime($siswa['waktu_selesai']) - strtotime($siswa['waktu_mulai'])) ?></td>
-                            <td><?= $siswa['jumlah_soal'] ?></td>
-                            <td>
-                                <span class="badge bg-success">
-                                    <?= $siswa['jawaban_benar'] ?>/<?= $siswa['jumlah_soal'] ?>
-                                    <?php if($siswa['jumlah_soal'] > 0): ?>
-                                        (<?= round(($siswa['jawaban_benar']/$siswa['jumlah_soal'])*100) ?>%)
-                                    <?php else: ?>
-                                        (0%)
-                                    <?php endif; ?>
-                                </span>
-                            </td>
-                            <td>
-                                <a href="<?= base_url('guru/hasil-ujian/detail/' . $siswa['peserta_ujian_id']) ?>" 
-                                   class="btn btn-sm btn-primary">
-                                    Detail
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+<?= $this->section('content') ?>
+<br><br><br>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header Info Ujian -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-chart-line"></i> Hasil Ujian: <?= esc($ujian['nama_ujian']) ?>
+                    </h4>
+                    <a href="<?= base_url('guru/hasil-ujian') ?>" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Kembali
+                    </a>
+                </div>
+                <div class="card-body">
+                    <?php if (session()->getFlashdata('success')): ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <?= session()->getFlashdata('success') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (session()->getFlashdata('error')): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <?= session()->getFlashdata('error') ?>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Jenis Ujian:</strong></td>
+                                    <td><?= esc($ujian['nama_jenis']) ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Kelas:</strong></td>
+                                    <td><?= esc($ujian['nama_kelas']) ?> - <?= esc($ujian['tahun_ajaran']) ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sekolah:</strong></td>
+                                    <td><?= esc($ujian['nama_sekolah']) ?></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Guru:</strong></td>
+                                    <td><?= esc($ujian['nama_guru']) ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Jadwal Ujian:</strong></td>
+                                    <td><?= $ujian['tanggal_mulai_format'] ?> - <?= $ujian['tanggal_selesai_format'] ?></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Kode Akses:</strong></td>
+                                    <td><code><?= esc($ujian['kode_akses']) ?></code></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($ujian['deskripsi'])): ?>
+                        <div class="mt-3">
+                            <strong>Deskripsi:</strong>
+                            <p class="text-muted mb-0"><?= nl2br(esc($ujian['deskripsi'])) ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Hasil Siswa -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> Hasil Siswa (<?= count($hasilSiswa) ?>)
+                    </h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="exportHasil()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="printHasil()">
+                            <i class="fas fa-print me-1"></i>Print
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filter -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" id="searchSiswa" placeholder="Cari nama/nomor peserta...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filterStatus">
+                                <option value="">Semua Status</option>
+                                <option value="selesai">Selesai</option>
+                                <option value="sedang_mengerjakan">Sedang Mengerjakan</option>
+                                <option value="belum_mulai">Belum Mulai</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary" onclick="resetFilter()">
+                                <i class="fas fa-redo me-1"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statistik -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h4><?= count(array_filter($hasilSiswa, fn($s) => $s['status'] === 'selesai')) ?></h4>
+                                    <p class="mb-0">Selesai</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h4><?= count(array_filter($hasilSiswa, fn($s) => $s['status'] === 'sedang_mengerjakan')) ?></h4>
+                                    <p class="mb-0">Mengerjakan</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body text-center">
+                                    <h4><?= count(array_filter($hasilSiswa, fn($s) => $s['status'] === 'belum_mulai')) ?></h4>
+                                    <p class="mb-0">Belum Mulai</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <?php
+                                    $skorSelesai = array_filter($hasilSiswa, fn($s) => $s['status'] === 'selesai' && $s['skor'] !== null);
+                                    $rataRata = count($skorSelesai) > 0 ? array_sum(array_column($skorSelesai, 'skor')) / count($skorSelesai) : 0;
+                                    ?>
+                                    <h4><?= round($rataRata, 1) ?></h4>
+                                    <p class="mb-0">Rata-rata Skor</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Hasil -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tableHasil">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>No</th>
+                                    <th>NIS</th>
+                                    <th>Nama Siswa</th>
+                                    <th>Status</th>
+                                    <th>Waktu Mulai</th>
+                                    <th>Waktu Selesai</th>
+                                    <th>Durasi Total</th>
+                                    <th>Rata-rata/Soal</th>
+                                    <th>Skor</th>
+                                    <th>Benar/Total</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($hasilSiswa as $index => $siswa): ?>
+                                    <tr data-status="<?= $siswa['status'] ?>">
+                                        <td><?= $index + 1 ?></td>
+                                        <td><strong><?= esc($siswa['nomor_peserta']) ?></strong></td>
+                                        <td><?= esc($siswa['nama_lengkap']) ?></td>
+                                        <td>
+                                            <?php
+                                            $statusClass = '';
+                                            $statusText = '';
+                                            switch ($siswa['status']) {
+                                                case 'selesai':
+                                                    $statusClass = 'bg-success';
+                                                    $statusText = 'Selesai';
+                                                    break;
+                                                case 'sedang_mengerjakan':
+                                                    $statusClass = 'bg-primary';
+                                                    $statusText = 'Mengerjakan';
+                                                    break;
+                                                case 'belum_mulai':
+                                                    $statusClass = 'bg-warning text-dark';
+                                                    $statusText = 'Belum Mulai';
+                                                    break;
+                                            }
+                                            ?>
+                                            <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['waktu_mulai']): ?>
+                                                <small class="text-muted"><?= $siswa['waktu_mulai_format'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['waktu_selesai']): ?>
+                                                <small class="text-muted"><?= $siswa['waktu_selesai_format'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai' && $siswa['durasi_format']): ?>
+                                                <span class="fw-bold"><?= $siswa['durasi_format'] ?></span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai' && $siswa['rata_rata_per_soal']): ?>
+                                                <small class="text-info"><?= $siswa['rata_rata_per_soal'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai' && $siswa['skor'] !== null): ?>
+                                                <strong class="fs-6 text-success"><?= number_format($siswa['skor'], 1) ?></strong>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai'): ?>
+                                                <span class="badge bg-info">
+                                                    <?= $siswa['jawaban_benar'] ?>/<?= $siswa['total_soal'] ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="d-grid gap-1">
+                                                <?php if ($siswa['status'] === 'selesai'): ?>
+                                                    <a href="<?= base_url('guru/hasil-ujian/detail/' . $siswa['peserta_ujian_id']) ?>"
+                                                        class="btn btn-info btn-sm">
+                                                        <i class="fas fa-eye me-1"></i>Detail
+                                                    </a>
+                                                    <a href="<?= base_url('guru/hasil-ujian/download-excel-html/' . $siswa['peserta_ujian_id']) ?>"
+                                                        class="btn btn-success btn-sm">
+                                                        <i class="fas fa-file-excel me-1"></i>Excel
+                                                    </a>
+                                                    <a href="<?= base_url('guru/hasil-ujian/download-pdf-html/' . $siswa['peserta_ujian_id']) ?>"
+                                                        class="btn btn-danger btn-sm" target="_blank">
+                                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                                    </a>
+                                                <?php else: ?>
+                                                    <button class="btn btn-secondary btn-sm" disabled>
+                                                        <i class="fas fa-hourglass-half me-1"></i>Belum Selesai
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Filter functionality
+    document.getElementById('searchSiswa').addEventListener('keyup', filterTable);
+    document.getElementById('filterStatus').addEventListener('change', filterTable);
+
+    function filterTable() {
+        const searchText = document.getElementById('searchSiswa').value.toLowerCase();
+        const statusFilter = document.getElementById('filterStatus').value;
+        const rows = document.querySelectorAll('#tableHasil tbody tr');
+
+        rows.forEach(row => {
+            const nama = row.cells[2].textContent.toLowerCase();
+            const nomor = row.cells[1].textContent.toLowerCase();
+            const status = row.getAttribute('data-status');
+
+            const textMatch = !searchText || nama.includes(searchText) || nomor.includes(searchText);
+            const statusMatch = !statusFilter || status === statusFilter;
+
+            row.style.display = (textMatch && statusMatch) ? '' : 'none';
+        });
+    }
+
+    function resetFilter() {
+        document.getElementById('searchSiswa').value = '';
+        document.getElementById('filterStatus').value = '';
+        filterTable();
+    }
+
+    function exportHasil() {
+        const namaUjian = '<?= addslashes($ujian['nama_ujian']) ?>';
+        const namaKelas = '<?= addslashes($ujian['nama_kelas']) ?>';
+
+        // Buat CSV content
+        let csvContent = "No,Nomor Peserta,Nama Siswa,Status,Waktu Mulai,Waktu Selesai,Durasi Total,Rata-rata per Soal,Skor,Benar/Total\n";
+
+        const rows = document.querySelectorAll('#tableHasil tbody tr');
+        rows.forEach((row, index) => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const rowData = [];
+                // Skip kolom aksi (index 10)
+                for (let i = 0; i < cells.length - 1; i++) {
+                    rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
+                }
+                csvContent += rowData.join(',') + '\n';
+            }
+        });
+
+        // Download CSV
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;'
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `hasil_${namaUjian.replace(/[^a-zA-Z0-9]/g, '_')}_${namaKelas.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+        link.click();
+    }
+
+    function printHasil() {
+        const printWindow = window.open('', '_blank');
+        const ujianInfo = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2>Hasil Ujian</h2>
+            <h3><?= esc($ujian['nama_ujian']) ?></h3>
+            <p>Kelas: <?= esc($ujian['nama_kelas']) ?> - <?= esc($ujian['nama_sekolah']) ?></p>
+            <p>Guru: <?= esc($ujian['nama_guru']) ?></p>
+            <p>Jadwal: <?= $ujian['tanggal_mulai_format'] ?> - <?= $ujian['tanggal_selesai_format'] ?></p>
+        </div>
+    `;
+
+        const tableContent = document.getElementById('tableHasil').outerHTML;
+
+        printWindow.document.write(`
+        <html>
+            <head>
+                <title>Hasil Ujian</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
+                    th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .badge { padding: 2px 4px; border-radius: 3px; font-size: 8px; }
+                    .bg-success { background-color: #d4edda; color: #155724; }
+                    .bg-primary { background-color: #cce7ff; color: #004085; }
+                    .bg-warning { background-color: #fff3cd; color: #856404; }
+                    .bg-info { background-color: #d1ecf1; color: #0c5460; }
+                    .d-grid { display: none; }
+                </style>
+            </head>
+            <body>
+                ${ujianInfo}
+                ${tableContent}
+                <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #666;">
+                    Dicetak pada: ${new Date().toLocaleString('id-ID')}
+                </div>
+            </body>
+        </html>
+    `);
+
+        printWindow.document.close();
+        printWindow.print();
+    }
+</script>
+
 <?= $this->endSection() ?>

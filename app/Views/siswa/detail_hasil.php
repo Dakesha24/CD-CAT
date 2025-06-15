@@ -22,15 +22,19 @@
           <div class="border-start ps-4">
             <div class="mb-3">
               <small class="text-muted d-block">Waktu Mulai</small>
-              <strong><?= date('d M Y H:i', strtotime($hasil['waktu_mulai'])) ?></strong>
+              <strong><?= $hasil['waktu_mulai_format'] ?></strong>
             </div>
             <div class="mb-3">
               <small class="text-muted d-block">Waktu Selesai</small>
-              <strong><?= date('d M Y H:i', strtotime($hasil['waktu_selesai'])) ?></strong>
+              <strong><?= $hasil['waktu_selesai_format'] ?></strong>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted d-block">Total Waktu Pengerjaan</small>
+              <strong><?= $hasil['durasi_total_format'] ?></strong>
             </div>
             <div>
-              <small class="text-muted d-block">Total Waktu</small>
-              <strong><?= date('H:i:s', strtotime($hasil['waktu_selesai']) - strtotime($hasil['waktu_mulai'])) ?></strong>
+              <small class="text-muted d-block">Rata-rata per Soal</small>
+              <strong><?= $rataRataWaktuFormat ?></strong>
             </div>
           </div>
         </div>
@@ -67,8 +71,8 @@
     <div class="col-md-3">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
-          <h3 class="text-primary mb-1"><?= number_format($jawabanBenar / $totalSoal * 100, 1) ?>%</h3>
-          <small class="text-muted">Persentase Benar</small>
+          <h3 class="text-primary mb-1"><?= $skor ?></h3>
+          <small class="text-muted">Skor Ujian</small>
         </div>
       </div>
     </div>
@@ -95,13 +99,15 @@
             <th>Jawaban Anda</th>
             <th>Jawaban Benar</th>
             <th>Status</th>
+            <th>Waktu Jawab</th>
+            <th>Durasi</th>
             <th>Pembahasan</th>
           </tr>
         </thead>
         <tbody>
           <?php foreach ($detailJawaban as $i => $jawaban): ?>
             <tr>
-              <td><?= $i + 1 ?></td>
+              <td><?= $jawaban['nomor_soal'] ?></td>
               <td><?= esc($jawaban['pertanyaan']) ?></td>
               <td><?= $jawaban['jawaban_siswa'] ?></td>
               <td><?= $jawaban['jawaban_benar'] ?></td>
@@ -113,17 +119,23 @@
                 <?php endif; ?>
               </td>
               <td>
+                <small class="text-muted"><?= $jawaban['waktu_menjawab_format'] ?></small>
+              </td>
+              <td>
+                <small class="fw-bold"><?= $jawaban['durasi_pengerjaan_format'] ?></small>
+              </td>
+              <td>
                 <?php if (isset($jawaban['pembahasan']) && !empty($jawaban['pembahasan'])): ?>
                   <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#pembahasanModal<?= $i ?>">
                     Lihat Pembahasan
                   </button>
-                  
+
                   <!-- Modal Pembahasan -->
                   <div class="modal fade" id="pembahasanModal<?= $i ?>" tabindex="-1" aria-labelledby="pembahasanModalLabel<?= $i ?>" aria-hidden="true">
                     <div class="modal-dialog modal-lg">
                       <div class="modal-content">
                         <div class="modal-header">
-                          <h5 class="modal-title" id="pembahasanModalLabel<?= $i ?>">Pembahasan Soal #<?= $i + 1 ?></h5>
+                          <h5 class="modal-title" id="pembahasanModalLabel<?= $i ?>">Pembahasan Soal #<?= $jawaban['nomor_soal'] ?></h5>
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">

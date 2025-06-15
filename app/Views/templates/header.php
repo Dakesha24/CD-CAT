@@ -5,9 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHY-FA-CAT</title>
+    <link rel="icon" type="image/png" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="apple-touch-icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
+    <link rel="shortcut icon" href="<?= base_url('assets/images/icon-cat.png') ?>">
+
+    
+
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
+
+
     <!-- Custom CSS -->
     <style>
         .hero-section {

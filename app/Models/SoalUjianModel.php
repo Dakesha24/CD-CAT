@@ -10,6 +10,9 @@ class SoalUjianModel extends Model
     protected $primaryKey = 'soal_id';
     protected $allowedFields = [
         'ujian_id',
+        'bank_ujian_id',         
+        'is_bank_soal',
+        'created_by',
         'pertanyaan',
         'pilihan_a',
         'pilihan_b',
@@ -22,5 +25,7 @@ class SoalUjianModel extends Model
         'foto'
     ];
 
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
+    protected $createdField = 'created_at';
+    protected $updatedField = 'updated_at';
 }

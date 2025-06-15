@@ -56,8 +56,8 @@
                                     <td><?= esc($ujian['nama_guru']) ?></td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Tanggal:</strong></td>
-                                    <td><?= date('d F Y', strtotime($ujian['tanggal_mulai'])) ?></td>
+                                    <td><strong>Jadwal Ujian:</strong></td>
+                                    <td><?= $ujian['tanggal_mulai_format'] ?> - <?= $ujian['tanggal_selesai_format'] ?></td>
                                 </tr>
                                 <tr>
                                     <td><strong>Kode Akses:</strong></td>
@@ -141,7 +141,7 @@
                         <div class="col-md-3">
                             <div class="card bg-info text-white">
                                 <div class="card-body text-center">
-                                    <?php 
+                                    <?php
                                     $nilaiSelesai = array_filter($hasilSiswa, fn($s) => $s['status'] === 'selesai' && $s['nilai'] !== null);
                                     $rataRata = count($nilaiSelesai) > 0 ? array_sum(array_column($nilaiSelesai, 'nilai')) / count($nilaiSelesai) : 0;
                                     ?>
@@ -158,14 +158,15 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>No</th>
-                                    <th>Nomor Peserta</th>
+                                    <th>NIS</th>
                                     <th>Nama Siswa</th>
                                     <th>Status</th>
+                                    <th>Waktu Mulai</th>
+                                    <th>Waktu Selesai</th>
+                                    <th>Durasi Total</th>
+                                    <th>Rata-rata/Soal</th>
                                     <th>Nilai</th>
-                                    <th>Skor</th>
-                                    <th>Theta (θ)</th>
                                     <th>Benar/Total</th>
-                                    <th>Waktu</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -197,22 +198,36 @@
                                             <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                                         </td>
                                         <td>
+                                            <?php if ($siswa['waktu_mulai']): ?>
+                                                <small class="text-muted"><?= $siswa['waktu_mulai_format'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['waktu_selesai']): ?>
+                                                <small class="text-muted"><?= $siswa['waktu_selesai_format'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai' && $siswa['durasi_format']): ?>
+                                                <span class="fw-bold"><?= $siswa['durasi_format'] ?></span>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if ($siswa['status'] === 'selesai' && $siswa['rata_rata_per_soal']): ?>
+                                                <small class="text-info"><?= $siswa['rata_rata_per_soal'] ?></small>
+                                            <?php else: ?>
+                                                <span class="text-muted">-</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
                                             <?php if ($siswa['status'] === 'selesai' && $siswa['nilai'] !== null): ?>
                                                 <strong class="fs-6 text-success"><?= $siswa['nilai'] ?></strong>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['status'] === 'selesai' && $siswa['skor'] !== null): ?>
-                                                <?= number_format($siswa['skor'], 1) ?>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['status'] === 'selesai' && $siswa['theta_akhir'] !== null): ?>
-                                                <?= number_format($siswa['theta_akhir'], 3) ?>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
@@ -227,27 +242,15 @@
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?php if ($siswa['waktu_mulai'] && $siswa['waktu_selesai']): ?>
-                                                <?php
-                                                $durasi = strtotime($siswa['waktu_selesai']) - strtotime($siswa['waktu_mulai']);
-                                                $jam = floor($durasi / 3600);
-                                                $menit = floor(($durasi % 3600) / 60);
-                                                ?>
-                                                <small class="text-muted"><?= sprintf('%02d:%02d', $jam, $menit) ?></small>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
                                             <div class="d-grid gap-1">
                                                 <?php if ($siswa['status'] === 'selesai'): ?>
-                                                    <a href="<?= base_url('admin/hasil-ujian/detail/' . $siswa['peserta_ujian_id']) ?>" 
-                                                       class="btn btn-info btn-sm">
+                                                    <a href="<?= base_url('admin/hasil-ujian/detail/' . $siswa['peserta_ujian_id']) ?>"
+                                                        class="btn btn-info btn-sm">
                                                         <i class="fas fa-eye me-1"></i>Detail
                                                     </a>
-                                                    <a href="<?= base_url('admin/hasil-ujian/hapus/' . $siswa['peserta_ujian_id']) ?>" 
-                                                       class="btn btn-danger btn-sm"
-                                                       onclick="return confirm('Apakah Anda yakin ingin menghapus hasil ujian siswa ini?\n\nSiswa akan direset ke status belum mulai.')">
+                                                    <a href="<?= base_url('admin/hasil-ujian/hapus/' . $siswa['peserta_ujian_id']) ?>"
+                                                        class="btn btn-danger btn-sm"
+                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus hasil ujian siswa ini?\n\nSiswa akan direset ke status belum mulai.')">
                                                         <i class="fas fa-trash me-1"></i>Hapus
                                                     </a>
                                                 <?php else: ?>
@@ -269,85 +272,87 @@
 </div>
 
 <script>
-// Filter functionality
-document.getElementById('searchSiswa').addEventListener('keyup', filterTable);
-document.getElementById('filterStatus').addEventListener('change', filterTable);
+    // Filter functionality
+    document.getElementById('searchSiswa').addEventListener('keyup', filterTable);
+    document.getElementById('filterStatus').addEventListener('change', filterTable);
 
-function filterTable() {
-    const searchText = document.getElementById('searchSiswa').value.toLowerCase();
-    const statusFilter = document.getElementById('filterStatus').value;
-    const rows = document.querySelectorAll('#tableHasil tbody tr');
+    function filterTable() {
+        const searchText = document.getElementById('searchSiswa').value.toLowerCase();
+        const statusFilter = document.getElementById('filterStatus').value;
+        const rows = document.querySelectorAll('#tableHasil tbody tr');
 
-    rows.forEach(row => {
-        const nama = row.cells[2].textContent.toLowerCase();
-        const nomor = row.cells[1].textContent.toLowerCase();
-        const status = row.getAttribute('data-status');
-        
-        const textMatch = !searchText || nama.includes(searchText) || nomor.includes(searchText);
-        const statusMatch = !statusFilter || status === statusFilter;
-        
-        row.style.display = (textMatch && statusMatch) ? '' : 'none';
-    });
-}
+        rows.forEach(row => {
+            const nama = row.cells[2].textContent.toLowerCase();
+            const nomor = row.cells[1].textContent.toLowerCase();
+            const status = row.getAttribute('data-status');
 
-function resetFilter() {
-    document.getElementById('searchSiswa').value = '';
-    document.getElementById('filterStatus').value = '';
-    filterTable();
-}
+            const textMatch = !searchText || nama.includes(searchText) || nomor.includes(searchText);
+            const statusMatch = !statusFilter || status === statusFilter;
 
-function exportHasil() {
-    const namaUjian = '<?= addslashes($ujian['nama_ujian']) ?>';
-    const namaKelas = '<?= addslashes($ujian['nama_kelas']) ?>';
-    
-    // Buat CSV content
-    let csvContent = "No,Nomor Peserta,Nama Siswa,Status,Nilai,Skor,Theta,Benar/Total,Durasi\n";
-    
-    const rows = document.querySelectorAll('#tableHasil tbody tr');
-    rows.forEach((row, index) => {
-        if (row.style.display !== 'none') {
-            const cells = row.querySelectorAll('td');
-            const rowData = [];
-            // Skip kolom aksi (index 9)
-            for (let i = 0; i < cells.length - 1; i++) {
-                rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
+            row.style.display = (textMatch && statusMatch) ? '' : 'none';
+        });
+    }
+
+    function resetFilter() {
+        document.getElementById('searchSiswa').value = '';
+        document.getElementById('filterStatus').value = '';
+        filterTable();
+    }
+
+    function exportHasil() {
+        const namaUjian = '<?= addslashes($ujian['nama_ujian']) ?>';
+        const namaKelas = '<?= addslashes($ujian['nama_kelas']) ?>';
+
+        // Buat CSV content
+        let csvContent = "No,Nomor Peserta,Nama Siswa,Status,Waktu Mulai,Waktu Selesai,Durasi Total,Rata-rata per Soal,Nilai,Benar/Total\n";
+
+        const rows = document.querySelectorAll('#tableHasil tbody tr');
+        rows.forEach((row, index) => {
+            if (row.style.display !== 'none') {
+                const cells = row.querySelectorAll('td');
+                const rowData = [];
+                // Skip kolom aksi (index 10)
+                for (let i = 0; i < cells.length - 1; i++) {
+                    rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
+                }
+                csvContent += rowData.join(',') + '\n';
             }
-            csvContent += rowData.join(',') + '\n';
-        }
-    });
-    
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `hasil_${namaUjian.replace(/[^a-zA-Z0-9]/g, '_')}_${namaKelas.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
-    link.click();
-}
+        });
 
-function printHasil() {
-    const printWindow = window.open('', '_blank');
-    const ujianInfo = `
+        // Download CSV
+        const blob = new Blob([csvContent], {
+            type: 'text/csv;charset=utf-8;'
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `hasil_${namaUjian.replace(/[^a-zA-Z0-9]/g, '_')}_${namaKelas.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+        link.click();
+    }
+
+    function printHasil() {
+        const printWindow = window.open('', '_blank');
+        const ujianInfo = `
         <div style="text-align: center; margin-bottom: 20px;">
             <h2>Hasil Ujian</h2>
             <h3><?= esc($ujian['nama_ujian']) ?></h3>
             <p>Kelas: <?= esc($ujian['nama_kelas']) ?> - <?= esc($ujian['nama_sekolah']) ?></p>
             <p>Guru: <?= esc($ujian['nama_guru']) ?></p>
-            <p>Tanggal: <?= date('d F Y', strtotime($ujian['tanggal_mulai'])) ?></p>
+            <p>Jadwal: <?= $ujian['tanggal_mulai_format'] ?> - <?= $ujian['tanggal_selesai_format'] ?></p>
         </div>
     `;
-    
-    const tableContent = document.getElementById('tableHasil').outerHTML;
-    
-    printWindow.document.write(`
+
+        const tableContent = document.getElementById('tableHasil').outerHTML;
+
+        printWindow.document.write(`
         <html>
             <head>
                 <title>Hasil Ujian</title>
                 <style>
                     body { font-family: Arial, sans-serif; margin: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-                    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
+                    th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
                     th { background-color: #f2f2f2; font-weight: bold; }
-                    .badge { padding: 2px 4px; border-radius: 3px; font-size: 10px; }
+                    .badge { padding: 2px 4px; border-radius: 3px; font-size: 8px; }
                     .bg-success { background-color: #d4edda; color: #155724; }
                     .bg-primary { background-color: #cce7ff; color: #004085; }
                     .bg-warning { background-color: #fff3cd; color: #856404; }
@@ -364,10 +369,10 @@ function printHasil() {
             </body>
         </html>
     `);
-    
-    printWindow.document.close();
-    printWindow.print();
-}
+
+        printWindow.document.close();
+        printWindow.print();
+    }
 </script>
 
 <?= $this->endSection() ?>

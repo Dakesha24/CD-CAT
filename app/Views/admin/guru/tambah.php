@@ -85,7 +85,7 @@
 
                                 <div class="mb-3">
                                     <label for="sekolah_id" class="form-label">Sekolah *</label>
-                                    <select class="form-select" id="sekolah_id" name="sekolah_id" required>
+                                    <select class="form-select" id="sekolah_id" name="sekolah_id" required onchange="filterKelas()">
                                         <option value="">Pilih Sekolah</option>
                                         <?php foreach ($sekolah as $s): ?>
                                             <option value="<?= $s['sekolah_id'] ?>" 
@@ -95,6 +95,28 @@
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Pilih Kelas (Opsional) -->
+                        <hr>
+                        <h5 class="mb-3">Kelas yang Diajar (Opsional)</h5>
+                        <div class="mb-3">
+                            <label for="kelas_ids" class="form-label">Pilih Kelas</label>
+                            <select class="form-select" id="kelas_ids" name="kelas_ids[]" multiple disabled>
+                                <option value="">Pilih sekolah terlebih dahulu untuk melihat kelas yang tersedia</option>
+                            </select>
+                            <div class="form-text">
+                                Anda dapat memilih multiple kelas dengan menekan Ctrl (Windows) atau Cmd (Mac) sambil mengklik.
+                                Kelas juga dapat ditambahkan setelah guru dibuat.
+                            </div>
+                        </div>
+
+                        <!-- Preview Kelas Terpilih -->
+                        <div id="selectedKelasPreview" class="mb-3" style="display: none;">
+                            <label class="form-label">Kelas yang Dipilih:</label>
+                            <div id="selectedKelasList" class="border rounded p-2 bg-light">
+                                <!-- JavaScript will populate this -->
                             </div>
                         </div>
 
@@ -112,5 +134,86 @@
         </div>
     </div>
 </div>
+
+<script>
+// Data kelas dari PHP
+const kelasData = <?= json_encode($kelas) ?>;
+
+function filterKelas() {
+    const sekolahId = document.getElementById('sekolah_id').value;
+    const kelasSelect = document.getElementById('kelas_ids');
+    
+    // Clear existing options
+    kelasSelect.innerHTML = '';
+    
+    if (sekolahId) {
+        kelasSelect.disabled = false;
+        
+        // Filter kelas berdasarkan sekolah yang dipilih
+        const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
+        
+        if (filteredKelas.length > 0) {
+            filteredKelas.forEach(kelas => {
+                const option = new Option(
+                    `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
+                    kelas.kelas_id
+                );
+                kelasSelect.add(option);
+            });
+        } else {
+            const option = new Option('Tidak ada kelas tersedia di sekolah ini', '');
+            option.disabled = true;
+            kelasSelect.add(option);
+        }
+        
+        // Restore selected values if exists (for validation errors)
+        const oldKelasIds = <?= json_encode(old('kelas_ids') ?? []) ?>;
+        if (oldKelasIds.length > 0) {
+            Array.from(kelasSelect.options).forEach(option => {
+                if (oldKelasIds.includes(option.value)) {
+                    option.selected = true;
+                }
+            });
+            updateSelectedPreview();
+        }
+    } else {
+        kelasSelect.disabled = true;
+        kelasSelect.innerHTML = '<option value="">Pilih sekolah terlebih dahulu</option>';
+        hideSelectedPreview();
+    }
+}
+
+function updateSelectedPreview() {
+    const kelasSelect = document.getElementById('kelas_ids');
+    const preview = document.getElementById('selectedKelasPreview');
+    const previewList = document.getElementById('selectedKelasList');
+    
+    const selectedOptions = Array.from(kelasSelect.selectedOptions);
+    
+    if (selectedOptions.length > 0) {
+        preview.style.display = 'block';
+        previewList.innerHTML = selectedOptions.map(option => 
+            `<span class="badge bg-primary me-2">${option.text}</span>`
+        ).join('');
+    } else {
+        hideSelectedPreview();
+    }
+}
+
+function hideSelectedPreview() {
+    document.getElementById('selectedKelasPreview').style.display = 'none';
+}
+
+// Event listener for kelas selection change
+document.getElementById('kelas_ids').addEventListener('change', updateSelectedPreview);
+
+// Initialize form when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const sekolahId = document.getElementById('sekolah_id').value;
+    if (sekolahId) {
+        filterKelas();
+    }
+});
+</script>
 
 <?= $this->endSection() ?>

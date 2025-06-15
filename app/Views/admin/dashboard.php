@@ -41,15 +41,15 @@
         </div>
 
         <div class="col-md-3">
-          <div class="card bg-warning text-white h-100">
+          <div class="card bg-info text-white h-100">
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <h4><?= $stats['inactive_users'] ?? 0 ?></h4>
-                  <p class="mb-0">User Nonaktif</p>
+                  <h4><?= $stats['total_sekolah'] ?? 0 ?></h4>
+                  <p class="mb-0">Total Sekolah</p>
                 </div>
                 <div class="align-self-center">
-                  <i class="bi bi-person-x fs-1"></i>
+                  <i class="bi bi-building fs-1"></i>
                 </div>
               </div>
             </div>
@@ -57,15 +57,15 @@
         </div>
 
         <div class="col-md-3">
-          <div class="card bg-info text-white h-100">
+          <div class="card bg-warning text-white h-100">
             <div class="card-body">
               <div class="d-flex justify-content-between">
                 <div>
-                  <h4><?= $stats['recent_registrations'] ?? 0 ?></h4>
-                  <p class="mb-0">Registrasi Baru (30 hari)</p>
+                  <h4><?= $stats['total_kelas'] ?? 0 ?></h4>
+                  <p class="mb-0">Total Kelas</p>
                 </div>
                 <div class="align-self-center">
-                  <i class="bi bi-person-plus fs-1"></i>
+                  <i class="bi bi-door-open fs-1"></i>
                 </div>
               </div>
             </div>
@@ -107,33 +107,17 @@
           </div>
         </div>
 
-        <!-- Kelola Sekolah Card -->
+        <!-- Kelola Sekolah & Kelas Card -->
         <div class="col-md-4 col-lg-3">
           <div class="card menu-card h-100">
             <div class="card-body text-center">
               <div class="icon-wrapper bg-info-subtle mx-auto mb-3">
                 <i class="bi bi-building text-info fs-1"></i>
               </div>
-              <h5 class="card-title">Kelola Sekolah</h5>
-              <p class="card-text">Tambah, edit, dan kelola data sekolah</p>
+              <h5 class="card-title">Kelola Sekolah & Kelas</h5>
+              <p class="card-text">Kelola sekolah, kelas, assign guru, dan transfer siswa</p>
               <a href="<?= base_url('admin/sekolah') ?>" class="btn btn-info">
-                <i class="bi bi-building-add me-2"></i>Kelola Sekolah
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Kelola Kelas Card -->
-        <div class="col-md-4 col-lg-3">
-          <div class="card menu-card h-100">
-            <div class="card-body text-center">
-              <div class="icon-wrapper bg-warning-subtle mx-auto mb-3">
-                <i class="bi bi-door-open text-warning fs-1"></i>
-              </div>
-              <h5 class="card-title">Kelola Kelas</h5>
-              <p class="card-text">Tambah, edit, dan kelola data kelas</p>
-              <a href="<?= base_url('admin/kelas') ?>" class="btn btn-warning">
-                <i class="bi bi-plus-square me-2"></i>Kelola Kelas
+                <i class="bi bi-building-gear me-2"></i>Kelola Sekolah & Kelas
               </a>
             </div>
           </div>
@@ -187,7 +171,7 @@
           </div>
         </div>
 
-        <!-- Kelola Pengumuman Card - BARU DITAMBAHKAN -->
+        <!-- Kelola Pengumuman Card -->
         <div class="col-md-4 col-lg-3">
           <div class="card menu-card h-100">
             <div class="card-body text-center">
@@ -204,50 +188,6 @@
         </div>
       </div>
 
-      <!-- Quick Actions Section -->
-      <div class="row mt-5">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Aksi Cepat</h5>
-            </div>
-            <div class="card-body">
-              <div class="row g-3">
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/guru/tambah') ?>" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-person-plus-fill me-2"></i>Tambah Guru
-                  </a>
-                </div>
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/siswa/tambah') ?>" class="btn btn-outline-success w-100">
-                    <i class="bi bi-people-fill me-2"></i>Tambah Siswa
-                  </a>
-                </div>
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/sekolah/tambah') ?>" class="btn btn-outline-info w-100">
-                    <i class="bi bi-building-add me-2"></i>Tambah Sekolah
-                  </a>
-                </div>
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/kelas/tambah') ?>" class="btn btn-outline-warning w-100">
-                    <i class="bi bi-door-open-fill me-2"></i>Tambah Kelas
-                  </a>
-                </div>
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/pengumuman/tambah') ?>" class="btn btn-outline-dark w-100">
-                    <i class="bi bi-megaphone-fill me-2"></i>Tambah Pengumuman
-                  </a>
-                </div>
-                <div class="col-md-2">
-                  <a href="<?= base_url('admin/hasil-ujian') ?>" class="btn btn-outline-secondary w-100">
-                    <i class="bi bi-file-earmark-bar-graph me-2"></i>Lihat Hasil
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </div>

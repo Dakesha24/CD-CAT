@@ -29,6 +29,8 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->post('guru/edit/(:num)', 'Admin::editGuru/$1');
   $routes->get('guru/hapus/(:num)', 'Admin::hapusGuru/$1');
   $routes->get('guru/restore/(:num)', 'Admin::restoreGuru/$1');
+  $routes->post('guru/assign-kelas', 'Admin::assignKelas');
+  $routes->get('guru/remove-kelas/(:num)/(:num)', 'Admin::removeKelas/$1/$2');
 
   // Kelola Siswa
   $routes->get('siswa', 'Admin::daftarSiswa');
@@ -48,13 +50,21 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->post('sekolah/edit/(:num)', 'Admin::editSekolah/$1');
   $routes->get('sekolah/hapus/(:num)', 'Admin::hapusSekolah/$1');
 
-  // Kelola Kelas
-  $routes->get('kelas', 'Admin::daftarKelas');
-  $routes->get('kelas/tambah', 'Admin::formTambahKelas');
-  $routes->post('kelas/tambah', 'Admin::tambahKelas');
-  $routes->get('kelas/edit/(:num)', 'Admin::formEditKelas/$1');
-  $routes->post('kelas/edit/(:num)', 'Admin::editKelas/$1');
-  $routes->get('kelas/hapus/(:num)', 'Admin::hapusKelas/$1');
+  // Daftar Kelas dalam Sekolah
+  $routes->get('sekolah/(:num)/kelas', 'Admin::daftarKelasBySekolah/$1');
+  $routes->get('sekolah/(:num)/kelas/tambah', 'Admin::formTambahKelasSekolah/$1');
+  $routes->post('sekolah/(:num)/kelas/tambah', 'Admin::tambahKelasSekolah/$1');
+
+  $routes->get('sekolah/(:num)/kelas/edit/(:num)', 'Admin::formEditKelasSekolah/$1/$2');
+  $routes->post('sekolah/(:num)/kelas/edit/(:num)', 'Admin::editKelasSekolah/$1/$2');
+  $routes->get('sekolah/(:num)/kelas/hapus/(:num)', 'Admin::hapusKelasSekolah/$1/$2');
+
+  $routes->get('sekolah/(:num)/kelas/(:num)/detail', 'Admin::detailKelasSekolah/$1/$2');
+  $routes->post('sekolah/(:num)/kelas/(:num)/guru/assign', 'Admin::assignGuruKelasSekolah/$1/$2');
+  $routes->get('sekolah/(:num)/kelas/(:num)/guru/remove/(:num)', 'Admin::removeGuruKelasSekolah/$1/$2/$3');
+  $routes->get('sekolah/(:num)/kelas/(:num)/transfer-siswa/(:num)', 'Admin::transferSiswaSekolah/$1/$2/$3');
+  $routes->post('sekolah/transfer-siswa/proses', 'Admin::prosesTransferSiswaSekolah');
+
 
   // Kelola Ujian
   $routes->get('ujian', 'Admin::daftarUjian');
@@ -125,6 +135,26 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
 
   $routes->get('profil', 'Guru::profil');
   $routes->post('profil/save', 'Guru::saveProfil');
+
+  $routes->get('bank-soal', 'Guru::bankSoal');
+  $routes->post('bank-soal/tambah', 'Guru::tambahBankSoal');
+  $routes->get('bank-soal/kategori/(:segment)', 'Guru::bankSoalKategori/$1');
+  $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)', 'Guru::bankSoalJenisUjian/$1/$2');
+  $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)/ujian/(:num)', 'Guru::bankSoalUjian/$1/$2/$3');
+
+  $routes->get('bank-soal/api/jenis-ujian-kelas', 'Guru::getJenisUjianForKelas');
+
+  // CRUD Soal Bank Ujian
+  $routes->post('bank-soal/tambah-soal', 'Guru::tambahSoalBankUjian');
+  $routes->post('bank-soal/edit-soal/(:num)', 'Guru::editSoalBankUjian/$1');
+  $routes->get('bank-soal/hapus-soal/(:num)', 'Guru::hapusSoalBankUjian/$1');
+
+  //kelola bank
+  $routes->get('bank-soal/api/kategori', 'Guru::getKategoriTersedia');
+  $routes->get('bank-soal/api/jenis-ujian', 'Guru::getJenisUjianByKategori');
+  $routes->get('bank-soal/api/bank-ujian', 'Guru::getBankUjianByKategoriJenis');
+  $routes->get('bank-soal/api/soal', 'Guru::getSoalBankUjian');
+  $routes->post('soal/import-bank', 'Guru::importSoalDariBank');
 });
 
 $routes->get('guru/hasil-ujian/download-excel-html/(:num)', 'Guru\Guru::downloadExcelHTML/$1');
@@ -146,6 +176,10 @@ $routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function ($rou
   $routes->post('ujian/simpan-jawaban', 'Siswa::simpanJawaban');
   $routes->post('ujian/mulai', 'Siswa::mulaiUjian');
   $routes->get('ujian/soal/(:num)', 'Siswa::soal/$1');
+
+  $routes->get('hasil/unduh/(:num)', 'Siswa::unduh/$1');
+
+  $routes->get('api/kelas-by-sekolah/(:num)', 'Siswa::getKelasBySekolah/$1');
 
   $routes->get('hasil/unduh/(:num)', 'Siswa::unduh/$1');
 });
