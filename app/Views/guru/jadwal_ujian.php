@@ -86,6 +86,9 @@
 
                             <div class="flex-grow-1">
                                 <h5 class="card-title fw-bold mb-2"><?= esc($j['nama_ujian']) ?></h5>
+                                <p class="text-muted small mb-1">
+                                    <i class="bi bi-code-square me-1"></i>Kode: <?= esc($j['kode_ujian']) ?>
+                                </p>
                                 <p class="card-text text-muted small mb-3">
                                     <i class="bi bi-people me-1"></i>Kelas <?= esc($j['nama_kelas']) ?>
                                     <br><i class="bi bi-person-check me-1"></i>Pengawas: <?= esc($j['nama_lengkap']) ?>
@@ -160,7 +163,9 @@
                                 <option value="">Pilih Ujian</option>
                                 <?php if (!empty($ujian_tambah)): ?>
                                     <?php foreach ($ujian_tambah as $u): ?>
-                                        <option value="<?= $u['id_ujian'] ?>"><?= esc($u['nama_ujian']) ?></option>
+                                        <option value="<?= $u['id_ujian'] ?>">
+                                            <?= esc($u['nama_ujian']) ?> (<?= esc($u['kode_ujian']) ?>)
+                                        </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>

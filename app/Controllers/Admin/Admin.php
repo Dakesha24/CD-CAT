@@ -2258,4 +2258,703 @@ class Admin extends Controller
 
         return redirect()->to(base_url('admin/pengumuman'));
     }
+
+    // ===== KELOLA BANK SOAL =====
+
+    public function bankSoal()
+    {
+        $db = \Config\Database::connect();
+
+        // Admin bisa akses semua kategori
+        $kategoriList = $db->table('bank_ujian')
+            ->select('kategori, COUNT(*) as jumlah_bank')
+            ->groupBy('kategori')
+            ->orderBy('kategori', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil semua jenis ujian untuk dropdown
+        $jenisUjianList = $this->jenisUjianModel->findAll();
+
+        $data = [
+            'kategoriList' => $kategoriList,
+            'jenisUjianList' => $jenisUjianList
+        ];
+
+        return view('admin/bank_soal/index', $data);
+    }
+
+    public function tambahBankSoal()
+    {
+        $rules = [
+            'kategori' => 'required',
+            'jenis_ujian_id' => 'required|numeric',
+            'nama_ujian' => 'required|min_length[3]',
+            'deskripsi' => 'required|min_length[10]'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        // Cek apakah kombinasi kategori + jenis_ujian + nama_ujian sudah ada
+        $db = \Config\Database::connect();
+        $existing = $db->table('bank_ujian')
+            ->where('kategori', $this->request->getPost('kategori'))
+            ->where('jenis_ujian_id', $this->request->getPost('jenis_ujian_id'))
+            ->where('nama_ujian', $this->request->getPost('nama_ujian'))
+            ->get()->getRowArray();
+
+        if ($existing) {
+            session()->setFlashdata('error', 'Bank soal dengan kategori, jenis ujian, dan nama ujian yang sama sudah ada.');
+            return redirect()->back()->withInput();
+        }
+
+        try {
+            $bankUjianData = [
+                'kategori' => $this->request->getPost('kategori'),
+                'jenis_ujian_id' => $this->request->getPost('jenis_ujian_id'),
+                'nama_ujian' => $this->request->getPost('nama_ujian'),
+                'deskripsi' => $this->request->getPost('deskripsi'),
+                'created_by' => session()->get('user_id'),
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            $db->table('bank_ujian')->insert($bankUjianData);
+            session()->setFlashdata('success', 'Bank soal berhasil ditambahkan!');
+            return redirect()->to(base_url('admin/bank-soal'));
+        } catch (\Exception $e) {
+            log_message('error', 'Error adding bank soal: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah bank soal.');
+            return redirect()->back()->withInput();
+        }
+    }
+
+    public function bankSoalKategori($kategori)
+    {
+        $db = \Config\Database::connect();
+
+        // Admin bisa akses semua kategori tanpa validasi
+        $jenisUjianList = $db->table('bank_ujian')
+            ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_ujian')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
+            ->where('bank_ujian.kategori', $kategori)
+            ->groupBy('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
+            ->orderBy('jenis_ujian.nama_jenis', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $data = [
+            'kategori' => $kategori,
+            'jenisUjianList' => $jenisUjianList
+        ];
+
+        return view('admin/bank_soal/kategori', $data);
+    }
+
+    public function bankSoalJenisUjian($kategori, $jenisUjianId)
+    {
+        $db = \Config\Database::connect();
+
+        // Ambil daftar ujian dalam jenis ujian dan kategori ini
+        $ujianList = $db->table('bank_ujian')
+            ->select('bank_ujian.*, users.username as creator_name, 
+                 (SELECT COUNT(*) FROM soal_ujian WHERE soal_ujian.bank_ujian_id = bank_ujian.bank_ujian_id AND soal_ujian.is_bank_soal = 1) as jumlah_soal')
+            ->join('users', 'users.user_id = bank_ujian.created_by')
+            ->where('bank_ujian.kategori', $kategori)
+            ->where('bank_ujian.jenis_ujian_id', $jenisUjianId)
+            ->orderBy('bank_ujian.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil info jenis ujian
+        $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
+
+        $data = [
+            'kategori' => $kategori,
+            'jenisUjian' => $jenisUjian,
+            'ujianList' => $ujianList
+        ];
+
+        return view('admin/bank_soal/jenis_ujian', $data);
+    }
+
+    public function bankSoalUjian($kategori, $jenisUjianId, $bankUjianId)
+    {
+        $db = \Config\Database::connect();
+
+        // Ambil info bank ujian
+        $bankUjian = $db->table('bank_ujian')
+            ->select('bank_ujian.*, jenis_ujian.nama_jenis, users.username as creator_name')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
+            ->join('users', 'users.user_id = bank_ujian.created_by')
+            ->where('bank_ujian.bank_ujian_id', $bankUjianId)
+            ->get()
+            ->getRowArray();
+
+        if (!$bankUjian) {
+            session()->setFlashdata('error', 'Bank ujian tidak ditemukan');
+            return redirect()->to(base_url('admin/bank-soal'));
+        }
+
+        // Ambil soal-soal dalam bank ujian ini
+        $soalList = $db->table('soal_ujian')
+            ->select('soal_ujian.*, users.username as creator_name')
+            ->join('users', 'users.user_id = soal_ujian.created_by', 'left')
+            ->where('bank_ujian_id', $bankUjianId)
+            ->where('is_bank_soal', true)
+            ->orderBy('created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        $data = [
+            'kategori' => $kategori,
+            'bankUjian' => $bankUjian,
+            'soalList' => $soalList
+        ];
+
+        return view('admin/bank_soal/ujian', $data);
+    }
+
+    public function tambahSoalBankUjian()
+    {
+        $bankUjianId = $this->request->getPost('bank_ujian_id');
+        $userId = session()->get('user_id');
+
+        // Admin bisa tambah soal ke bank ujian manapun
+        $db = \Config\Database::connect();
+        $bankUjian = $db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->get()->getRowArray();
+
+        if (!$bankUjian) {
+            return redirect()->back()->with('error', 'Bank ujian tidak ditemukan');
+        }
+
+        // Validasi form input
+        $rules = [
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
+        }
+
+        // Ambil data dari form
+        $data = [
+            'ujian_id' => null,
+            'bank_ujian_id' => $bankUjianId,
+            'is_bank_soal' => true,
+            'created_by' => $userId,
+            'kode_soal' => $this->request->getPost('kode_soal'),
+            'pertanyaan' => $this->request->getPost('pertanyaan'),
+            'pilihan_a' => $this->request->getPost('pilihan_a'),
+            'pilihan_b' => $this->request->getPost('pilihan_b'),
+            'pilihan_c' => $this->request->getPost('pilihan_c'),
+            'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
+            'jawaban_benar' => $this->request->getPost('jawaban_benar'),
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan')
+        ];
+
+        // Upload foto jika ada
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            $newName = $fotoFile->getRandomName();
+            $uploadPath = 'uploads/soal';
+
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            $fotoFile->move($uploadPath, $newName);
+            $data['foto'] = $newName;
+        }
+
+        try {
+            $this->soalUjianModel->insert($data);
+            session()->setFlashdata('success', 'Soal berhasil ditambahkan ke bank ujian!');
+            return redirect()->back();
+        } catch (\Exception $e) {
+            log_message('error', 'Error saat menambahkan soal bank ujian: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal: ' . $e->getMessage());
+        }
+    }
+
+    public function editSoalBankUjian($soalId)
+    {
+        // Admin bisa edit soal bank ujian siapa saja
+        $soal = $this->soalUjianModel->find($soalId);
+        if (!$soal || !$soal['is_bank_soal']) {
+            return redirect()->back()->with('error', 'Soal tidak ditemukan');
+        }
+
+        // Validasi form input (sama seperti di guru)
+        $rules = [
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
+        }
+
+        $data = [
+            'kode_soal' => $this->request->getPost('kode_soal'),
+            'pertanyaan' => $this->request->getPost('pertanyaan'),
+            'pilihan_a' => $this->request->getPost('pilihan_a'),
+            'pilihan_b' => $this->request->getPost('pilihan_b'),
+            'pilihan_c' => $this->request->getPost('pilihan_c'),
+            'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
+            'jawaban_benar' => $this->request->getPost('jawaban_benar'),
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan')
+        ];
+
+        // Handle foto upload/delete (sama seperti di guru)
+        $uploadPath = 'uploads/soal';
+        $fotoFile = $this->request->getFile('foto');
+
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            if (!empty($soal['foto'])) {
+                $fotoPath = $uploadPath . '/' . $soal['foto'];
+                if (file_exists($fotoPath)) {
+                    unlink($fotoPath);
+                }
+            }
+
+            $newName = $fotoFile->getRandomName();
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            $fotoFile->move($uploadPath, $newName);
+            $data['foto'] = $newName;
+        }
+
+        if ($this->request->getPost('hapus_foto') == '1' && !empty($soal['foto'])) {
+            $fotoPath = $uploadPath . '/' . $soal['foto'];
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+            $data['foto'] = null;
+        }
+
+        try {
+            $this->soalUjianModel->update($soalId, $data);
+            session()->setFlashdata('success', 'Soal berhasil diupdate!');
+            return redirect()->back();
+        } catch (\Exception $e) {
+            log_message('error', 'Error saat mengupdate soal bank ujian: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal: ' . $e->getMessage());
+        }
+    }
+
+    public function hapusSoalBankUjian($soalId)
+    {
+        // Admin bisa hapus soal bank ujian siapa saja
+        $soal = $this->soalUjianModel->find($soalId);
+        if (!$soal || !$soal['is_bank_soal']) {
+            return redirect()->back()->with('error', 'Soal tidak ditemukan');
+        }
+
+        // Hapus foto jika ada
+        if (!empty($soal['foto'])) {
+            $fotoPath = 'uploads/soal/' . $soal['foto'];
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
+            }
+        }
+
+        try {
+            $this->soalUjianModel->delete($soalId);
+            session()->setFlashdata('success', 'Soal berhasil dihapus!');
+            return redirect()->back();
+        } catch (\Exception $e) {
+            log_message('error', 'Error saat menghapus soal bank ujian: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus soal.');
+        }
+    }
+
+    public function hapusBankUjian($bankUjianId)
+    {
+        $db = \Config\Database::connect();
+
+        try {
+            $db->transStart();
+
+            // Cek apakah ada soal di bank ujian ini
+            $jumlahSoal = $db->table('soal_ujian')
+                ->where('bank_ujian_id', $bankUjianId)
+                ->where('is_bank_soal', true)
+                ->countAllResults();
+
+            if ($jumlahSoal > 0) {
+                session()->setFlashdata('error', "Tidak dapat menghapus bank ujian karena masih memiliki {$jumlahSoal} soal. Hapus soal terlebih dahulu.");
+                return redirect()->back();
+            }
+
+            // Hapus bank ujian
+            $db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->delete();
+
+            $db->transComplete();
+
+            if ($db->transStatus() === FALSE) {
+                throw new \Exception('Transaction failed');
+            }
+
+            session()->setFlashdata('success', 'Bank ujian berhasil dihapus!');
+        } catch (\Exception $e) {
+            log_message('error', 'Error deleting bank ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus bank ujian.');
+        }
+
+        return redirect()->to(base_url('admin/bank-soal'));
+    }
+
+    // API Methods untuk AJAX (bisa digunakan untuk modal atau select dinamis)
+    public function getKategoriTersedia()
+    {
+        $db = \Config\Database::connect();
+
+        // Admin bisa akses semua kategori
+        $kategori = $db->table('bank_ujian')
+            ->select('DISTINCT kategori')
+            ->orderBy('kategori', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        $kategoriList = array_column($kategori, 'kategori');
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $kategoriList
+        ]);
+    }
+
+    public function getJenisUjianByKategori()
+    {
+        $kategori = $this->request->getGet('kategori');
+        $db = \Config\Database::connect();
+
+        if (!$kategori) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Kategori harus dipilih'
+            ]);
+        }
+
+        // Admin bisa akses semua jenis ujian di kategori manapun
+        $jenisUjian = $db->table('bank_ujian')
+            ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_bank')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
+            ->where('bank_ujian.kategori', $kategori)
+            ->groupBy('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
+            ->orderBy('jenis_ujian.nama_jenis', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $jenisUjian
+        ]);
+    }
+
+    public function getBankUjianByKategoriJenis()
+    {
+        $kategori = $this->request->getGet('kategori');
+        $jenisUjianId = $this->request->getGet('jenis_ujian_id');
+        $db = \Config\Database::connect();
+
+        if (!$kategori || !$jenisUjianId) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Kategori dan jenis ujian harus dipilih'
+            ]);
+        }
+
+        // Admin bisa akses semua bank ujian
+        $bankUjian = $db->table('bank_ujian')
+            ->select('bank_ujian.*, users.username as creator_name,
+                 (SELECT COUNT(*) FROM soal_ujian WHERE soal_ujian.bank_ujian_id = bank_ujian.bank_ujian_id AND soal_ujian.is_bank_soal = 1) as jumlah_soal')
+            ->join('users', 'users.user_id = bank_ujian.created_by')
+            ->where('bank_ujian.kategori', $kategori)
+            ->where('bank_ujian.jenis_ujian_id', $jenisUjianId)
+            ->orderBy('bank_ujian.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $bankUjian
+        ]);
+    }
+
+    public function getSoalBankUjian()
+    {
+        $bankUjianId = $this->request->getGet('bank_ujian_id');
+        $db = \Config\Database::connect();
+
+        if (!$bankUjianId) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Bank ujian harus dipilih'
+            ]);
+        }
+
+        // Validasi bank ujian exists
+        $bankUjian = $db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->get()->getRowArray();
+        if (!$bankUjian) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Bank ujian tidak ditemukan'
+            ]);
+        }
+
+        // Admin bisa akses semua soal bank ujian
+        $soalList = $this->soalUjianModel
+            ->select('soal_ujian.*, soal_ujian.kode_soal')
+            ->where('bank_ujian_id', $bankUjianId)
+            ->where('is_bank_soal', true)
+            ->orderBy('created_at', 'DESC')
+            ->findAll();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $soalList,
+            'bank_ujian' => $bankUjian
+        ]);
+    }
+
+    // ===== KELOLA JENIS UJIAN =====
+
+    public function daftarJenisUjian()
+    {
+        $db = \Config\Database::connect();
+
+        // Query untuk mengambil semua jenis ujian dengan informasi lengkap
+        $data['jenis_ujian'] = $db->table('jenis_ujian ju')
+            ->select('ju.*, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, s.sekolah_id,
+                 g.nama_lengkap as guru_pembuat, u.username as user_pembuat,
+                 COUNT(DISTINCT uj.id_ujian) as total_ujian')
+            ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
+            ->join('users u', 'u.user_id = ju.created_by', 'left')
+            ->join('guru g', 'g.user_id = ju.created_by', 'left')
+            ->join('ujian uj', 'uj.jenis_ujian_id = ju.jenis_ujian_id', 'left')
+            ->groupBy('ju.jenis_ujian_id, ju.nama_jenis, ju.deskripsi, ju.kelas_id, ju.created_by, ju.created_at, ju.updated_at,
+                  k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, s.sekolah_id, g.nama_lengkap, u.username')
+            ->orderBy('ju.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil semua sekolah untuk filter/dropdown
+        $sekolahModel = new \App\Models\SekolahModel();
+        $data['sekolah'] = $sekolahModel->findAll();
+
+        // Ambil semua kelas untuk dropdown tambah/edit
+        $data['kelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, s.sekolah_id')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->orderBy('s.nama_sekolah', 'ASC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return view('admin/jenis_ujian/daftar', $data);
+    }
+
+    public function jenisUjian()
+    {
+        $db = \Config\Database::connect();
+
+        // Admin bisa melihat semua jenis ujian dari semua guru
+        $data['jenis_ujian'] = $db->table('jenis_ujian ju')
+            ->select('ju.*, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, u.username as creator_name, g.nama_lengkap as guru_nama')
+            ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
+            ->join('users u', 'u.user_id = ju.created_by', 'left')
+            ->join('guru g', 'g.user_id = u.user_id', 'left')
+            ->orderBy('ju.created_at', 'DESC')
+            ->get()
+            ->getResultArray();
+
+        // Ambil semua kelas untuk dropdown
+        $data['semua_kelas'] = $db->table('kelas k')
+            ->select('k.kelas_id, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah')
+            ->join('sekolah s', 's.sekolah_id = k.sekolah_id')
+            ->orderBy('s.nama_sekolah', 'ASC')
+            ->orderBy('k.nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return view('admin/jenis_ujian', $data);
+    }
+
+    public function tambahJenisUjian()
+    {
+        $kelasId = $this->request->getPost('kelas_id');
+        $userId = session()->get('user_id');
+
+        // Validasi input
+        $rules = [
+            'nama_jenis' => 'required|min_length[3]|max_length[100]',
+            'deskripsi' => 'required|min_length[10]',
+            'kelas_id' => 'required|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        // Validasi kelas exists
+        $kelas = $this->kelasModel->find($kelasId);
+        if (!$kelas) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan.');
+            return redirect()->back()->withInput();
+        }
+
+        try {
+            $data = [
+                'nama_jenis' => $this->request->getPost('nama_jenis'),
+                'deskripsi' => $this->request->getPost('deskripsi'),
+                'kelas_id' => $kelasId,
+                'created_by' => $userId
+            ];
+
+            $this->jenisUjianModel->insert($data);
+            session()->setFlashdata('success', 'Jenis ujian berhasil ditambahkan!');
+            return redirect()->to(base_url('admin/jenis-ujian'));
+        } catch (\Exception $e) {
+            log_message('error', 'Error adding jenis ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah jenis ujian: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
+    }
+
+
+    public function editJenisUjian($jenisUjianId)
+    {
+        $userId = session()->get('user_id');
+
+        // Validasi input
+        $rules = [
+            'nama_jenis' => 'required|min_length[3]|max_length[100]',
+            'deskripsi' => 'required|min_length[10]',
+            'kelas_id' => 'required|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        // Cek jenis ujian exists
+        $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
+        if (!$jenisUjian) {
+            session()->setFlashdata('error', 'Jenis ujian tidak ditemukan.');
+            return redirect()->to(base_url('admin/jenis-ujian'));
+        }
+
+        $kelasId = $this->request->getPost('kelas_id');
+
+        // Validasi kelas exists
+        $kelas = $this->kelasModel->find($kelasId);
+        if (!$kelas) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan.');
+            return redirect()->back()->withInput();
+        }
+
+        try {
+            $data = [
+                'nama_jenis' => $this->request->getPost('nama_jenis'),
+                'deskripsi' => $this->request->getPost('deskripsi'),
+                'kelas_id' => $kelasId
+            ];
+
+            $this->jenisUjianModel->update($jenisUjianId, $data);
+            session()->setFlashdata('success', 'Jenis ujian berhasil diperbarui!');
+            return redirect()->to(base_url('admin/jenis-ujian'));
+        } catch (\Exception $e) {
+            log_message('error', 'Error updating jenis ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui jenis ujian: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
+    }
+
+    public function hapusJenisUjian($jenisUjianId)
+    {
+        try {
+            // Cek jenis ujian exists
+            $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
+            if (!$jenisUjian) {
+                session()->setFlashdata('error', 'Jenis ujian tidak ditemukan.');
+                return redirect()->to(base_url('admin/jenis-ujian'));
+            }
+
+            // Cek apakah ada ujian yang menggunakan jenis ujian ini
+            $db = \Config\Database::connect();
+            $ujianTerkait = $db->table('ujian')
+                ->where('jenis_ujian_id', $jenisUjianId)
+                ->countAllResults();
+
+            if ($ujianTerkait > 0) {
+                session()->setFlashdata('error', "Tidak dapat menghapus jenis ujian ini karena masih ada {$ujianTerkait} ujian yang menggunakan jenis ujian ini. Harap hapus ujian terkait terlebih dahulu.");
+                return redirect()->to(base_url('admin/jenis-ujian'));
+            }
+
+            $this->jenisUjianModel->delete($jenisUjianId);
+            session()->setFlashdata('success', 'Jenis ujian berhasil dihapus!');
+        } catch (\Exception $e) {
+            log_message('error', 'Error deleting jenis ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus jenis ujian.');
+        }
+
+        return redirect()->to(base_url('admin/jenis-ujian'));
+    }
+
+    // API method untuk mendapatkan kelas berdasarkan sekolah (untuk AJAX)
+    public function getKelasBySekolah($sekolahId)
+    {
+        $db = \Config\Database::connect();
+
+        $kelas = $db->table('kelas')
+            ->select('kelas_id, nama_kelas, tahun_ajaran')
+            ->where('sekolah_id', $sekolahId)
+            ->orderBy('tahun_ajaran', 'DESC')
+            ->orderBy('nama_kelas', 'ASC')
+            ->get()
+            ->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $kelas
+        ]);
+    }
 }

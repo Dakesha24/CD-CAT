@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,128 +16,160 @@
             color: #333;
             font-size: 12px;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
         }
-        h1, h2, h3 {
+
+        h1,
+        h2,
+        h3 {
             color: #2c3e50;
             margin-top: 20px;
             margin-bottom: 10px;
         }
+
         h1 {
             text-align: center;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
             font-size: 20px;
         }
+
         h2 {
             font-size: 16px;
             background-color: #f5f5f5;
             padding: 5px 10px;
             border-left: 4px solid #3498db;
         }
+
         .report-header {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .report-header .report-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 5px;
         }
+
         .report-header .report-subtitle {
             font-size: 14px;
             color: #666;
             margin-bottom: 5px;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
         }
+
         table.info {
             margin-bottom: 20px;
         }
+
         table.info td {
             padding: 5px 10px;
         }
+
         table.info td:first-child {
             width: 150px;
             font-weight: bold;
         }
+
         table.detail {
             border: 1px solid #ccc;
         }
+
         table.detail th {
             background-color: #f2f2f2;
             padding: 8px;
             text-align: left;
             border: 1px solid #ccc;
         }
+
         table.detail td {
             padding: 8px;
             border: 1px solid #ccc;
         }
+
         .text-success {
             color: #27ae60;
         }
+
         .text-danger {
             color: #e74c3c;
         }
+
         .text-center {
             text-align: center;
         }
+
         .highlight {
             font-weight: bold;
             font-size: 18px;
             color: #2980b9;
         }
+
         .row {
             display: flex;
             margin-bottom: 15px;
         }
+
         .col {
             flex: 1;
             padding: 0 10px;
         }
+
         .chart-container {
             width: 100%;
             height: 300px;
             margin: 20px 0;
         }
+
         .chart-row {
             display: flex;
             flex-wrap: wrap;
             margin: 0 -10px;
         }
+
         .chart-col {
             flex: 0 0 50%;
             max-width: 50%;
             padding: 0 10px;
             box-sizing: border-box;
         }
+
         @media print {
             body {
                 font-size: 12px;
             }
+
             .container {
                 width: 100%;
                 max-width: none;
                 padding: 0;
             }
+
             h1 {
                 font-size: 18px;
             }
+
             h2 {
                 font-size: 14px;
             }
+
             h3 {
                 font-size: 13px;
             }
+
             .page-break {
                 page-break-before: always;
             }
+
             .chart-col {
                 flex: 0 0 100%;
                 max-width: 100%;
@@ -145,19 +178,15 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="report-header">
             <div class="report-title">HASIL UJIAN ADAPTIF SISWA</div>
-            <?php 
-            // Generate kode soal dari tahun dan ID
-            $tahunPembuatan = date('Y', strtotime($hasil['tanggal_mulai']));
-            $kode_soal = $tahunPembuatan . str_pad($hasil['ujian_id'], 4, '0', STR_PAD_LEFT);
-            ?>
             <div class="report-subtitle"><?= esc($hasil['nama_ujian']) ?> - <?= esc($hasil['nama_jenis']) ?></div>
-            <div class="report-subtitle">Kode Soal: <?= $kode_soal ?></div>
+            <div class="report-subtitle">Kode Ujian: <?= esc($hasil['kode_ujian']) ?></div>
         </div>
-        
+
         <div class="row">
             <div class="col">
                 <h2>Informasi Ujian</h2>
@@ -165,6 +194,10 @@
                     <tr>
                         <td>Nama Ujian</td>
                         <td>: <?= esc($hasil['nama_ujian']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Kode Ujian</td>
+                        <td>: <?= esc($hasil['kode_ujian']) ?></td>
                     </tr>
                     <tr>
                         <td>Jenis Ujian</td>
@@ -206,9 +239,9 @@
                 </table>
             </div>
         </div>
-        
+
         <h2>Hasil Akhir</h2>
-        <?php 
+        <?php
         // Ambil theta terakhir (dari jawaban terakhir)
         $lastTheta = end($detailJawaban)['theta_saat_ini'];
         // Hitung nilai akhir: 50 + 16.6 * theta
@@ -250,7 +283,7 @@
                 </table>
             </div>
         </div>
-        
+
         <h2>Grafik Perkembangan</h2>
         <div class="chart-row">
             <div class="chart-col">
@@ -268,12 +301,13 @@
                 <div id="seChartImage"></div>
             </div>
         </div>
-        
+
         <h2>Detail Jawaban</h2>
         <table class="detail">
             <thead>
                 <tr>
                     <th>No</th>
+                    <th>Kode Soal</th>
                     <th>ID Soal</th>
                     <th>Pertanyaan</th>
                     <th>Tingkat Kesulitan</th>
@@ -291,28 +325,29 @@
             </thead>
             <tbody>
                 <?php foreach ($detailJawaban as $i => $jawaban): ?>
-                <tr>
-                    <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
-                    <td class="text-center"><?= $jawaban['soal_id'] ?></td>
-                    <td><?= esc($jawaban['pertanyaan']) ?></td>
-                    <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
-                    <td class="text-center"><?= $jawaban['jawaban_siswa'] ?></td>
-                    <td class="text-center <?= $jawaban['is_correct'] ? 'text-success' : 'text-danger' ?>">
-                        <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
-                    </td>
-                    <td class="text-center"><?= $jawaban['waktu_menjawab_format'] ?></td>
-                    <td class="text-center"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
-                    <td class="text-center"><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
-                    <td class="text-center"><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
-                    <td class="text-center"><?= isset($jawaban['ii_saat_ini']) ? number_format($jawaban['ii_saat_ini'], 3) : '-' ?></td>
-                    <td class="text-center"><?= number_format($jawaban['se_saat_ini'], 3) ?></td>
-                    <td class="text-center"><?= number_format(abs($jawaban['delta_se_saat_ini']), 3) ?></td>
-                    <td class="text-center"><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
-                </tr>
+                    <tr>
+                        <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
+                        <td class="text-center"><?= esc($jawaban['kode_soal']) ?></td>
+                        <td class="text-center"><?= $jawaban['soal_id'] ?></td>
+                        <td><?= esc($jawaban['pertanyaan']) ?></td>
+                        <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
+                        <td class="text-center"><?= $jawaban['jawaban_siswa'] ?></td>
+                        <td class="text-center <?= $jawaban['is_correct'] ? 'text-success' : 'text-danger' ?>">
+                            <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
+                        </td>
+                        <td class="text-center"><?= $jawaban['waktu_menjawab_format'] ?></td>
+                        <td class="text-center"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
+                        <td class="text-center"><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= isset($jawaban['ii_saat_ini']) ? number_format($jawaban['ii_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= number_format($jawaban['se_saat_ini'], 3) ?></td>
+                        <td class="text-center"><?= number_format(abs($jawaban['delta_se_saat_ini']), 3) ?></td>
+                        <td class="text-center"><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        
+
         <div style="text-align: right; margin-top: 30px; margin-bottom: 50px;">
             <p>
                 <?= date('d F Y') ?><br>
@@ -321,21 +356,21 @@
             </p>
         </div>
     </div>
-    
+
     <script>
         // Data untuk grafik
         const labels = <?= json_encode(array_map(function ($item) {
-                        return 'Soal ' . $item['nomor_soal'];
-                      }, $detailJawaban)) ?>;
-        
+                            return 'Soal ' . $item['nomor_soal'];
+                        }, $detailJawaban)) ?>;
+
         const thetaData = <?= json_encode(array_map(function ($item) {
-                            return $item['theta_saat_ini'];
-                          }, $detailJawaban)) ?>;
+                                return $item['theta_saat_ini'];
+                            }, $detailJawaban)) ?>;
 
         const seData = <?= json_encode(array_map(function ($item) {
-                          return $item['se_saat_ini'];
+                            return $item['se_saat_ini'];
                         }, $detailJawaban)) ?>;
-                    
+
 
         // Fungsi untuk membuat grafik Theta
         function createThetaChart() {
@@ -412,18 +447,18 @@
         // Fungsi untuk mengkonversi chart ke gambar
         async function chartToImage(chart, containerId) {
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             const canvas = chart.canvas;
-            
+
             html2canvas(canvas).then(canvas => {
                 const container = document.getElementById(containerId);
-                
+
                 const img = document.createElement('img');
                 img.src = canvas.toDataURL('image/png');
                 img.style.width = '100%';
                 img.style.maxWidth = '100%';
                 container.appendChild(img);
-                
+
                 chart.canvas.parentNode.style.display = 'none';
             });
         }
@@ -432,14 +467,15 @@
         window.onload = async function() {
             const thetaChart = createThetaChart();
             const seChart = createSEChart();
-            
+
             await chartToImage(thetaChart, 'thetaChartImage');
             await chartToImage(seChart, 'seChartImage');
-            
+
             setTimeout(() => {
                 window.print();
             }, 1000);
         }
     </script>
 </body>
+
 </html>

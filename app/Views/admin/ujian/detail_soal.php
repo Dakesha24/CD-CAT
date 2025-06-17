@@ -3,6 +3,8 @@
 <?= $this->section('title') ?>Detail Soal<?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<br><br><br>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">

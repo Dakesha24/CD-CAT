@@ -25,7 +25,20 @@
 
   <?php if (session()->getFlashdata('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-      <i class="bi bi-exclamation-circle me-2"></i><?= session()->getFlashdata('error') ?>
+      <i class="bi bi-exclamation-circle me-2"></i>
+      <?php
+      // Memeriksa jika flashdata 'error' adalah array (dari validasi)
+      $errors = session()->getFlashdata('error');
+      if (is_array($errors)) {
+        echo '<ul>';
+        foreach ($errors as $error) {
+          echo '<li>' . esc($error) . '</li>'; // Menampilkan setiap error dalam list
+        }
+        echo '</ul>';
+      } else {
+        echo esc($errors); // Jika bukan array, tampilkan langsung
+      }
+      ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
@@ -87,6 +100,10 @@
 
               <div class="flex-grow-1">
                 <h5 class="card-title fw-bold mb-2"><?= esc($u['nama_ujian']) ?></h5>
+                <!-- Tambahkan Kode Ujian di sini -->
+                <?php if (!empty($u['kode_ujian'])): ?>
+                  <p class="card-subtitle text-muted small mb-2">Kode Ujian: <strong><?= esc($u['kode_ujian']) ?></strong></p>
+                <?php endif; ?>
                 <p class="card-text text-muted small mb-3"><?= esc($u['deskripsi']) ?></p>
 
                 <div class="row g-2 text-center mb-3">
@@ -170,6 +187,12 @@
               <label class="form-label fw-semibold">Nama Ujian</label>
               <input type="text" name="nama_ujian" class="form-control" placeholder="Contoh: UTS Matematika Semester 1" required>
             </div>
+            <!-- Tambahkan input Kode Ujian di sini untuk modal tambah -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Kode Ujian</label>
+              <input type="text" name="kode_ujian" class="form-control" placeholder="Contoh: MTK_UTS_2025_01" required>
+              <div class="form-text">Kode unik untuk ujian ini (digunakan untuk identifikasi).</div>
+            </div>
             <div class="col-12">
               <label class="form-label fw-semibold">Deskripsi</label>
               <textarea name="deskripsi" class="form-control" rows="3" placeholder="Deskripsi ujian..." required></textarea>
@@ -250,6 +273,12 @@
               <div class="col-12">
                 <label class="form-label fw-semibold">Nama Ujian</label>
                 <input type="text" name="nama_ujian" class="form-control" value="<?= esc($u['nama_ujian']) ?>" required>
+              </div>
+              <!-- Tambahkan input Kode Ujian di sini untuk modal edit -->
+              <div class="col-12">
+                <label class="form-label fw-semibold">Kode Ujian</label>
+                <input type="text" name="kode_ujian" class="form-control" value="<?= esc($u['kode_ujian']) ?>" required>
+                <div class="form-text">Kode unik untuk ujian ini (digunakan untuk identifikasi).</div>
               </div>
               <div class="col-12">
                 <label class="form-label fw-semibold">Deskripsi</label>

@@ -146,7 +146,7 @@ class Siswa extends Controller
 
     //gabungkan data jadwal ujian dengan status peserta
     $jadwalUjian = $this->jadwalUjianModel
-      ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.deskripsi, ujian.durasi, peserta_ujian.status as status_peserta')
+      ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.kode_ujian, ujian.deskripsi, ujian.durasi, peserta_ujian.status as status_peserta')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
       ->join('peserta_ujian', 'peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.siswa_id = ' . $siswa['siswa_id'], 'left')
       ->where('jadwal_ujian.kelas_id', $siswa['kelas_id'])
@@ -251,7 +251,7 @@ class Siswa extends Controller
 
     // 3. Ambil informasi ujian dan jadwal di awal
     $ujianInfo = $this->jadwalUjianModel
-      ->select('jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis')
+      ->select('jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis')
       ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
       ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
       ->where('jadwal_ujian.jadwal_id', $jadwalId)
@@ -319,7 +319,7 @@ class Siswa extends Controller
     if (!isset($catParams['current_question']) || $catParams['current_question'] === null) {
       // Untuk soal pertama, cari yang paling dekat dengan 0
       $nextQuestion = $this->soalUjianModel
-        ->select('*, ABS(tingkat_kesulitan - 0) as distance')  // Hitung jarak dari 0
+        ->select('*, kode_soal, ABS(tingkat_kesulitan - 0) as distance')  // Hitung jarak dari 0
         ->where('ujian_id', $ujianInfo['id_ujian'])
         ->orderBy('distance', 'ASC')  // Urutkan berdasarkan jarak terdekat dengan 0
         ->first();
@@ -477,7 +477,7 @@ class Siswa extends Controller
 
         // Jika benar, cari soal lebih sulit
         $nextQuestion = $this->soalUjianModel
-          ->select('*, ABS(tingkat_kesulitan - ' . ($b + 0.01) . ') as distance')
+          ->select('*, kode_soal, ABS(tingkat_kesulitan - ' . ($b + 0.01) . ') as distance')
           ->where('ujian_id', $soal['ujian_id'])
           ->where('tingkat_kesulitan >', $b);
 
@@ -491,7 +491,7 @@ class Siswa extends Controller
         // Jika salah, update theta dan cari soal lebih mudah
         $theta = $b;
         $nextQuestion = $this->soalUjianModel
-          ->select('*, ABS(tingkat_kesulitan - ' . ($b - 0.01) . ') as distance')
+          ->select('*, kode_soal, ABS(tingkat_kesulitan - ' . ($b - 0.01) . ') as distance')
           ->where('ujian_id', $soal['ujian_id'])
           ->where('tingkat_kesulitan <', $b);
 
@@ -699,6 +699,7 @@ class Siswa extends Controller
             peserta_ujian.*, 
             jadwal_ujian.*, 
             ujian.nama_ujian, 
+            ujian.kode_ujian,
             ujian.deskripsi, 
             ujian.durasi,
             jenis_ujian.nama_jenis,
@@ -714,6 +715,7 @@ class Siswa extends Controller
       ->where('peserta_ujian.status', 'selesai')
       ->orderBy('peserta_ujian.waktu_selesai', 'DESC')
       ->findAll();
+
 
     // Tambahkan informasi jumlah soal untuk setiap ujian
     foreach ($riwayatUjian as &$ujian) {
@@ -751,6 +753,7 @@ class Siswa extends Controller
             peserta_ujian.*, 
             jadwal_ujian.*, 
             ujian.*, 
+            ujian.kode_ujian,
             jenis_ujian.nama_jenis,
             TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
             TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
@@ -768,6 +771,7 @@ class Siswa extends Controller
       ->select('
             hasil_ujian.*, 
             soal_ujian.pertanyaan, 
+            soal_ujian.kode_soal,
             soal_ujian.jawaban_benar, 
             soal_ujian.tingkat_kesulitan, 
             soal_ujian.pembahasan,
@@ -850,6 +854,7 @@ class Siswa extends Controller
             peserta_ujian.*, 
             jadwal_ujian.*, 
             ujian.*, 
+            ujian.kode_ujian,
             jenis_ujian.nama_jenis,
             TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
             TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
@@ -873,6 +878,7 @@ class Siswa extends Controller
       ->select('
             hasil_ujian.*, 
             soal_ujian.pertanyaan, 
+            soal_ujian.kode_soal,
             soal_ujian.jawaban_benar, 
             soal_ujian.tingkat_kesulitan, 
             soal_ujian.pembahasan,

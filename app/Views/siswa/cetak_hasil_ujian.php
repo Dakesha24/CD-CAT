@@ -47,6 +47,12 @@
             color: #6c757d;
         }
 
+        .kode-ujian {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
         .info-box {
             margin-bottom: 25px;
         }
@@ -156,6 +162,8 @@
         <div class="header">
             <div class="title">LAPORAN HASIL UJIAN</div>
             <div class="subtitle"><?= esc($hasil['nama_ujian']) ?></div>
+            <!-- TAMBAHAN: Tampilkan kode ujian -->
+            <div class="kode-ujian">Kode Ujian: <?= esc($hasil['kode_ujian']) ?></div>
         </div>
 
         <div class="row">
@@ -220,18 +228,21 @@
                     <thead class="table-light">
                         <tr>
                             <th width="5%">No</th>
-                            <th width="35%">Pertanyaan</th>
+                            <th width="10%">Kode Soal</th>
+                            <th width="30%">Pertanyaan</th>
                             <th width="10%">Jawaban Anda</th>
                             <th width="10%">Jawaban Benar</th>
                             <th width="10%">Status</th>
-                            <th width="15%">Waktu Jawab</th>
-                            <th width="15%">Durasi</th>
+                            <th width="12.5%">Waktu Jawab</th>
+                            <th width="12.5%">Durasi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($detailJawaban as $i => $jawaban): ?>
                             <tr>
                                 <td><?= $jawaban['nomor_soal'] ?></td>
+                                <!-- TAMBAHAN: Tampilkan kode soal -->
+                                <td><small><?= esc($jawaban['kode_soal']) ?></small></td>
                                 <td><?= esc($jawaban['pertanyaan']) ?></td>
                                 <td><?= $jawaban['jawaban_siswa'] ?></td>
                                 <td><?= $jawaban['jawaban_benar'] ?></td>
@@ -255,7 +266,7 @@
             <?php foreach ($detailJawaban as $i => $jawaban): ?>
                 <?php if (isset($jawaban['pembahasan']) && !empty($jawaban['pembahasan'])): ?>
                     <div class="pembahasan-item">
-                        <div class="fw-bold mb-2">Soal #<?= $jawaban['nomor_soal'] ?>:</div>
+                        <div class="fw-bold mb-2">Soal #<?= $jawaban['nomor_soal'] ?> (<?= esc($jawaban['kode_soal']) ?>):</div>
                         <div class="mb-3"><?= esc($jawaban['pertanyaan']) ?></div>
                         <div class="fw-bold mb-2">Pembahasan:</div>
                         <div><?= $jawaban['pembahasan'] ?></div>

@@ -94,6 +94,14 @@
             <td><?= esc($hasil['nama_lengkap']) ?></td>
         </tr>
         <tr>
+            <td>Kode Ujian</td>
+            <td>:</td>
+            <td><?= esc($hasil['kode_ujian']) ?></td>
+            <td>NIS</td>
+            <td>:</td>
+            <td><?= esc($hasil['nomor_peserta']) ?></td>
+        </tr>
+        <tr>
             <td>Jenis Ujian</td>
             <td>:</td>
             <td><?= esc($hasil['nama_jenis']) ?></td>
@@ -177,6 +185,7 @@
         <thead>
             <tr>
                 <th width="30">No</th>
+                <th width="60">Kode Soal</th>
                 <th width="50">ID Soal</th>
                 <th>Pertanyaan</th>
                 <th width="60">Tingkat Kesulitan</th>
@@ -196,6 +205,7 @@
             <?php foreach ($detailJawaban as $i => $jawaban): ?>
                 <tr>
                     <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
+                    <td class="text-center"><?= esc($jawaban['kode_soal']) ?></td>
                     <td class="text-center"><?= $jawaban['soal_id'] ?></td>
                     <td><?= esc($jawaban['pertanyaan']) ?></td>
                     <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>

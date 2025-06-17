@@ -16,6 +16,10 @@
             <div>
               <h4 class="mb-0"><?= esc($ujian['nama_ujian']) ?></h4>
               <small class="text-muted"><?= esc($ujian['nama_jenis']) ?></small>
+              <!-- TAMBAHAN: Tampilkan kode ujian -->
+              <div class="mt-1">
+                <span class="badge bg-secondary"><?= esc($ujian['kode_ujian']) ?></span>
+              </div>
             </div>
             <div class="text-center">
               <h5 class="mb-0">Sisa Waktu</h5>
@@ -34,8 +38,14 @@
       <!-- Soal -->
       <div class="card border-0 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title mb-4">Pertanyaan:</h5>
-          <p class="lead mb-4"><?= esc($soal['pertanyaan']) ?></p>
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="card-title mb-0">Pertanyaan:</h5>
+            <!-- TAMBAHAN: Tampilkan kode soal -->
+            <span class="badge bg-info"><?= esc($soal['kode_soal']) ?></span>
+          </div>
+
+          <!-- PERBAIKAN: Hilangkan esc() untuk pertanyaan agar HTML ditampilkan -->
+          <div class="lead mb-4"><?= $soal['pertanyaan'] ?></div>
 
           <?php if (!empty($soal['foto'])): ?>
             <!-- Tampilkan foto soal jika ada -->
@@ -56,14 +66,18 @@
                 'D' => $soal['pilihan_d'],
                 'E' => $soal['pilihan_e']
               ];
-              foreach ($pilihan as $key => $value): ?>
+              foreach ($pilihan as $key => $value): 
+                // Skip pilihan yang kosong (untuk pilihan E yang opsional)
+                if (empty($value)) continue;
+              ?>
                 <label class="list-group-item list-group-item-action">
                   <input class="form-check-input me-2"
                     type="radio"
                     name="jawaban"
                     value="<?= $key ?>"
                     required>
-                  <?= $key ?>. <?= esc($value) ?>
+                  <!-- PERBAIKAN: Hilangkan esc() untuk pilihan agar HTML ditampilkan -->
+                  <?= $key ?>. <?= $value ?>
                 </label>
               <?php endforeach; ?>
             </div>
@@ -110,4 +124,78 @@
     window.onbeforeunload = null;
   };
 </script>
+
+<!-- CSS tambahan untuk styling konten CKEditor -->
+<style>
+/* Styling untuk konten yang dibuat dengan CKEditor */
+.lead {
+  line-height: 1.6;
+}
+
+.lead p {
+  margin-bottom: 1rem;
+}
+
+.lead strong, .lead b {
+  font-weight: 600;
+}
+
+.lead em, .lead i {
+  font-style: italic;
+}
+
+.lead sub {
+  font-size: 0.8em;
+  vertical-align: sub;
+}
+
+.lead sup {
+  font-size: 0.8em;
+  vertical-align: super;
+}
+
+.lead table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.lead table, .lead th, .lead td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.lead th {
+  background-color: #f2f2f2;
+}
+
+.lead ul, .lead ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+/* Styling untuk pilihan jawaban */
+.list-group-item {
+  line-height: 1.5;
+}
+
+.list-group-item strong, .list-group-item b {
+  font-weight: 600;
+}
+
+.list-group-item em, .list-group-item i {
+  font-style: italic;
+}
+
+.list-group-item sub {
+  font-size: 0.9em;
+  vertical-align: sub;
+}
+
+.list-group-item sup {
+  font-size: 0.9em;
+  vertical-align: super;
+}
+</style>
+
 <?= $this->endSection() ?>

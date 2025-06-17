@@ -65,6 +65,32 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->get('sekolah/(:num)/kelas/(:num)/transfer-siswa/(:num)', 'Admin::transferSiswaSekolah/$1/$2/$3');
   $routes->post('sekolah/transfer-siswa/proses', 'Admin::prosesTransferSiswaSekolah');
 
+  // Bank Soal
+  $routes->get('bank-soal', 'Admin::bankSoal');
+  $routes->post('bank-soal/tambah', 'Admin::tambahBankSoal');
+  $routes->get('bank-soal/kategori/(:segment)', 'Admin::bankSoalKategori/$1');
+  $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)', 'Admin::bankSoalJenisUjian/$1/$2');
+  $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)/ujian/(:num)', 'Admin::bankSoalUjian/$1/$2/$3');
+  $routes->post('bank-soal/tambah-soal', 'Admin::tambahSoalBankUjian');
+  $routes->post('bank-soal/edit-soal/(:num)', 'Admin::editSoalBankUjian/$1');
+  $routes->get('bank-soal/hapus-soal/(:num)', 'Admin::hapusSoalBankUjian/$1');
+  $routes->get('bank-soal/hapus/(:num)', 'Admin::hapusBankUjian/$1');
+
+  // Kelola Jenis Ujian
+  $routes->get('jenis-ujian', 'Admin::jenisUjian');
+  $routes->post('jenis-ujian/tambah', 'Admin::tambahJenisUjian');
+  $routes->post('jenis-ujian/edit/(:num)', 'Admin::editJenisUjian/$1');
+  $routes->get('jenis-ujian/hapus/(:num)', 'Admin::hapusJenisUjian/$1');
+
+  // API routes untuk AJAX
+  $routes->get('api/kelas-by-sekolah/(:num)', 'Admin::getKelasBySekolah/$1');
+
+  // API routes untuk AJAX
+  $routes->get('bank-soal/api/kategori', 'Admin::getKategoriTersedia');
+  $routes->get('bank-soal/api/jenis-ujian', 'Admin::getJenisUjianByKategori');
+  $routes->get('bank-soal/api/bank-ujian', 'Admin::getBankUjianByKategoriJenis');
+  $routes->get('bank-soal/api/soal', 'Admin::getSoalBankUjian');
+
 
   // Kelola Ujian
   $routes->get('ujian', 'Admin::daftarUjian');
@@ -132,6 +158,10 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
   $routes->get('hasil-ujian', 'Guru::hasilUjian');
   $routes->get('hasil-ujian/siswa/(:num)', 'Guru::daftarSiswa/$1');
   $routes->get('hasil-ujian/detail/(:num)', 'Guru::detailHasil/$1');
+
+  $routes->get('hasil-ujian/hapus/(:num)', 'Guru::hapusHasilSiswa/$1');
+  $routes->get('hasil-ujian/reset/(:num)', 'Guru::resetStatusSiswa/$1');
+
 
   $routes->get('profil', 'Guru::profil');
   $routes->post('profil/save', 'Guru::saveProfil');

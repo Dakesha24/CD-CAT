@@ -8,7 +8,7 @@ class UjianModel extends Model
 {
   protected $table = 'ujian';
   protected $primaryKey = 'id_ujian';
-  protected $allowedFields = ['jenis_ujian_id', 'nama_ujian', 'deskripsi', 'se_awal', 'se_minimum', 'delta_se_minimum', 'durasi', 'kelas_id', 'created_by'];
+  protected $allowedFields = ['jenis_ujian_id', 'nama_ujian', 'kode_ujian', 'deskripsi', 'se_awal', 'se_minimum', 'delta_se_minimum', 'durasi', 'kelas_id', 'created_by'];
   protected $useTimestamps = true;
   protected $createdField = 'created_at';
   protected $updatedField = 'updated_at';

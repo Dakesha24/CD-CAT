@@ -15,7 +15,9 @@
       <div class="row">
         <div class="col-md-8">
           <h4 class="text-primary mb-1"><?= esc($hasil['nama_ujian']) ?></h4>
-          <p class="text-muted mb-3"><?= esc($hasil['nama_jenis']) ?></p>
+          <p class="text-muted mb-1"><?= esc($hasil['nama_jenis']) ?></p>
+          <!-- TAMBAHAN: Tampilkan kode ujian -->
+          <p class="text-muted mb-3"><small><i class="bi bi-hash"></i> <?= esc($hasil['kode_ujian']) ?></small></p>
           <p class="mb-0"><?= esc($hasil['deskripsi']) ?></p>
         </div>
         <div class="col-md-4">
@@ -95,6 +97,7 @@
         <thead>
           <tr>
             <th>No</th>
+            <th>Kode Soal</th>
             <th>Pertanyaan</th>
             <th>Jawaban Anda</th>
             <th>Jawaban Benar</th>
@@ -108,6 +111,8 @@
           <?php foreach ($detailJawaban as $i => $jawaban): ?>
             <tr>
               <td><?= $jawaban['nomor_soal'] ?></td>
+              <!-- TAMBAHAN: Tampilkan kode soal -->
+              <td><small class="text-muted"><?= esc($jawaban['kode_soal']) ?></small></td>
               <td><?= esc($jawaban['pertanyaan']) ?></td>
               <td><?= $jawaban['jawaban_siswa'] ?></td>
               <td><?= $jawaban['jawaban_benar'] ?></td>
@@ -135,7 +140,7 @@
                     <div class="modal-dialog modal-lg">
                       <div class="modal-content">
                         <div class="modal-header">
-                          <h5 class="modal-title" id="pembahasanModalLabel<?= $i ?>">Pembahasan Soal #<?= $jawaban['nomor_soal'] ?></h5>
+                          <h5 class="modal-title" id="pembahasanModalLabel<?= $i ?>">Pembahasan Soal #<?= $jawaban['nomor_soal'] ?> (<?= esc($jawaban['kode_soal']) ?>)</h5>
                           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">

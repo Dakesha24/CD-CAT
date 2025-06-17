@@ -17,7 +17,9 @@
               <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
                   <h5 class="card-title text-primary mb-1"><?= esc($ujian['nama_ujian']) ?></h5>
-                  <small class="text-muted"><?= esc($ujian['nama_jenis']) ?></small>
+                  <small class="text-muted d-block"><?= esc($ujian['nama_jenis']) ?></small>
+                  <!-- TAMBAHAN: Tampilkan kode ujian -->
+                  <small class="text-muted"><i class="bi bi-hash"></i> <?= esc($ujian['kode_ujian']) ?></small>
                 </div>
                 <span class="badge bg-success">Selesai</span>
               </div>

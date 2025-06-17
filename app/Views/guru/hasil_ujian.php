@@ -64,6 +64,9 @@
 
               <div class="flex-grow-1">
                 <h5 class="card-title fw-bold mb-2"><?= esc($ujian['nama_ujian']) ?></h5>
+                <p class="text-muted small mb-1">
+                  <i class="bi bi-code-square me-1"></i>Kode: <?= esc($ujian['kode_ujian']) ?>
+                </p>
                 <p class="card-text text-muted small mb-3"><?= esc($ujian['deskripsi']) ?></p>
 
                 <!-- Informasi Waktu -->

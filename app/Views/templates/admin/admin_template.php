@@ -219,6 +219,17 @@
             </li>
 
             <hr class="sidebar-divider">
+            <div class="sidebar-section">Kelola Institusi</div>
+
+            <!-- Kelola Sekolah -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/sekolah') ?>" class="nav-link <?= (strpos(current_url(), 'admin/sekolah') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-building"></i>
+                    <span>Kelola Sekolah & Kelas</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
             <div class="sidebar-section">Kelola Pengguna</div>
 
             <!-- Kelola Guru -->
@@ -238,18 +249,22 @@
             </li>
 
             <hr class="sidebar-divider">
-            <div class="sidebar-section">Kelola Institusi</div>
+            <div class="sidebar-section">Kelola Ujian</div>
 
-            <!-- Kelola Sekolah -->
+            <!-- Bank Ujian -->
             <li class="nav-item">
-                <a href="<?= base_url('admin/sekolah') ?>" class="nav-link <?= (strpos(current_url(), 'admin/sekolah') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-building"></i>
-                    <span>Kelola Sekolah & Kelas</span>
+                <a href="<?= base_url('admin/bank-soal') ?>" class="nav-link <?= (strpos(current_url(), 'admin/bank-soal') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-database"></i>
+                    <span>Bank Ujian</span>
                 </a>
             </li>
-
-            <hr class="sidebar-divider">
-            <div class="sidebar-section">Kelola Ujian</div>
+            <!-- kelola jenis ujian -->
+            <li class="nav-item">
+                <a href="<?= base_url('admin/jenis-ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/bank-soal') !== false) ? 'active' : '' ?>">
+                    <i class="bi bi-journal"></i>
+                    <span>Jenis Ujian</span>
+                </a>
+            </li>
 
             <!-- Kelola Ujian -->
             <li class="nav-item">

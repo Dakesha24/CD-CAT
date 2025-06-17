@@ -10,7 +10,8 @@ class SoalUjianModel extends Model
     protected $primaryKey = 'soal_id';
     protected $allowedFields = [
         'ujian_id',
-        'bank_ujian_id',         
+        'bank_ujian_id',
+        'kode_soal',
         'is_bank_soal',
         'created_by',
         'pertanyaan',

@@ -72,6 +72,24 @@ class Guru extends Controller
         $userId = session()->get('user_id');
         $guru = $this->guruModel->where('user_id', $userId)->first();
 
+        // Validasi input form
+        $rules = [
+            'jenis_ujian_id' => 'required|numeric',
+            'nama_ujian' => 'required|min_length[3]|max_length[255]',
+            'kode_ujian' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]', // Validasi kode_ujian
+            'deskripsi' => 'required|min_length[10]',
+            'se_awal' => 'required|decimal',
+            'se_minimum' => 'required|decimal',
+            'delta_se_minimum' => 'required|decimal',
+            'durasi' => 'required',
+            'kelas_id' => 'permit_empty|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            // Mengirimkan error ke session flashdata
+            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+        }
+
         // Validasi jenis ujian (pastikan guru memiliki akses)
         $jenisUjianId = $this->request->getPost('jenis_ujian_id');
         if (!$this->jenisUjianModel->hasAccess($jenisUjianId, $guru['guru_id'])) {
@@ -93,9 +111,11 @@ class Guru extends Controller
             }
         }
 
+
         $data = [
             'jenis_ujian_id' => $jenisUjianId,
             'nama_ujian' => $this->request->getPost('nama_ujian'),
+            'kode_ujian' => $this->request->getPost('kode_ujian'),
             'deskripsi' => $this->request->getPost('deskripsi'),
             'se_awal' => $this->request->getPost('se_awal'),
             'se_minimum' => $this->request->getPost('se_minimum'),
@@ -118,6 +138,30 @@ class Guru extends Controller
         $userId = session()->get('user_id');
         $guru = $this->guruModel->where('user_id', $userId)->first();
 
+        // Ambil data ujian yang akan diedit untuk mendapatkan kode_ujian lama
+        $ujian = $this->ujianModel->find($id);
+        if (!$ujian) {
+            return redirect()->to('guru/ujian')->with('error', 'Ujian tidak ditemukan.');
+        }
+
+        // Validasi input form, termasuk validasi untuk kode_ujian
+        $rules = [
+            'jenis_ujian_id' => 'required|numeric',
+            'nama_ujian' => 'required|min_length[3]|max_length[255]',
+            'kode_ujian' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]', // Validasi kode_ujian, abaikan ID saat ini
+            'deskripsi' => 'required|min_length[10]',
+            'se_awal' => 'required|decimal',
+            'se_minimum' => 'required|decimal',
+            'delta_se_minimum' => 'required|decimal',
+            'durasi' => 'required',
+            'kelas_id' => 'permit_empty|numeric' // `permit_empty` mengizinkan nilai kosong
+        ];
+
+        if (!$this->validate($rules)) {
+            // Mengirimkan error ke session flashdata
+            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+        }
+
         // Cek akses ke ujian ini
         if (!$this->ujianModel->hasAccess($id, $guru['guru_id'])) {
             return redirect()->to('guru/ujian')
@@ -133,7 +177,8 @@ class Guru extends Controller
 
         // Validasi kelas (jika diubah)
         $kelasId = $this->request->getPost('kelas_id');
-        if ($kelasId) {
+        // Hanya validasi jika kelasId tidak kosong, karena kelas_id bisa NULL
+        if (!empty($kelasId)) {
             $kelasAccess = $this->db->table('kelas_guru')
                 ->where('guru_id', $guru['guru_id'])
                 ->where('kelas_id', $kelasId)
@@ -148,12 +193,13 @@ class Guru extends Controller
         $data = [
             'jenis_ujian_id' => $jenisUjianId,
             'nama_ujian' => $this->request->getPost('nama_ujian'),
+            'kode_ujian' => $this->request->getPost('kode_ujian'),
             'deskripsi' => $this->request->getPost('deskripsi'),
             'se_awal' => $this->request->getPost('se_awal'),
             'se_minimum' => $this->request->getPost('se_minimum'),
             'delta_se_minimum' => $this->request->getPost('delta_se_minimum'),
             'durasi' => $this->request->getPost('durasi'),
-            'kelas_id' => $kelasId
+            'kelas_id' => empty($kelasId) ? null : $kelasId // PERBAIKAN PENTING DI SINI
         ];
 
         try {
@@ -215,32 +261,35 @@ class Guru extends Controller
         return view('guru/kelola_soal', $data);
     }
 
+
     public function tambahSoal()
     {
         // Validasi form input
         $rules = [
             'ujian_id' => 'required|numeric',
             'pertanyaan' => 'required',
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
             'pilihan_a' => 'required',
             'pilihan_b' => 'required',
             'pilihan_c' => 'required',
             'pilihan_d' => 'required',
-            'pilihan_e' => 'required',
             'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
             'tingkat_kesulitan' => 'required|decimal',
             'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
             'pembahasan' => 'permit_empty'
         ];
 
-        // Jika validasi gagal, kembalikan pesan error
         if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
         }
 
         // Ambil data dari form
         $data = [
             'ujian_id' => $this->request->getPost('ujian_id'),
             'pertanyaan' => $this->request->getPost('pertanyaan'),
+            'kode_soal' => $this->request->getPost('kode_soal'),
             'pilihan_a' => $this->request->getPost('pilihan_a'),
             'pilihan_b' => $this->request->getPost('pilihan_b'),
             'pilihan_c' => $this->request->getPost('pilihan_c'),
@@ -248,27 +297,21 @@ class Guru extends Controller
             'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
             'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
-            'pembahasan' => $this->request->getPost('pembahasan')
+            'pembahasan' => $this->request->getPost('pembahasan'),
+            'created_by' => session()->get('user_id')
         ];
 
         // Upload foto jika ada
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
-            // Generate nama file unik
             $newName = $fotoFile->getRandomName();
-
-            // Lokasi penyimpanan yang benar (relatif terhadap public/)
             $uploadPath = 'uploads/soal';
 
-            // Buat direktori upload jika belum ada
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
             }
 
-            // Pindahkan ke direktori upload
             $fotoFile->move($uploadPath, $newName);
-
-            // Simpan nama file ke database
             $data['foto'] = $newName;
         }
 
@@ -278,39 +321,42 @@ class Guru extends Controller
             return redirect()->to('guru/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
         } catch (\Exception $e) {
             log_message('error', 'Error saat menambahkan soal: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal: ' . $e->getMessage());
         }
     }
 
+
     public function editSoal($id)
     {
-        // Validasi form input
-        $rules = [
-            'pertanyaan' => 'required',
-            'pilihan_a' => 'required',
-            'pilihan_b' => 'required',
-            'pilihan_c' => 'required',
-            'pilihan_d' => 'required',
-            'pilihan_e' => 'required',
-            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
-            'tingkat_kesulitan' => 'required|decimal',
-            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
-            'pembahasan' => 'permit_empty'
-        ];
-
-        // Jika validasi gagal, kembalikan pesan error
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
-        }
-
         // Ambil data soal yang akan diedit
         $soal = $this->soalUjianModel->find($id);
         if (!$soal) {
             return redirect()->back()->with('error', 'Soal tidak ditemukan');
         }
 
+        // Validasi form input
+        $rules = [
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
+        }
+
         // Ambil data dari form
         $data = [
+            'kode_soal' => $this->request->getPost('kode_soal'),
             'pertanyaan' => $this->request->getPost('pertanyaan'),
             'pilihan_a' => $this->request->getPost('pilihan_a'),
             'pilihan_b' => $this->request->getPost('pilihan_b'),
@@ -322,7 +368,6 @@ class Guru extends Controller
             'pembahasan' => $this->request->getPost('pembahasan')
         ];
 
-        // Lokasi penyimpanan yang benar (relatif terhadap public/)
         $uploadPath = 'uploads/soal';
 
         // Upload foto jika ada
@@ -336,30 +381,21 @@ class Guru extends Controller
                 }
             }
 
-            // Generate nama file unik
             $newName = $fotoFile->getRandomName();
-
-            // Buat direktori upload jika belum ada
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
             }
 
-            // Pindahkan ke direktori upload
             $fotoFile->move($uploadPath, $newName);
-
-            // Simpan nama file ke database
             $data['foto'] = $newName;
         }
 
         // Checkbox untuk menghapus foto
         if ($this->request->getPost('hapus_foto') == '1' && !empty($soal['foto'])) {
-            // Hapus file fisik
             $fotoPath = $uploadPath . '/' . $soal['foto'];
             if (file_exists($fotoPath)) {
                 unlink($fotoPath);
             }
-
-            // Set nilai foto menjadi null di database
             $data['foto'] = null;
         }
 
@@ -370,7 +406,7 @@ class Guru extends Controller
             return redirect()->to('guru/soal/' . $ujian_id)->with('success', 'Soal berhasil diupdate');
         } catch (\Exception $e) {
             log_message('error', 'Error saat mengupdate soal: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal: ' . $e->getMessage());
         }
     }
 
@@ -388,14 +424,21 @@ class Guru extends Controller
         $userId = session()->get('user_id');
         $guru = $this->guruModel->where('user_id', $userId)->first();
 
-        // Ambil jadwal berdasarkan kelas yang diajar guru
-        $data['jadwal'] = $this->jadwalUjianModel->getJadwalByKelasGuru($guru['guru_id']);
+        $data['jadwal'] = $this->db->table('jadwal_ujian')
+            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.kode_ujian, kelas.nama_kelas, guru.nama_lengkap')
+            ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
+            ->join('kelas', 'kelas.kelas_id = jadwal_ujian.kelas_id')
+            ->join('guru', 'guru.guru_id = jadwal_ujian.guru_id')
+            ->join('kelas_guru', 'kelas_guru.kelas_id = jadwal_ujian.kelas_id')
+            ->where('kelas_guru.guru_id', $guru['guru_id'])
+            ->orderBy('jadwal_ujian.tanggal_mulai', 'DESC')
+            ->get()->getResultArray();
 
         // Daftar ujian untuk modal tambah: hanya ujian yang bisa diakses guru
-        $data['ujian_tambah'] = $this->ujianModel->getByKelasGuru($guru['guru_id']);
+        $data['ujian_tambah'] = $this->ujianModel->select('id_ujian, nama_ujian, kode_ujian')->getByKelasGuru($guru['guru_id']);
 
         // Daftar ujian untuk modal edit: hanya ujian yang bisa diakses guru
-        $data['ujian_edit'] = $this->ujianModel->getByKelasGuru($guru['guru_id']);
+        $data['ujian_edit'] = $this->ujianModel->select('id_ujian, nama_ujian, kode_ujian')->getByKelasGuru($guru['guru_id']);
 
         // Daftar kelas yang diajar guru
         $data['kelas'] = $this->db->table('kelas')
@@ -415,7 +458,6 @@ class Guru extends Controller
 
         return view('guru/jadwal_ujian', $data);
     }
-
 
     public function tambahJadwal()
     {
@@ -599,17 +641,17 @@ class Guru extends Controller
 
         // Ambil daftar ujian yang sudah pernah dijadwalkan oleh guru ini dengan informasi waktu
         $daftarUjian = $this->jadwalUjianModel
-            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.deskripsi, jenis_ujian.nama_jenis, kelas.nama_kelas,
+            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.deskripsi, ujian.kode_ujian, jenis_ujian.nama_jenis, kelas.nama_kelas,
              (SELECT COUNT(*) FROM peserta_ujian WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as jumlah_peserta,
              (SELECT AVG(TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai))) 
-              FROM peserta_ujian 
-              WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as rata_rata_durasi_detik,
+             FROM peserta_ujian 
+             WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as rata_rata_durasi_detik,
              (SELECT MIN(TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai))) 
-              FROM peserta_ujian 
-              WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as durasi_tercepat_detik,
+             FROM peserta_ujian 
+             WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as durasi_tercepat_detik,
              (SELECT MAX(TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai))) 
-              FROM peserta_ujian 
-              WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as durasi_terlama_detik,
+             FROM peserta_ujian 
+             WHERE peserta_ujian.jadwal_id = jadwal_ujian.jadwal_id AND peserta_ujian.status = "selesai") as durasi_terlama_detik,
              DATE_FORMAT(jadwal_ujian.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
              DATE_FORMAT(jadwal_ujian.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
@@ -652,16 +694,121 @@ class Guru extends Controller
         return view('guru/hasil_ujian', ['daftarUjian' => $daftarUjian]);
     }
 
+    public function hapusHasilSiswa($pesertaUjianId)
+    {
+        $userId = session()->get('user_id');
+        $guru = $this->guruModel->where('user_id', $userId)->first();
+
+        // Validasi akses
+        $peserta = $this->pesertaUjianModel
+            ->select('peserta_ujian.*, jadwal_ujian.guru_id, jadwal_ujian.jadwal_id')
+            ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+            ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->first();
+
+        if (!$peserta) {
+            session()->setFlashdata('error', 'Data peserta ujian tidak ditemukan');
+            return redirect()->back();
+        }
+
+        // Cek akses guru
+        if ($peserta['guru_id'] != $guru['guru_id']) {
+            session()->setFlashdata('error', 'Anda tidak memiliki akses untuk menghapus hasil ujian ini');
+            return redirect()->back();
+        }
+
+        try {
+            $this->db->transStart();
+
+            // 1. Hapus semua hasil ujian (jawaban) siswa ini
+            $this->hasilUjianModel->where('peserta_ujian_id', $pesertaUjianId)->delete();
+
+            // 2. Hapus record peserta ujian
+            $this->pesertaUjianModel->delete($pesertaUjianId);
+
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                throw new \Exception('Gagal menghapus data');
+            }
+
+            session()->setFlashdata('success', 'Hasil ujian siswa berhasil dihapus');
+        } catch (\Exception $e) {
+            log_message('error', 'Error hapus hasil ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus hasil ujian');
+        }
+
+        // Redirect kembali ke daftar siswa dengan jadwal_id yang sama
+        return redirect()->to('guru/hasil-ujian/siswa/' . $peserta['jadwal_id']);
+    }
+
+    /**
+     * Reset status ujian siswa (untuk siswa yang belum selesai)
+     */
+    public function resetStatusSiswa($pesertaUjianId)
+    {
+        $userId = session()->get('user_id');
+        $guru = $this->guruModel->where('user_id', $userId)->first();
+
+        // Validasi akses
+        $peserta = $this->pesertaUjianModel
+            ->select('peserta_ujian.*, jadwal_ujian.guru_id, jadwal_ujian.jadwal_id')
+            ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
+            ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
+            ->first();
+
+        if (!$peserta) {
+            session()->setFlashdata('error', 'Data peserta ujian tidak ditemukan');
+            return redirect()->back();
+        }
+
+        // Cek akses guru
+        if ($peserta['guru_id'] != $guru['guru_id']) {
+            session()->setFlashdata('error', 'Anda tidak memiliki akses untuk reset ujian ini');
+            return redirect()->back();
+        }
+
+        try {
+            $this->db->transStart();
+
+            // 1. Hapus semua hasil ujian (jawaban) yang sudah ada
+            $this->hasilUjianModel->where('peserta_ujian_id', $pesertaUjianId)->delete();
+
+            // 2. Reset status peserta ujian
+            $this->pesertaUjianModel->update($pesertaUjianId, [
+                'status' => 'belum_mulai',
+                'waktu_mulai' => null,
+                'waktu_selesai' => null,
+                'theta_akhir' => null,
+                'se_akhir' => null
+            ]);
+
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                throw new \Exception('Gagal reset status ujian');
+            }
+
+            session()->setFlashdata('success', 'Status ujian siswa berhasil direset. Siswa dapat mengulang ujian dari awal.');
+        } catch (\Exception $e) {
+            log_message('error', 'Error reset status ujian: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat reset status ujian');
+        }
+
+        // Redirect kembali ke daftar siswa dengan jadwal_id yang sama
+        return redirect()->to('guru/hasil-ujian/siswa/' . $peserta['jadwal_id']);
+    }
+
     public function daftarSiswa($jadwalId)
     {
         $db = \Config\Database::connect();
 
         // Ambil info ujian dengan informasi waktu
         $ujian = $db->table('jadwal_ujian ju')
-            ->select('ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
-                 s.nama_sekolah, g.nama_lengkap as nama_guru, ju.kode_akses,
-                 DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
-                 DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
+            ->select('ju.*, u.nama_ujian, u.deskripsi, u.kode_ujian, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
+                     s.nama_sekolah, g.nama_lengkap as nama_guru, ju.kode_akses,
+                     DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
+                     DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
@@ -688,12 +835,12 @@ class Guru extends Controller
         // Ambil hasil siswa dengan perhitungan nilai dan informasi waktu
         $hasilSiswa = $db->table('peserta_ujian pu')
             ->select('pu.peserta_ujian_id, pu.status, pu.waktu_mulai, pu.waktu_selesai,
-                 siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
-                 u.username,
-                 TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
-                 TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
-                 DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-                 DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+                     siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
+                     u.username,
+                     TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
+                     TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
+                     DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                     DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('siswa', 'siswa.siswa_id = pu.siswa_id', 'left')
             ->join('users u', 'u.user_id = siswa.user_id', 'left')
             ->where('pu.jadwal_id', $jadwalId)
@@ -786,7 +933,7 @@ class Guru extends Controller
     {
         // Ambil detail hasil ujian dengan informasi waktu
         $hasil = $this->pesertaUjianModel
-            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis, 
+            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
              siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
              TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
              TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
@@ -802,7 +949,7 @@ class Guru extends Controller
 
         // Ambil detail jawaban dengan waktu
         $detailJawaban = $this->hasilUjianModel
-            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, 
+            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
              soal_ujian.tingkat_kesulitan,
              DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
@@ -1045,17 +1192,15 @@ class Guru extends Controller
         }
     }
 
-    //method download hasil
     public function downloadExcelHTML($pesertaUjianId)
     {
-        // Ambil detail hasil ujian dengan informasi waktu lengkap
         $hasil = $this->pesertaUjianModel
-            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis, 
-         siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
-         TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
-         TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
-         DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-         DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
+     siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
+     TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+     TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+     DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+     DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -1064,11 +1209,10 @@ class Guru extends Controller
             ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
             ->first();
 
-        // Ambil detail jawaban
         $detailJawaban = $this->hasilUjianModel
-            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, 
-         soal_ujian.tingkat_kesulitan,
-         DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
+     soal_ujian.tingkat_kesulitan,
+     DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -1086,11 +1230,11 @@ class Guru extends Controller
             return $carry + ($item['is_correct'] ? 1 : 0);
         }, 0);
 
-        // Format durasi total
+        // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
         if ($hasil['durasi_total_detik']) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
-            $detik = $hasil['durasi_total_detik'] % 60;
+            $detik = $hasil['durasi_total_detik'] % 60; // PERBAIKAN: ganti dari durasi_detik ke durasi_total_detik
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
         }
 
@@ -1139,16 +1283,16 @@ class Guru extends Controller
         exit;
     }
 
+
     public function downloadPDFHTML($pesertaUjianId)
     {
-        // Ambil detail hasil ujian dengan informasi waktu lengkap
         $hasil = $this->pesertaUjianModel
-            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, jenis_ujian.nama_jenis, 
-         siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
-         TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
-         TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
-         DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-         DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+            ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
+       siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
+       TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+       TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+       DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+       DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -1157,11 +1301,10 @@ class Guru extends Controller
             ->where('peserta_ujian.peserta_ujian_id', $pesertaUjianId)
             ->first();
 
-        // Ambil detail jawaban
         $detailJawaban = $this->hasilUjianModel
-            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.jawaban_benar, 
-         soal_ujian.tingkat_kesulitan,
-         DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+            ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
+       soal_ujian.tingkat_kesulitan,
+       DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -1179,11 +1322,11 @@ class Guru extends Controller
             return $carry + ($item['is_correct'] ? 1 : 0);
         }, 0);
 
-        // Format durasi total
+        // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
         if ($hasil['durasi_total_detik']) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
-            $detik = $hasil['durasi_total_detik'] % 60;
+            $detik = $hasil['durasi_total_detik'] % 60; // PERBAIKAN: ganti dari durasi_detik ke durasi_total_detik
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
         }
 
@@ -1412,6 +1555,7 @@ class Guru extends Controller
 
         // Validasi form input
         $rules = [
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
             'pertanyaan' => 'required',
             'pilihan_a' => 'required',
             'pilihan_b' => 'required',
@@ -1424,7 +1568,9 @@ class Guru extends Controller
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
         }
 
         // Ambil data dari form
@@ -1433,6 +1579,7 @@ class Guru extends Controller
             'bank_ujian_id' => $bankUjianId,
             'is_bank_soal' => true,
             'created_by' => $userId,
+            'kode_soal' => $this->request->getPost('kode_soal'),
             'pertanyaan' => $this->request->getPost('pertanyaan'),
             'pilihan_a' => $this->request->getPost('pilihan_a'),
             'pilihan_b' => $this->request->getPost('pilihan_b'),
@@ -1440,7 +1587,7 @@ class Guru extends Controller
             'pilihan_d' => $this->request->getPost('pilihan_d'),
             'pilihan_e' => $this->request->getPost('pilihan_e'),
             'jawaban_benar' => $this->request->getPost('jawaban_benar'),
-            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'), // PERBAIKI TYPO
             'pembahasan' => $this->request->getPost('pembahasan')
         ];
 
@@ -1463,7 +1610,7 @@ class Guru extends Controller
             return redirect()->back()->with('success', 'Soal berhasil ditambahkan ke bank ujian');
         } catch (\Exception $e) {
             log_message('error', 'Error saat menambahkan soal bank ujian: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal: ' . $e->getMessage());
         }
     }
 
@@ -1483,8 +1630,9 @@ class Guru extends Controller
             return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengedit soal ini');
         }
 
-        // Validasi form input (sama seperti tambah soal)
+        // Validasi form input
         $rules = [
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
             'pertanyaan' => 'required',
             'pilihan_a' => 'required',
             'pilihan_b' => 'required',
@@ -1497,11 +1645,13 @@ class Guru extends Controller
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
         }
 
-        // Update logic sama seperti editSoalBank() yang sudah ada
         $data = [
+            'kode_soal' => $this->request->getPost('kode_soal'),
             'pertanyaan' => $this->request->getPost('pertanyaan'),
             'pilihan_a' => $this->request->getPost('pilihan_a'),
             'pilihan_b' => $this->request->getPost('pilihan_b'),
@@ -1547,7 +1697,7 @@ class Guru extends Controller
             return redirect()->back()->with('success', 'Soal berhasil diupdate');
         } catch (\Exception $e) {
             log_message('error', 'Error saat mengupdate soal bank ujian: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal.');
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal: ' . $e->getMessage());
         }
     }
 
@@ -1810,6 +1960,7 @@ class Guru extends Controller
 
         // Ambil soal-soal dari bank ujian
         $soalList = $this->soalUjianModel
+            ->select('soal_ujian.*, soal_ujian.kode_soal') // Tambahkan kode_soal di sini
             ->where('bank_ujian_id', $bankUjianId)
             ->where('is_bank_soal', true)
             ->orderBy('created_at', 'DESC')
@@ -1858,12 +2009,16 @@ class Guru extends Controller
                 }
 
                 if ($aksesValid) {
-                    // Copy soal ke ujian tertentu
+                    // Copy soal ke ujian tertentu - LANGSUNG COPY, BOLEH DUPLICATE
                     $dataSoalBaru = $soalBank;
                     unset($dataSoalBaru['soal_id']); // Remove primary key
                     $dataSoalBaru['ujian_id'] = $ujianId;
-                    $dataSoalBaru['bank_ujian_id'] = null; // Tidak terkait lagi dengan bank ujian
-                    $dataSoalBaru['is_bank_soal'] = false; // Bukan bank soal lagi
+                    $dataSoalBaru['bank_ujian_id'] = null; // Not linked to bank ujian anymore
+                    $dataSoalBaru['is_bank_soal'] = false; // Not a bank question anymore
+                    $dataSoalBaru['created_by'] = $userId; // Set current user as creator
+                    $dataSoalBaru['created_at'] = date('Y-m-d H:i:s'); // Set current timestamp
+                    $dataSoalBaru['updated_at'] = date('Y-m-d H:i:s'); // Set current timestamp
+                    // kode_soal akan tetap sama (duplikasi diizinkan)
 
                     try {
                         $this->soalUjianModel->insert($dataSoalBaru);
@@ -1891,27 +2046,4 @@ class Guru extends Controller
             return redirect()->back()->with('error', 'Gagal mengimport soal dari bank');
         }
     }
-
-    // public function getBankSoalAPI()
-    // {
-    //     $userId = session()->get('user_id');
-    //     $kategori = $this->request->getGet('kategori');
-
-    //     $query = $this->soalUjianModel
-    //         ->where('is_bank_soal', true)
-    //         ->where('created_by', $userId);
-
-    //     if ($kategori) {
-    //         $query->where('kategori', $kategori);
-    //     }
-
-    //     $bankSoal = $query->findAll();
-
-    //     return $this->response->setJSON([
-    //         'status' => 'success',
-    //         'data' => $bankSoal
-    //     ]);
-    // }
-
-
 }

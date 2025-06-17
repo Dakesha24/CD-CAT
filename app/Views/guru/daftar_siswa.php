@@ -40,6 +40,10 @@
                                     <td><?= esc($ujian['nama_jenis']) ?></td>
                                 </tr>
                                 <tr>
+                                    <td><strong>Kode Ujian:</strong></td>
+                                    <td><code><?= esc($ujian['kode_ujian']) ?></code></td>
+                                </tr>
+                                <tr>
                                     <td><strong>Kelas:</strong></td>
                                     <td><?= esc($ujian['nama_kelas']) ?> - <?= esc($ujian['tahun_ajaran']) ?></td>
                                 </tr>
@@ -244,6 +248,7 @@
                                         <td>
                                             <div class="d-grid gap-1">
                                                 <?php if ($siswa['status'] === 'selesai'): ?>
+                                                    <!-- Tombol untuk siswa yang sudah selesai -->
                                                     <a href="<?= base_url('guru/hasil-ujian/detail/' . $siswa['peserta_ujian_id']) ?>"
                                                         class="btn btn-info btn-sm">
                                                         <i class="fas fa-eye me-1"></i>Detail
@@ -256,9 +261,42 @@
                                                         class="btn btn-danger btn-sm" target="_blank">
                                                         <i class="fas fa-file-pdf me-1"></i>PDF
                                                     </a>
-                                                <?php else: ?>
-                                                    <button class="btn btn-secondary btn-sm" disabled>
-                                                        <i class="fas fa-hourglass-half me-1"></i>Belum Selesai
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        onclick="confirmDelete(<?= $siswa['peserta_ujian_id'] ?>, '<?= addslashes($siswa['nama_lengkap']) ?>', 'selesai')"
+                                                        title="Hapus Hasil Ujian">
+                                                        <i class="fas fa-trash me-1"></i>Hapus
+                                                    </button>
+
+                                                <?php elseif ($siswa['status'] === 'sedang_mengerjakan'): ?>
+                                                    <!-- Tombol untuk siswa yang sedang mengerjakan -->
+                                                    <span class="badge bg-primary mb-1">
+                                                        <i class="fas fa-clock me-1"></i>Sedang Mengerjakan
+                                                    </span>
+                                                    <button type="button"
+                                                        class="btn btn-warning btn-sm"
+                                                        onclick="confirmReset(<?= $siswa['peserta_ujian_id'] ?>, '<?= addslashes($siswa['nama_lengkap']) ?>', 'sedang_mengerjakan')"
+                                                        title="Reset ke Belum Mulai">
+                                                        <i class="fas fa-redo me-1"></i>Reset
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        onclick="confirmDelete(<?= $siswa['peserta_ujian_id'] ?>, '<?= addslashes($siswa['nama_lengkap']) ?>', 'sedang_mengerjakan')"
+                                                        title="Hapus Peserta Ujian">
+                                                        <i class="fas fa-trash me-1"></i>Hapus
+                                                    </button>
+
+                                                <?php else: // belum_mulai 
+                                                ?>
+                                                    <!-- Tombol untuk siswa yang belum mulai -->
+                                                    <span class="badge bg-warning text-dark mb-1">
+                                                        <i class="fas fa-hourglass-half me-1"></i>Belum Mulai
+                                                    </span>
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm"
+                                                        onclick="confirmDelete(<?= $siswa['peserta_ujian_id'] ?>, '<?= addslashes($siswa['nama_lengkap']) ?>', 'belum_mulai')"
+                                                        title="Hapus Peserta Ujian">
+                                                        <i class="fas fa-trash me-1"></i>Hapus
                                                     </button>
                                                 <?php endif; ?>
                                             </div>
@@ -375,6 +413,163 @@
 
         printWindow.document.close();
         printWindow.print();
+    }
+
+    // Function untuk konfirmasi hapus hasil ujian
+    function confirmDelete(pesertaUjianId, namaSiswa, status) {
+        let title, warning, description;
+
+        if (status === 'selesai') {
+            title = 'Konfirmasi Hapus Hasil Ujian';
+            warning = 'Semua data jawaban dan hasil ujian akan dihapus permanen';
+            description = 'Apakah Anda yakin ingin menghapus hasil ujian untuk:';
+        } else if (status === 'sedang_mengerjakan') {
+            title = 'Konfirmasi Hapus Peserta yang Sedang Mengerjakan';
+            warning = 'Peserta akan dihapus dari ujian dan progress yang sudah dikerjakan akan hilang';
+            description = 'Apakah Anda yakin ingin menghapus peserta yang sedang mengerjakan:';
+        } else {
+            title = 'Konfirmasi Hapus Peserta Ujian';
+            warning = 'Peserta akan dihapus dari daftar ujian';
+            description = 'Apakah Anda yakin ingin menghapus peserta ujian:';
+        }
+
+        const modalHtml = `
+        <div class="modal fade" id="deleteModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            ${title}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <strong>Peringatan!</strong> Tindakan ini tidak dapat dibatalkan.
+                        </div>
+                        <p>${description}</p>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <strong>${namaSiswa}</strong><br>
+                                <small class="text-muted">${warning}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Batal
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="deleteHasil(${pesertaUjianId})">
+                            <i class="fas fa-trash me-1"></i>Ya, Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        // Remove existing modal
+        const existingModal = document.getElementById('deleteModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add new modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+
+
+
+
+    // TAMBAHAN: Function untuk konfirmasi reset status ujian
+    function confirmReset(pesertaUjianId, namaSiswa, status) {
+        let description, warning;
+
+        if (status === 'sedang_mengerjakan') {
+            description = 'Apakah Anda yakin ingin reset ujian untuk siswa yang sedang mengerjakan:';
+            warning = 'Progress ujian yang sudah dikerjakan akan hilang dan siswa dapat mengulang dari awal';
+        } else {
+            description = 'Apakah Anda yakin ingin reset status ujian untuk:';
+            warning = 'Status akan dikembalikan ke "belum_mulai"';
+        }
+
+        const modalHtml = `
+        <div class="modal fade" id="resetModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title">
+                            <i class="fas fa-redo text-warning me-2"></i>
+                            Konfirmasi Reset Status Ujian
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>Info:</strong> ${warning}
+                        </div>
+                        <p>${description}</p>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <strong>${namaSiswa}</strong><br>
+                                <small class="text-muted">Siswa dapat mengulang ujian dari awal</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Batal
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="resetStatus(${pesertaUjianId})">
+                            <i class="fas fa-redo me-1"></i>Ya, Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+        // Remove existing modal
+        const existingModal = document.getElementById('resetModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add new modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('resetModal'));
+        modal.show();
+    }
+
+    // TAMBAHAN: Function untuk execute hapus
+    function deleteHasil(pesertaUjianId) {
+        // Show loading
+        const deleteBtn = document.querySelector('#deleteModal .btn-danger');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menghapus...';
+        deleteBtn.disabled = true;
+
+        // Redirect ke controller
+        window.location.href = `<?= base_url('guru/hasil-ujian/hapus/') ?>${pesertaUjianId}`;
+    }
+
+    // TAMBAHAN: Function untuk execute reset
+    function resetStatus(pesertaUjianId) {
+        // Show loading
+        const resetBtn = document.querySelector('#resetModal .btn-warning');
+        const originalText = resetBtn.innerHTML;
+        resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Reset...';
+        resetBtn.disabled = true;
+
+        // Redirect ke controller
+        window.location.href = `<?= base_url('guru/hasil-ujian/reset/') ?>${pesertaUjianId}`;
     }
 </script>
 

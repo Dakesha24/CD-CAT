@@ -8,13 +8,8 @@
       <p class="text-muted mb-0">
         <?= esc($hasil['nama_ujian']) ?> - <?= esc($hasil['nama_jenis']) ?>
       </p>
-      <?php
-      // Generate kode soal dari tahun dan ID
-      $tahunPembuatan = date('Y', strtotime($hasil['tanggal_mulai']));
-      $kode_soal = $tahunPembuatan . str_pad($hasil['ujian_id'], 4, '0', STR_PAD_LEFT);
-      ?>
       <p class="text-muted mb-0">
-        Kode Soal: <strong><?= $kode_soal ?></strong>
+        Kode Ujian: <code><?= esc($hasil['kode_ujian']) ?></code>
       </p>
     </div>
     <div>
@@ -167,6 +162,7 @@
         <thead>
           <tr>
             <th>No</th>
+            <th>Kode Soal</th>
             <th>ID Soal</th>
             <th>Pertanyaan</th>
             <th>Tingkat Kesulitan</th>
@@ -186,6 +182,7 @@
           <?php foreach ($detailJawaban as $i => $jawaban): ?>
             <tr>
               <td><?= $jawaban['nomor_soal'] ?></td>
+              <td class="fw-bold text-primary"><?= esc($jawaban['kode_soal']) ?></td>
               <td><?= $jawaban['soal_id'] ?></td>
               <td><?= esc($jawaban['pertanyaan']) ?></td>
               <td><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
@@ -240,87 +237,86 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  // Data untuk grafik theta dan SE
-  const thetaData = <?= json_encode(array_map(function ($item) {
-                      return $item['theta_saat_ini'];
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Data untuk grafik theta dan SE
+    const thetaData = <?= json_encode(array_map(function ($item) {
+                        return $item['theta_saat_ini'];
+                      }, $detailJawaban)) ?>;
+
+    const seData = <?= json_encode(array_map(function ($item) {
+                      return $item['se_saat_ini'];
                     }, $detailJawaban)) ?>;
 
-  const seData = <?= json_encode(array_map(function ($item) {
-                    return $item['se_saat_ini'];
-                  }, $detailJawaban)) ?>;
-
-  const labels = <?= json_encode(array_map(function ($i) {
-                    return 'Soal ' . ($i + 1);
-                  }, range(0, count($detailJawaban) - 1))) ?>;
+    const labels = <?= json_encode(array_map(function ($i) {
+                      return 'Soal ' . ($i + 1);
+                    }, range(0, count($detailJawaban) - 1))) ?>;
 
 
-  // Grafik Theta
-  new Chart(document.getElementById('thetaChart'), {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Theta (θ)',
-        data: thetaData,
-        borderColor: '#4e73df',
-        tension: 0.1,
-        fill: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Perkembangan Estimasi Kemampuan (θ)'
-        }
+    // Grafik Theta
+    new Chart(document.getElementById('thetaChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Theta (θ)',
+          data: thetaData,
+          borderColor: '#4e73df',
+          tension: 0.1,
+          fill: false
+        }]
       },
-      scales: {
-        y: {
-          beginAtZero: false,
+      options: {
+        responsive: true,
+        plugins: {
           title: {
             display: true,
-            text: 'Nilai Theta'
+            text: 'Perkembangan Estimasi Kemampuan (θ)'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: 'Nilai Theta'
+            }
           }
         }
       }
-    }
-  });
+    });
 
-  // Grafik SE
-  new Chart(document.getElementById('seChart'), {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Standard Error',
-        data: seData,
-        borderColor: '#1cc88a',
-        tension: 0.1,
-        fill: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: 'Perkembangan Standard Error'
-        }
+    // Grafik SE
+    new Chart(document.getElementById('seChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Standard Error',
+          data: seData,
+          borderColor: '#1cc88a',
+          tension: 0.1,
+          fill: false
+        }]
       },
-      scales: {
-        y: {
-          beginAtZero: false,
+      options: {
+        responsive: true,
+        plugins: {
           title: {
             display: true,
-            text: 'Nilai SE'
+            text: 'Perkembangan Standard Error'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            title: {
+              display: true,
+              text: 'Nilai SE'
+            }
           }
         }
       }
-    }
-  });
-
-</script>
-<?= $this->endSection() ?>
+    });
+  </script>
+  <?= $this->endSection() ?>
