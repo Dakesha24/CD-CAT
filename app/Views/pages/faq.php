@@ -2,10 +2,9 @@
 
 <?= $this->section('content') ?>
 <div class="faq-container">
-  <!-- Hero Section -->
   <div class="hero-section text-center py-5">
     <div class="container">
-      <h1 class="hero-title mb-4">Frequently Asked Questions</h1>
+      <h1 class="hero-title mb-4"><i>Frequently Asked Questions</i></h1>
       <div class="row justify-content-center">
         <div class="col-lg-8">
           <p class="hero-subtitle">Temukan jawaban untuk pertanyaan yang sering diajukan tentang PHY-FA-CAT</p>
@@ -14,28 +13,25 @@
     </div>
   </div>
 
-  <!-- FAQ Content -->
   <div class="container py-5">
     <div class="row justify-content-center">
       <div class="col-lg-8">
         <div class="faq-card">
           <div class="accordion" id="faqAccordion">
-            <!-- FAQ Item 1 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading1">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
                   <i class="bi bi-question-circle me-2"></i>
-                  Apa itu Computerized Adaptive Testing (CAT)?
+                  Apa itu&nbsp;<i>Computerized Adaptive Testing (CAT)</i>?
                 </button>
               </h2>
               <div id="collapse1" class="accordion-collapse collapse show" aria-labelledby="heading1" data-bs-parent="#faqAccordion">
                 <div class="accordion-body">
-                  CAT adalah sistem ujian modern yang secara cerdas menyesuaikan tingkat kesulitan soal berdasarkan jawaban peserta tes secara real-time. Sistem ini membantu memberikan pengukuran kemampuan yang lebih akurat dan efisien.
+                  <i>CAT</i> adalah sistem ujian modern yang secara cerdas menyesuaikan tingkat kesulitan soal berdasarkan jawaban peserta tes secara <i>real-time</i>. Sistem ini membantu memberikan pengukuran kemampuan yang lebih akurat dan efisien.
                 </div>
               </div>
             </div>
 
-            <!-- FAQ Item 2 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading2">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
@@ -50,7 +46,6 @@
               </div>
             </div>
 
-            <!-- FAQ Item 3 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading3">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
@@ -65,7 +60,6 @@
               </div>
             </div>
 
-            <!-- FAQ Item 4 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading4">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
@@ -80,7 +74,6 @@
               </div>
             </div>
 
-            <!-- FAQ Item 5 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading5">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse5" aria-expanded="false" aria-controls="collapse5">
@@ -90,12 +83,11 @@
               </h2>
               <div id="collapse5" class="accordion-collapse collapse" aria-labelledby="heading5" data-bs-parent="#faqAccordion">
                 <div class="accordion-body">
-                  Guru dapat mengunggah atau menambahkan soal baru ke dalam bank soal, yang nantinya akan disesuaikan secara otomatis oleh sistem CAT.
+                  Guru dapat mengunggah atau menambahkan soal baru ke dalam bank soal, yang nantinya akan disesuaikan secara otomatis oleh sistem <i>CAT</i>.
                 </div>
               </div>
             </div>
 
-            <!-- FAQ Item 6 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading6">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6" aria-expanded="false" aria-controls="collapse6">
@@ -110,7 +102,6 @@
               </div>
             </div>
 
-            <!-- FAQ Item 7 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading7">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7" aria-expanded="false" aria-controls="collapse7">
@@ -125,7 +116,6 @@
               </div>
             </div>
 
-            <!-- FAQ Item 8 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading8">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8" aria-expanded="false" aria-controls="collapse8">
@@ -135,12 +125,11 @@
               </h2>
               <div id="collapse8" class="accordion-collapse collapse" aria-labelledby="heading8" data-bs-parent="#faqAccordion">
                 <div class="accordion-body">
-                  Ya, laporan hasil ujian dapat diunduh dalam format PDF melalui menu <em>Riwayat Ujian</em>.
+                  Ya, laporan hasil ujian dapat diunduh dalam format <i>PDF</i> melalui menu Riwayat Ujian.
                 </div>
               </div>
             </div>
 
-            <!-- FAQ Item 9 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading9">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse9" aria-expanded="false" aria-controls="collapse9">
@@ -150,12 +139,11 @@
               </h2>
               <div id="collapse9" class="accordion-collapse collapse" aria-labelledby="heading9" data-bs-parent="#faqAccordion">
                 <div class="accordion-body">
-                  Segera hubungi pusat bantuan kami melalui menu <em>Bantuan</em> atau kirim email ke tim dukungan teknis kami.
+                  Segera hubungi pusat bantuan kami melalui menu Bantuan atau kirim <i>email</i> ke tim dukungan teknis kami.
                 </div>
               </div>
             </div>
 
-            <!-- FAQ Item 10 -->
             <div class="accordion-item">
               <h2 class="accordion-header" id="heading10">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse10" aria-expanded="false" aria-controls="collapse10">
@@ -169,9 +157,6 @@
                 </div>
               </div>
             </div>
-
-
-
           </div>
         </div>
       </div>

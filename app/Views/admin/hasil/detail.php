@@ -26,6 +26,26 @@
                 class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left me-1"></i>Kembali
             </a>
+
+            <!-- Download Buttons -->
+            <div class="btn-group me-2" role="group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download me-1"></i>Download
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="<?= base_url('admin/hasil-ujian/download-excel/' . $hasil['peserta_ujian_id']) ?>" target="_blank">
+                            <i class="fas fa-file-excel me-2 text-success"></i>Download Excel
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="<?= base_url('admin/hasil-ujian/download-pdf/' . $hasil['peserta_ujian_id']) ?>" target="_blank">
+                            <i class="fas fa-file-pdf me-2 text-danger"></i>Download PDF
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
             <a href="<?= base_url('admin/hasil-ujian/hapus/' . $hasil['peserta_ujian_id']) ?>"
                 class="btn btn-danger"
                 onclick="return confirm('Apakah Anda yakin ingin menghapus hasil ujian siswa ini?\n\nSiswa akan direset ke status belum mulai.')">
@@ -122,6 +142,95 @@
                             <td><strong><?= number_format(end($detailJawaban)['se_saat_ini'], 3) ?></strong></td>
                         </tr>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- **BARU: Kemampuan Kognitif** -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Analisis Kemampuan Kognitif</h5>
+            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#cognitiveHelp" aria-expanded="false">
+                <i class="fas fa-info-circle me-1"></i>Info Perhitungan
+            </button>
+        </div>
+
+        <div class="collapse" id="cognitiveHelp">
+            <div class="card-body bg-light">
+                <h6 class="fw-bold">Rumus Kemampuan Kognitif:</h6>
+                <p class="mb-2"><strong>Skor = (B - (S/(P-1))) / N × 100</strong></p>
+                <ul class="small mb-0">
+                    <li><strong>B</strong>: Jumlah jawaban benar</li>
+                    <li><strong>S</strong>: Jumlah jawaban salah</li>
+                    <li><strong>P</strong>: Rata-rata jumlah pilihan jawaban per soal</li>
+                    <li><strong>N</strong>: Total jumlah soal</li>
+                </ul>
+                <p class="small mt-2 mb-0 text-muted">
+                    Formula ini menggunakan koreksi tebakan untuk mengurangi efek menebak secara acak pada penilaian kemampuan kognitif.
+                </p>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td width="180">Skor Kemampuan Kognitif</td>
+                                    <td width="20">:</td>
+                                    <td><strong class="fs-4 text-primary"><?= $kemampuanKognitif['skor'] ?></strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Kategori</td>
+                                    <td>:</td>
+                                    <td>
+                                        <span class="badge <?= $klasifikasiKognitif['bg_class'] ?> fs-6">
+                                            <?= $klasifikasiKognitif['kategori'] ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Rata-rata Pilihan/Soal</td>
+                                    <td>:</td>
+                                    <td><strong><?= $kemampuanKognitif['rata_rata_pilihan'] ?></strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td width="150">Total Benar</td>
+                                    <td width="20">:</td>
+                                    <td><strong class="text-success"><?= $kemampuanKognitif['total_benar'] ?></strong> soal</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Salah</td>
+                                    <td>:</td>
+                                    <td><strong class="text-danger"><?= $kemampuanKognitif['total_salah'] ?></strong> soal</td>
+                                </tr>
+                                <tr>
+                                    <td>Persentase Benar</td>
+                                    <td>:</td>
+                                    <td><strong><?= round(($kemampuanKognitif['total_benar'] / $totalSoal) * 100, 1) ?>%</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <div class="circular-progress mx-auto" style="width: 120px; height: 120px; background: conic-gradient(<?= $klasifikasiKognitif['bg_class'] === 'bg-success' ? '#28a745' : ($klasifikasiKognitif['bg_class'] === 'bg-info' ? '#17a2b8' : ($klasifikasiKognitif['bg_class'] === 'bg-warning' ? '#ffc107' : '#dc3545')) ?> <?= ($kemampuanKognitif['skor'] / 100) * 360 ?>deg, #e9ecef 0deg); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <span class="fw-bold fs-5"><?= $kemampuanKognitif['skor'] ?></span>
+                            </div>
+                        </div>
+                        <p class="mt-2 mb-0 fw-bold <?= $klasifikasiKognitif['class'] ?>">
+                            <?= $klasifikasiKognitif['kategori'] ?>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

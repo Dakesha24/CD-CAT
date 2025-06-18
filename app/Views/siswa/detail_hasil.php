@@ -46,7 +46,7 @@
 
   <!-- Statistik -->
   <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
           <h3 class="mb-1"><?= $totalSoal ?></h3>
@@ -54,7 +54,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
           <h3 class="text-success mb-1"><?= $jawabanBenar ?></h3>
@@ -62,7 +62,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
           <h3 class="text-danger mb-1"><?= $totalSoal - $jawabanBenar ?></h3>
@@ -70,11 +70,135 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <div class="card border-0 shadow-sm">
         <div class="card-body text-center">
           <h3 class="text-primary mb-1"><?= $skor ?></h3>
           <small class="text-muted">Skor Ujian</small>
+        </div>
+      </div>
+    </div>
+    <!-- BARU: Kartu Kemampuan Kognitif -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <h3 class="<?= $klasifikasiKognitif['class'] ?> mb-1"><?= $kemampuanKognitif['skor'] ?>%</h3>
+          <small class="text-muted d-block">Skor Kognitif</small>
+          <span class="badge <?= $klasifikasiKognitif['bg_class'] ?> text-white mt-2">
+            <?= $klasifikasiKognitif['kategori'] ?>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARU: Card Penjelasan Kemampuan Kognitif -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0">
+      <h5 class="mb-0">
+        <i class="bi bi-brain"></i> Analisis Kemampuan Kognitif
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <p class="mb-2">
+            <strong>Interpretasi Hasil:</strong>
+          </p>
+          <p class="text-muted mb-3">
+            Kemampuan kognitif Anda dalam mata pelajaran ini tergolong
+            <strong class="<?= $klasifikasiKognitif['class'] ?>"><?= $klasifikasiKognitif['kategori'] ?></strong>
+            dengan skor <strong><?= $kemampuanKognitif['skor'] ?>%</strong>.
+          </p>
+
+          <?php if ($kemampuanKognitif['skor'] > 80): ?>
+            <div class="alert alert-success">
+              <i class="bi bi-trophy"></i>
+              <strong>Excellent!</strong> Anda menunjukkan pemahaman yang sangat baik terhadap materi ini.
+            </div>
+          <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+            <div class="alert alert-info">
+              <i class="bi bi-star"></i>
+              <strong>Good Job!</strong> Anda memiliki pemahaman yang baik, terus tingkatkan!
+            </div>
+          <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+            <div class="alert alert-warning">
+              <i class="bi bi-lightbulb"></i>
+              <strong>Keep Learning!</strong> Masih ada ruang untuk peningkatan pemahaman.
+            </div>
+          <?php else: ?>
+            <div class="alert alert-danger">
+              <i class="bi bi-book"></i>
+              <strong>Need More Practice!</strong> Disarankan untuk mempelajari kembali materi ini.
+            </div>
+          <?php endif; ?>
+        </div>
+        <div class="col-md-4">
+          <div class="border-start ps-4">
+            <small class="text-muted d-block">Detail Perhitungan:</small>
+            <div class="mt-2">
+              <small class="text-muted">Jawaban Benar: <?= $kemampuanKognitif['total_benar'] ?></small><br>
+              <small class="text-muted">Jawaban Salah: <?= $kemampuanKognitif['total_salah'] ?></small><br>
+              <small class="text-muted">Rata-rata Pilihan: <?= $kemampuanKognitif['rata_rata_pilihan'] ?></small><br>
+              <small class="text-muted">Total Soal: <?= $totalSoal ?></small>
+            </div>
+            <div class="mt-3">
+              <!-- <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#rumusModal">
+                <i class="bi bi-calculator"></i> Lihat Rumus
+              </button> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Rumus Perhitungan -->
+  <div class="modal fade" id="rumusModal" tabindex="-1" aria-labelledby="rumusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="rumusModalLabel">Rumus Perhitungan Skor Kognitif</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-4">
+            <h6>Rumus Dasar:</h6>
+            <div class="bg-light p-3 rounded">
+              <code>Skor = (B - (S/(P-1))) / N × 100</code>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h6>Keterangan:</h6>
+            <ul>
+              <li><strong>B</strong> = Jumlah jawaban benar</li>
+              <li><strong>S</strong> = Jumlah jawaban salah</li>
+              <li><strong>P</strong> = Rata-rata jumlah pilihan jawaban per soal</li>
+              <li><strong>N</strong> = Total jumlah soal</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h6>Klasifikasi Kemampuan:</h6>
+            <ul>
+              <li><span class="badge bg-success">Sangat Tinggi</span>: 80% - 100%</li>
+              <li><span class="badge bg-info">Tinggi</span>: 60% - 80%</li>
+              <li><span class="badge bg-warning">Rata-rata (Sedang)</span>: 40% - 60%</li>
+              <li><span class="badge bg-orange text-white">Rendah</span>: 20% - 40%</li>
+              <li><span class="badge bg-danger">Sangat Rendah</span>: 0% - 20%</li>
+            </ul>
+          </div>
+
+          <div class="bg-info-subtle p-3 rounded">
+            <small>
+              <strong>Catatan:</strong> Rumus ini menggunakan koreksi untuk faktor menebak,
+              sehingga memberikan estimasi yang lebih akurat tentang kemampuan kognitif siswa.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
         </div>
       </div>
     </div>
@@ -100,7 +224,7 @@
             <th>Kode Soal</th>
             <th>Pertanyaan</th>
             <th>Jawaban Anda</th>
-            <th>Jawaban Benar</th>
+            <!-- <th>Jawaban Benar</th> -->
             <th>Status</th>
             <th>Waktu Jawab</th>
             <th>Durasi</th>
@@ -113,9 +237,13 @@
               <td><?= $jawaban['nomor_soal'] ?></td>
               <!-- TAMBAHAN: Tampilkan kode soal -->
               <td><small class="text-muted"><?= esc($jawaban['kode_soal']) ?></small></td>
-              <td><?= esc($jawaban['pertanyaan']) ?></td>
+              <td>
+                <div style="max-width: 300px; overflow-x: auto;">
+                  <?= $jawaban['pertanyaan'] ?>
+                </div>
+              </td>
               <td><?= $jawaban['jawaban_siswa'] ?></td>
-              <td><?= $jawaban['jawaban_benar'] ?></td>
+              <!-- <td><?= $jawaban['jawaban_benar'] ?></td> -->
               <td>
                 <?php if ($jawaban['is_correct']): ?>
                   <span class="badge bg-success">Benar</span>
@@ -163,5 +291,15 @@
     </div>
   </div>
 </div>
+
+<style>
+  .bg-orange {
+    background-color: #fd7e14 !important;
+  }
+
+  .text-orange {
+    color: #fd7e14 !important;
+  }
+</style>
 
 <?= $this->endSection() ?>

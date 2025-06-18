@@ -139,7 +139,7 @@
                     </div>
                     <div class="modal-body">
                         <p class="fw-bold mb-2">Kode Soal: <span class="text-primary"><?= $s['kode_soal'] ?></span></p>
-                        
+
                         <p class="fw-bold mb-2">Pertanyaan:</p>
                         <div class="border p-3 mb-3"><?= $s['pertanyaan'] ?></div>
 
@@ -219,7 +219,7 @@ endforeach; ?>
                                 </small>
                             </div>
                             <textarea name="pertanyaan" id="pertanyaan_tambah" class="form-control" rows="4" required placeholder="Masukkan pertanyaan soal..."></textarea>
-                            
+
                             <div class="mt-3">
                                 <label class="form-label"><i class="fas fa-image text-secondary me-1"></i>Foto Soal (Opsional)</label>
                                 <input type="file" name="foto" class="form-control" accept=".jpg,.jpeg,.png">
@@ -350,7 +350,7 @@ endforeach; ?>
                                 <input type="text" name="kode_soal" class="form-control" value="<?= esc($s['kode_soal']) ?>" required>
                                 <small class="text-muted">Kode unik untuk soal ini</small>
                             </div>
-                            
+
                             <div class="col-12">
                                 <label class="form-label fw-semibold">Pertanyaan</label>
                                 <div class="mb-2">
@@ -460,9 +460,9 @@ endforeach; ?>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">2. Pilih Jenis Ujian:</label>
+                        <label class="form-label">2. Pilih Mata Pelajaran:</label>
                         <select id="filterJenisUjianImport" class="form-select" disabled>
-                            <option value="">Pilih Jenis Ujian</option>
+                            <option value="">Pilih Mata Pelajaran</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -535,7 +535,7 @@ endforeach; ?>
                         </div>
 
                         <div class="text-center mt-3" id="noBankSoalMessage" style="display: none;">
-                            <p class="text-muted">Pilih kategori, jenis ujian, dan bank ujian untuk melihat soal yang tersedia</p>
+                            <p class="text-muted">Pilih kategori, Mata Pelajaran, dan bank ujian untuk melihat soal yang tersedia</p>
                         </div>
                     </form>
                 </div>
@@ -554,329 +554,565 @@ endforeach; ?>
 <script src="<?= base_url('ckeditor/ckeditor.js') ?>"></script>
 
 <script>
-// Konfigurasi CKEditor
-const ckEditorConfig = {
-    height: 200,
-    toolbar: [
-        { name: 'document', items: ['Source'] },
-        { name: 'clipboard', items: ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
-        { name: 'editing', items: ['Find', 'Replace', '-', 'SelectAll'] },
-        '/',
-        { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat'] },
-        { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'] },
-        { name: 'links', items: ['Link', 'Unlink'] },
-        '/',
-        { name: 'styles', items: ['Styles', 'Format', 'Font', 'FontSize'] },
-        { name: 'colors', items: ['TextColor', 'BGColor'] },
-        { name: 'tools', items: ['Maximize', 'ShowBlocks'] },
-        { name: 'insert', items: ['Table', 'HorizontalRule', 'SpecialChar', 'MathSymbols'] }
-    ],
-    // Disable file upload, image upload, dan exportpdf
-    removePlugins: 'image,uploadimage,uploadwidget,uploadfile,filetools,filebrowser,exportpdf',
-    // Disable version check warning
-    versionCheck: false,
-    // Extra plugins untuk simbol matematika
-    extraPlugins: 'specialchar',
-    // Disable drag and drop file upload
-    disallowedContent: 'img[src]',
-    // Allow basic formatting
-    allowedContent: {
-        'h1 h2 h3 h4 h5 h6 p blockquote li ul ol': true,
-        'strong em u s sub sup': true,
-        'table thead tbody tr th td': true,
-        'a[href]': true,
-        'span{color,background-color,font-size,font-family}': true,
-        'div{text-align}': true
-    },
-    // Custom special characters untuk matematika/fisika
-    specialChars: [
-        // Greek letters (sering digunakan dalam fisika)
-        ['α', 'Alpha'], ['β', 'Beta'], ['γ', 'Gamma'], ['δ', 'Delta'], ['ε', 'Epsilon'],
-        ['ζ', 'Zeta'], ['η', 'Eta'], ['θ', 'Theta'], ['ι', 'Iota'], ['κ', 'Kappa'],
-        ['λ', 'Lambda'], ['μ', 'Mu'], ['ν', 'Nu'], ['ξ', 'Xi'], ['ο', 'Omicron'],
-        ['π', 'Pi'], ['ρ', 'Rho'], ['σ', 'Sigma'], ['τ', 'Tau'], ['υ', 'Upsilon'],
-        ['φ', 'Phi'], ['χ', 'Chi'], ['ψ', 'Psi'], ['ω', 'Omega'],
-        // Capital Greek letters
-        ['Α', 'Alpha (capital)'], ['Β', 'Beta (capital)'], ['Γ', 'Gamma (capital)'], 
-        ['Δ', 'Delta (capital)'], ['Ε', 'Epsilon (capital)'], ['Ζ', 'Zeta (capital)'],
-        ['Η', 'Eta (capital)'], ['Θ', 'Theta (capital)'], ['Ι', 'Iota (capital)'],
-        ['Κ', 'Kappa (capital)'], ['Λ', 'Lambda (capital)'], ['Μ', 'Mu (capital)'],
-        ['Ν', 'Nu (capital)'], ['Ξ', 'Xi (capital)'], ['Ο', 'Omicron (capital)'],
-        ['Π', 'Pi (capital)'], ['Ρ', 'Rho (capital)'], ['Σ', 'Sigma (capital)'],
-        ['Τ', 'Tau (capital)'], ['Υ', 'Upsilon (capital)'], ['Φ', 'Phi (capital)'],
-        ['Χ', 'Chi (capital)'], ['Ψ', 'Psi (capital)'], ['Ω', 'Omega (capital)'],
-        // Mathematical operators
-        ['±', 'Plus-minus'], ['∓', 'Minus-plus'], ['×', 'Multiplication'], ['÷', 'Division'],
-        ['∝', 'Proportional'], ['∞', 'Infinity'], ['∂', 'Partial derivative'],
-        ['∇', 'Nabla (gradient)'], ['∆', 'Delta (change)'], ['∑', 'Summation'],
-        ['∏', 'Product'], ['∫', 'Integral'], ['∮', 'Contour integral'],
-        ['∬', 'Double integral'], ['∭', 'Triple integral'],
-        // Relations and logic
-        ['≈', 'Approximately equal'], ['≠', 'Not equal'], ['≡', 'Identical'],
-        ['≤', 'Less than or equal'], ['≥', 'Greater than or equal'],
-        ['«', 'Much less than'], ['»', 'Much greater than'],
-        ['∈', 'Element of'], ['∉', 'Not element of'], ['⊂', 'Subset'],
-        ['⊃', 'Superset'], ['∪', 'Union'], ['∩', 'Intersection'],
-        ['∀', 'For all'], ['∃', 'There exists'], ['∄', 'There does not exist'],
-        ['∧', 'Logical and'], ['∨', 'Logical or'], ['¬', 'Not'],
-        // Arrows
-        ['→', 'Right arrow'], ['←', 'Left arrow'], ['↑', 'Up arrow'], ['↓', 'Down arrow'],
-        ['↔', 'Left-right arrow'], ['⇒', 'Right double arrow'], ['⇐', 'Left double arrow'],
-        ['⇔', 'Left-right double arrow'], ['↗', 'Northeast arrow'], ['↖', 'Northwest arrow'],
-        ['↘', 'Southeast arrow'], ['↙', 'Southwest arrow'],
-        // Units and constants
-        ['°', 'Degree'], ['′', 'Prime (minutes/feet)'], ['″', 'Double prime (seconds/inches)'],
-        ['℃', 'Celsius'], ['℉', 'Fahrenheit'], ['Å', 'Angstrom'],
-        ['ℏ', 'Reduced Planck constant'], ['ħ', 'H-bar'],
-        // Fractions
-        ['½', 'One half'], ['⅓', 'One third'], ['⅔', 'Two thirds'],
-        ['¼', 'One quarter'], ['¾', 'Three quarters'], ['⅕', 'One fifth'],
-        ['⅖', 'Two fifths'], ['⅗', 'Three fifths'], ['⅘', 'Four fifths'],
-        ['⅙', 'One sixth'], ['⅚', 'Five sixths'], ['⅛', 'One eighth'],
-        ['⅜', 'Three eighths'], ['⅝', 'Five eighths'], ['⅞', 'Seven eighths'],
-        // Superscript numbers
-        ['⁰', 'Superscript 0'], ['¹', 'Superscript 1'], ['²', 'Superscript 2'],
-        ['³', 'Superscript 3'], ['⁴', 'Superscript 4'], ['⁵', 'Superscript 5'],
-        ['⁶', 'Superscript 6'], ['⁷', 'Superscript 7'], ['⁸', 'Superscript 8'],
-        ['⁹', 'Superscript 9'], ['⁺', 'Superscript plus'], ['⁻', 'Superscript minus'],
-        // Subscript numbers
-        ['₀', 'Subscript 0'], ['₁', 'Subscript 1'], ['₂', 'Subscript 2'],
-        ['₃', 'Subscript 3'], ['₄', 'Subscript 4'], ['₅', 'Subscript 5'],
-        ['₆', 'Subscript 6'], ['₇', 'Subscript 7'], ['₈', 'Subscript 8'],
-        ['₉', 'Subscript 9'], ['₊', 'Subscript plus'], ['₋', 'Subscript minus'],
-        // Root symbols
-        ['√', 'Square root'], ['∛', 'Cube root'], ['∜', 'Fourth root']
-    ],
-    // Disable file dialog
-    filebrowserBrowseUrl: '',
-    filebrowserUploadUrl: '',
-    filebrowserImageBrowseUrl: '',
-    filebrowserImageUploadUrl: '',
-    // Content styling
-    contentsCss: [
-        'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; margin: 20px; }',
-        'table { border-collapse: collapse; width: 100%; }',
-        'table, th, td { border: 1px solid #ddd; padding: 8px; }'
-    ],
-    // Entermode
-    enterMode: CKEDITOR.ENTER_P,
-    shiftEnterMode: CKEDITOR.ENTER_BR
-};
+    // Konfigurasi CKEditor
+    const ckEditorConfig = {
+        height: 200,
+        toolbar: [{
+                name: 'document',
+                items: ['Source']
+            },
+            {
+                name: 'clipboard',
+                items: ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo']
+            },
+            {
+                name: 'editing',
+                items: ['Find', 'Replace', '-', 'SelectAll']
+            },
+            '/',
+            {
+                name: 'basicstyles',
+                items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'RemoveFormat']
+            },
+            {
+                name: 'paragraph',
+                items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote']
+            },
+            {
+                name: 'links',
+                items: ['Link', 'Unlink']
+            },
+            '/',
+            {
+                name: 'styles',
+                items: ['Styles', 'Format', 'Font', 'FontSize']
+            },
+            {
+                name: 'colors',
+                items: ['TextColor', 'BGColor']
+            },
+            {
+                name: 'tools',
+                items: ['Maximize', 'ShowBlocks']
+            },
+            {
+                name: 'insert',
+                items: ['Table', 'HorizontalRule', 'SpecialChar', 'MathSymbols']
+            }
+        ],
+        // Disable file upload, image upload, dan exportpdf
+        removePlugins: 'image,uploadimage,uploadwidget,uploadfile,filetools,filebrowser,exportpdf',
+        // Disable version check warning
+        versionCheck: false,
+        // Extra plugins untuk simbol matematika
+        extraPlugins: 'specialchar',
+        // Disable drag and drop file upload
+        disallowedContent: 'img[src]',
+        // Allow basic formatting
+        allowedContent: {
+            'h1 h2 h3 h4 h5 h6 p blockquote li ul ol': true,
+            'strong em u s sub sup': true,
+            'table thead tbody tr th td': true,
+            'a[href]': true,
+            'span{color,background-color,font-size,font-family}': true,
+            'div{text-align}': true
+        },
+        // Custom special characters untuk matematika/fisika
+        specialChars: [
+            // Greek letters (sering digunakan dalam fisika)
+            ['α', 'Alpha'],
+            ['β', 'Beta'],
+            ['γ', 'Gamma'],
+            ['δ', 'Delta'],
+            ['ε', 'Epsilon'],
+            ['ζ', 'Zeta'],
+            ['η', 'Eta'],
+            ['θ', 'Theta'],
+            ['ι', 'Iota'],
+            ['κ', 'Kappa'],
+            ['λ', 'Lambda'],
+            ['μ', 'Mu'],
+            ['ν', 'Nu'],
+            ['ξ', 'Xi'],
+            ['ο', 'Omicron'],
+            ['π', 'Pi'],
+            ['ρ', 'Rho'],
+            ['σ', 'Sigma'],
+            ['τ', 'Tau'],
+            ['υ', 'Upsilon'],
+            ['φ', 'Phi'],
+            ['χ', 'Chi'],
+            ['ψ', 'Psi'],
+            ['ω', 'Omega'],
+            // Capital Greek letters
+            ['Α', 'Alpha (capital)'],
+            ['Β', 'Beta (capital)'],
+            ['Γ', 'Gamma (capital)'],
+            ['Δ', 'Delta (capital)'],
+            ['Ε', 'Epsilon (capital)'],
+            ['Ζ', 'Zeta (capital)'],
+            ['Η', 'Eta (capital)'],
+            ['Θ', 'Theta (capital)'],
+            ['Ι', 'Iota (capital)'],
+            ['Κ', 'Kappa (capital)'],
+            ['Λ', 'Lambda (capital)'],
+            ['Μ', 'Mu (capital)'],
+            ['Ν', 'Nu (capital)'],
+            ['Ξ', 'Xi (capital)'],
+            ['Ο', 'Omicron (capital)'],
+            ['Π', 'Pi (capital)'],
+            ['Ρ', 'Rho (capital)'],
+            ['Σ', 'Sigma (capital)'],
+            ['Τ', 'Tau (capital)'],
+            ['Υ', 'Upsilon (capital)'],
+            ['Φ', 'Phi (capital)'],
+            ['Χ', 'Chi (capital)'],
+            ['Ψ', 'Psi (capital)'],
+            ['Ω', 'Omega (capital)'],
+            // Mathematical operators
+            ['±', 'Plus-minus'],
+            ['∓', 'Minus-plus'],
+            ['×', 'Multiplication'],
+            ['÷', 'Division'],
+            ['∝', 'Proportional'],
+            ['∞', 'Infinity'],
+            ['∂', 'Partial derivative'],
+            ['∇', 'Nabla (gradient)'],
+            ['∆', 'Delta (change)'],
+            ['∑', 'Summation'],
+            ['∏', 'Product'],
+            ['∫', 'Integral'],
+            ['∮', 'Contour integral'],
+            ['∬', 'Double integral'],
+            ['∭', 'Triple integral'],
+            // Relations and logic
+            ['≈', 'Approximately equal'],
+            ['≠', 'Not equal'],
+            ['≡', 'Identical'],
+            ['≤', 'Less than or equal'],
+            ['≥', 'Greater than or equal'],
+            ['«', 'Much less than'],
+            ['»', 'Much greater than'],
+            ['∈', 'Element of'],
+            ['∉', 'Not element of'],
+            ['⊂', 'Subset'],
+            ['⊃', 'Superset'],
+            ['∪', 'Union'],
+            ['∩', 'Intersection'],
+            ['∀', 'For all'],
+            ['∃', 'There exists'],
+            ['∄', 'There does not exist'],
+            ['∧', 'Logical and'],
+            ['∨', 'Logical or'],
+            ['¬', 'Not'],
+            // Arrows
+            ['→', 'Right arrow'],
+            ['←', 'Left arrow'],
+            ['↑', 'Up arrow'],
+            ['↓', 'Down arrow'],
+            ['↔', 'Left-right arrow'],
+            ['⇒', 'Right double arrow'],
+            ['⇐', 'Left double arrow'],
+            ['⇔', 'Left-right double arrow'],
+            ['↗', 'Northeast arrow'],
+            ['↖', 'Northwest arrow'],
+            ['↘', 'Southeast arrow'],
+            ['↙', 'Southwest arrow'],
+            // Units and constants
+            ['°', 'Degree'],
+            ['′', 'Prime (minutes/feet)'],
+            ['″', 'Double prime (seconds/inches)'],
+            ['℃', 'Celsius'],
+            ['℉', 'Fahrenheit'],
+            ['Å', 'Angstrom'],
+            ['ℏ', 'Reduced Planck constant'],
+            ['ħ', 'H-bar'],
+            // Fractions
+            ['½', 'One half'],
+            ['⅓', 'One third'],
+            ['⅔', 'Two thirds'],
+            ['¼', 'One quarter'],
+            ['¾', 'Three quarters'],
+            ['⅕', 'One fifth'],
+            ['⅖', 'Two fifths'],
+            ['⅗', 'Three fifths'],
+            ['⅘', 'Four fifths'],
+            ['⅙', 'One sixth'],
+            ['⅚', 'Five sixths'],
+            ['⅛', 'One eighth'],
+            ['⅜', 'Three eighths'],
+            ['⅝', 'Five eighths'],
+            ['⅞', 'Seven eighths'],
+            // Superscript numbers
+            ['⁰', 'Superscript 0'],
+            ['¹', 'Superscript 1'],
+            ['²', 'Superscript 2'],
+            ['³', 'Superscript 3'],
+            ['⁴', 'Superscript 4'],
+            ['⁵', 'Superscript 5'],
+            ['⁶', 'Superscript 6'],
+            ['⁷', 'Superscript 7'],
+            ['⁸', 'Superscript 8'],
+            ['⁹', 'Superscript 9'],
+            ['⁺', 'Superscript plus'],
+            ['⁻', 'Superscript minus'],
+            // Subscript numbers
+            ['₀', 'Subscript 0'],
+            ['₁', 'Subscript 1'],
+            ['₂', 'Subscript 2'],
+            ['₃', 'Subscript 3'],
+            ['₄', 'Subscript 4'],
+            ['₅', 'Subscript 5'],
+            ['₆', 'Subscript 6'],
+            ['₇', 'Subscript 7'],
+            ['₈', 'Subscript 8'],
+            ['₉', 'Subscript 9'],
+            ['₊', 'Subscript plus'],
+            ['₋', 'Subscript minus'],
+            // Root symbols
+            ['√', 'Square root'],
+            ['∛', 'Cube root'],
+            ['∜', 'Fourth root']
+        ],
+        // Disable file dialog
+        filebrowserBrowseUrl: '',
+        filebrowserUploadUrl: '',
+        filebrowserImageBrowseUrl: '',
+        filebrowserImageUploadUrl: '',
+        // Content styling
+        contentsCss: [
+            'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; margin: 20px; }',
+            'table { border-collapse: collapse; width: 100%; }',
+            'table, th, td { border: 1px solid #ddd; padding: 8px; }'
+        ],
+        // Entermode
+        enterMode: CKEDITOR.ENTER_P,
+        shiftEnterMode: CKEDITOR.ENTER_BR
+    };
 
-// Konfigurasi khusus untuk pilihan (lebih kecil) - didefinisikan setelah config utama
-const ckEditorConfigPilihan = {
-    height: 120,
-    toolbar: [
-        { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Subscript', 'Superscript'] },
-        { name: 'colors', items: ['TextColor'] },
-        { name: 'insert', items: ['SpecialChar'] },
-        { name: 'tools', items: ['Source'] }
-    ],
-    // Disable file upload, image upload, dan exportpdf
-    removePlugins: 'image,uploadimage,uploadwidget,uploadfile,filetools,filebrowser,exportpdf',
-    // Disable version check warning
-    versionCheck: false,
-    // Extra plugins untuk simbol matematika
-    extraPlugins: 'specialchar',
-    // Disable drag and drop file upload
-    disallowedContent: 'img[src]',
-    // Allow basic formatting
-    allowedContent: {
-        'strong em u s sub sup': true,
-        'span{color,background-color,font-size,font-family}': true
-    },
-    // Custom special characters untuk matematika/fisika (sama dengan config utama)
-    specialChars: [
-        // Greek letters (sering digunakan dalam fisika)
-        ['α', 'Alpha'], ['β', 'Beta'], ['γ', 'Gamma'], ['δ', 'Delta'], ['ε', 'Epsilon'],
-        ['ζ', 'Zeta'], ['η', 'Eta'], ['θ', 'Theta'], ['ι', 'Iota'], ['κ', 'Kappa'],
-        ['λ', 'Lambda'], ['μ', 'Mu'], ['ν', 'Nu'], ['ξ', 'Xi'], ['ο', 'Omicron'],
-        ['π', 'Pi'], ['ρ', 'Rho'], ['σ', 'Sigma'], ['τ', 'Tau'], ['υ', 'Upsilon'],
-        ['φ', 'Phi'], ['χ', 'Chi'], ['ψ', 'Psi'], ['ω', 'Omega'],
-        // Capital Greek letters
-        ['Α', 'Alpha (capital)'], ['Β', 'Beta (capital)'], ['Γ', 'Gamma (capital)'], 
-        ['Δ', 'Delta (capital)'], ['Ε', 'Epsilon (capital)'], ['Ζ', 'Zeta (capital)'],
-        ['Η', 'Eta (capital)'], ['Θ', 'Theta (capital)'], ['Ι', 'Iota (capital)'],
-        ['Κ', 'Kappa (capital)'], ['Λ', 'Lambda (capital)'], ['Μ', 'Mu (capital)'],
-        ['Ν', 'Nu (capital)'], ['Ξ', 'Xi (capital)'], ['Ο', 'Omicron (capital)'],
-        ['Π', 'Pi (capital)'], ['Ρ', 'Rho (capital)'], ['Σ', 'Sigma (capital)'],
-        ['Τ', 'Tau (capital)'], ['Υ', 'Upsilon (capital)'], ['Φ', 'Phi (capital)'],
-        ['Χ', 'Chi (capital)'], ['Ψ', 'Psi (capital)'], ['Ω', 'Omega (capital)'],
-        // Mathematical operators
-        ['±', 'Plus-minus'], ['∓', 'Minus-plus'], ['×', 'Multiplication'], ['÷', 'Division'],
-        ['∝', 'Proportional'], ['∞', 'Infinity'], ['∂', 'Partial derivative'],
-        ['∇', 'Nabla (gradient)'], ['∆', 'Delta (change)'], ['∑', 'Summation'],
-        ['∏', 'Product'], ['∫', 'Integral'], ['∮', 'Contour integral'],
-        ['∬', 'Double integral'], ['∭', 'Triple integral'],
-        // Relations and logic
-        ['≈', 'Approximately equal'], ['≠', 'Not equal'], ['≡', 'Identical'],
-        ['≤', 'Less than or equal'], ['≥', 'Greater than or equal'],
-        ['«', 'Much less than'], ['»', 'Much greater than'],
-        ['∈', 'Element of'], ['∉', 'Not element of'], ['⊂', 'Subset'],
-        ['⊃', 'Superset'], ['∪', 'Union'], ['∩', 'Intersection'],
-        ['∀', 'For all'], ['∃', 'There exists'], ['∄', 'There does not exist'],
-        ['∧', 'Logical and'], ['∨', 'Logical or'], ['¬', 'Not'],
-        // Arrows
-        ['→', 'Right arrow'], ['←', 'Left arrow'], ['↑', 'Up arrow'], ['↓', 'Down arrow'],
-        ['↔', 'Left-right arrow'], ['⇒', 'Right double arrow'], ['⇐', 'Left double arrow'],
-        ['⇔', 'Left-right double arrow'], ['↗', 'Northeast arrow'], ['↖', 'Northwest arrow'],
-        ['↘', 'Southeast arrow'], ['↙', 'Southwest arrow'],
-        // Units and constants
-        ['°', 'Degree'], ['′', 'Prime (minutes/feet)'], ['″', 'Double prime (seconds/inches)'],
-        ['℃', 'Celsius'], ['℉', 'Fahrenheit'], ['Å', 'Angstrom'],
-        ['ℏ', 'Reduced Planck constant'], ['ħ', 'H-bar'],
-        // Fractions
-        ['½', 'One half'], ['⅓', 'One third'], ['⅔', 'Two thirds'],
-        ['¼', 'One quarter'], ['¾', 'Three quarters'], ['⅕', 'One fifth'],
-        ['⅖', 'Two fifths'], ['⅗', 'Three fifths'], ['⅘', 'Four fifths'],
-        ['⅙', 'One sixth'], ['⅚', 'Five sixths'], ['⅛', 'One eighth'],
-        ['⅜', 'Three eighths'], ['⅝', 'Five eighths'], ['⅞', 'Seven eighths'],
-        // Superscript numbers
-        ['⁰', 'Superscript 0'], ['¹', 'Superscript 1'], ['²', 'Superscript 2'],
-        ['³', 'Superscript 3'], ['⁴', 'Superscript 4'], ['⁵', 'Superscript 5'],
-        ['⁶', 'Superscript 6'], ['⁷', 'Superscript 7'], ['⁸', 'Superscript 8'],
-        ['⁹', 'Superscript 9'], ['⁺', 'Superscript plus'], ['⁻', 'Superscript minus'],
-        // Subscript numbers
-        ['₀', 'Subscript 0'], ['₁', 'Subscript 1'], ['₂', 'Subscript 2'],
-        ['₃', 'Subscript 3'], ['₄', 'Subscript 4'], ['₅', 'Subscript 5'],
-        ['₆', 'Subscript 6'], ['₇', 'Subscript 7'], ['₈', 'Subscript 8'],
-        ['₉', 'Subscript 9'], ['₊', 'Subscript plus'], ['₋', 'Subscript minus'],
-        // Root symbols
-        ['√', 'Square root'], ['∛', 'Cube root'], ['∜', 'Fourth root']
-    ],
-    // Disable file dialog
-    filebrowserBrowseUrl: '',
-    filebrowserUploadUrl: '',
-    filebrowserImageBrowseUrl: '',
-    filebrowserImageUploadUrl: '',
-    // Content styling
-    contentsCss: [
-        'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; margin: 20px; }',
-        'sub, sup { font-size: 0.75em; }'
-    ],
-    // Entermode
-    enterMode: CKEDITOR.ENTER_P,
-    shiftEnterMode: CKEDITOR.ENTER_BR
-};
+    // Konfigurasi khusus untuk pilihan (lebih kecil) - didefinisikan setelah config utama
+    const ckEditorConfigPilihan = {
+        height: 120,
+        toolbar: [{
+                name: 'basicstyles',
+                items: ['Bold', 'Italic', 'Underline', 'Subscript', 'Superscript']
+            },
+            {
+                name: 'colors',
+                items: ['TextColor']
+            },
+            {
+                name: 'insert',
+                items: ['SpecialChar']
+            },
+            {
+                name: 'tools',
+                items: ['Source']
+            }
+        ],
+        // Disable file upload, image upload, dan exportpdf
+        removePlugins: 'image,uploadimage,uploadwidget,uploadfile,filetools,filebrowser,exportpdf',
+        // Disable version check warning
+        versionCheck: false,
+        // Extra plugins untuk simbol matematika
+        extraPlugins: 'specialchar',
+        // Disable drag and drop file upload
+        disallowedContent: 'img[src]',
+        // Allow basic formatting
+        allowedContent: {
+            'strong em u s sub sup': true,
+            'span{color,background-color,font-size,font-family}': true
+        },
+        // Custom special characters untuk matematika/fisika (sama dengan config utama)
+        specialChars: [
+            // Greek letters (sering digunakan dalam fisika)
+            ['α', 'Alpha'],
+            ['β', 'Beta'],
+            ['γ', 'Gamma'],
+            ['δ', 'Delta'],
+            ['ε', 'Epsilon'],
+            ['ζ', 'Zeta'],
+            ['η', 'Eta'],
+            ['θ', 'Theta'],
+            ['ι', 'Iota'],
+            ['κ', 'Kappa'],
+            ['λ', 'Lambda'],
+            ['μ', 'Mu'],
+            ['ν', 'Nu'],
+            ['ξ', 'Xi'],
+            ['ο', 'Omicron'],
+            ['π', 'Pi'],
+            ['ρ', 'Rho'],
+            ['σ', 'Sigma'],
+            ['τ', 'Tau'],
+            ['υ', 'Upsilon'],
+            ['φ', 'Phi'],
+            ['χ', 'Chi'],
+            ['ψ', 'Psi'],
+            ['ω', 'Omega'],
+            // Capital Greek letters
+            ['Α', 'Alpha (capital)'],
+            ['Β', 'Beta (capital)'],
+            ['Γ', 'Gamma (capital)'],
+            ['Δ', 'Delta (capital)'],
+            ['Ε', 'Epsilon (capital)'],
+            ['Ζ', 'Zeta (capital)'],
+            ['Η', 'Eta (capital)'],
+            ['Θ', 'Theta (capital)'],
+            ['Ι', 'Iota (capital)'],
+            ['Κ', 'Kappa (capital)'],
+            ['Λ', 'Lambda (capital)'],
+            ['Μ', 'Mu (capital)'],
+            ['Ν', 'Nu (capital)'],
+            ['Ξ', 'Xi (capital)'],
+            ['Ο', 'Omicron (capital)'],
+            ['Π', 'Pi (capital)'],
+            ['Ρ', 'Rho (capital)'],
+            ['Σ', 'Sigma (capital)'],
+            ['Τ', 'Tau (capital)'],
+            ['Υ', 'Upsilon (capital)'],
+            ['Φ', 'Phi (capital)'],
+            ['Χ', 'Chi (capital)'],
+            ['Ψ', 'Psi (capital)'],
+            ['Ω', 'Omega (capital)'],
+            // Mathematical operators
+            ['±', 'Plus-minus'],
+            ['∓', 'Minus-plus'],
+            ['×', 'Multiplication'],
+            ['÷', 'Division'],
+            ['∝', 'Proportional'],
+            ['∞', 'Infinity'],
+            ['∂', 'Partial derivative'],
+            ['∇', 'Nabla (gradient)'],
+            ['∆', 'Delta (change)'],
+            ['∑', 'Summation'],
+            ['∏', 'Product'],
+            ['∫', 'Integral'],
+            ['∮', 'Contour integral'],
+            ['∬', 'Double integral'],
+            ['∭', 'Triple integral'],
+            // Relations and logic
+            ['≈', 'Approximately equal'],
+            ['≠', 'Not equal'],
+            ['≡', 'Identical'],
+            ['≤', 'Less than or equal'],
+            ['≥', 'Greater than or equal'],
+            ['«', 'Much less than'],
+            ['»', 'Much greater than'],
+            ['∈', 'Element of'],
+            ['∉', 'Not element of'],
+            ['⊂', 'Subset'],
+            ['⊃', 'Superset'],
+            ['∪', 'Union'],
+            ['∩', 'Intersection'],
+            ['∀', 'For all'],
+            ['∃', 'There exists'],
+            ['∄', 'There does not exist'],
+            ['∧', 'Logical and'],
+            ['∨', 'Logical or'],
+            ['¬', 'Not'],
+            // Arrows
+            ['→', 'Right arrow'],
+            ['←', 'Left arrow'],
+            ['↑', 'Up arrow'],
+            ['↓', 'Down arrow'],
+            ['↔', 'Left-right arrow'],
+            ['⇒', 'Right double arrow'],
+            ['⇐', 'Left double arrow'],
+            ['⇔', 'Left-right double arrow'],
+            ['↗', 'Northeast arrow'],
+            ['↖', 'Northwest arrow'],
+            ['↘', 'Southeast arrow'],
+            ['↙', 'Southwest arrow'],
+            // Units and constants
+            ['°', 'Degree'],
+            ['′', 'Prime (minutes/feet)'],
+            ['″', 'Double prime (seconds/inches)'],
+            ['℃', 'Celsius'],
+            ['℉', 'Fahrenheit'],
+            ['Å', 'Angstrom'],
+            ['ℏ', 'Reduced Planck constant'],
+            ['ħ', 'H-bar'],
+            // Fractions
+            ['½', 'One half'],
+            ['⅓', 'One third'],
+            ['⅔', 'Two thirds'],
+            ['¼', 'One quarter'],
+            ['¾', 'Three quarters'],
+            ['⅕', 'One fifth'],
+            ['⅖', 'Two fifths'],
+            ['⅗', 'Three fifths'],
+            ['⅘', 'Four fifths'],
+            ['⅙', 'One sixth'],
+            ['⅚', 'Five sixths'],
+            ['⅛', 'One eighth'],
+            ['⅜', 'Three eighths'],
+            ['⅝', 'Five eighths'],
+            ['⅞', 'Seven eighths'],
+            // Superscript numbers
+            ['⁰', 'Superscript 0'],
+            ['¹', 'Superscript 1'],
+            ['²', 'Superscript 2'],
+            ['³', 'Superscript 3'],
+            ['⁴', 'Superscript 4'],
+            ['⁵', 'Superscript 5'],
+            ['⁶', 'Superscript 6'],
+            ['⁷', 'Superscript 7'],
+            ['⁸', 'Superscript 8'],
+            ['⁹', 'Superscript 9'],
+            ['⁺', 'Superscript plus'],
+            ['⁻', 'Superscript minus'],
+            // Subscript numbers
+            ['₀', 'Subscript 0'],
+            ['₁', 'Subscript 1'],
+            ['₂', 'Subscript 2'],
+            ['₃', 'Subscript 3'],
+            ['₄', 'Subscript 4'],
+            ['₅', 'Subscript 5'],
+            ['₆', 'Subscript 6'],
+            ['₇', 'Subscript 7'],
+            ['₈', 'Subscript 8'],
+            ['₉', 'Subscript 9'],
+            ['₊', 'Subscript plus'],
+            ['₋', 'Subscript minus'],
+            // Root symbols
+            ['√', 'Square root'],
+            ['∛', 'Cube root'],
+            ['∜', 'Fourth root']
+        ],
+        // Disable file dialog
+        filebrowserBrowseUrl: '',
+        filebrowserUploadUrl: '',
+        filebrowserImageBrowseUrl: '',
+        filebrowserImageUploadUrl: '',
+        // Content styling
+        contentsCss: [
+            'body { font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; margin: 20px; }',
+            'sub, sup { font-size: 0.75em; }'
+        ],
+        // Entermode
+        enterMode: CKEDITOR.ENTER_P,
+        shiftEnterMode: CKEDITOR.ENTER_BR
+    };
 
-// Initialize CKEditor untuk modal tambah
-function initializeCKEditorTambah() {
-    // Destroy existing instances if any
-    destroyCKEditorInstances([
-        'pertanyaan_tambah', 
-        'pilihan_a_tambah', 
-        'pilihan_b_tambah', 
-        'pilihan_c_tambah', 
-        'pilihan_d_tambah', 
-        'pilihan_e_tambah', 
-        'pembahasan_tambah'
-    ]);
-
-    // Initialize new instances
-    CKEDITOR.replace('pertanyaan_tambah', ckEditorConfig);
-    CKEDITOR.replace('pilihan_a_tambah', ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_b_tambah', ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_c_tambah', ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_d_tambah', ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_e_tambah', ckEditorConfigPilihan);
-    CKEDITOR.replace('pembahasan_tambah', ckEditorConfig);
-}
-
-// Initialize CKEditor untuk modal edit
-function initializeCKEditorEdit(soalId) {
-    const editorIds = [
-        'pertanyaan_edit_' + soalId,
-        'pilihan_a_edit_' + soalId,
-        'pilihan_b_edit_' + soalId,
-        'pilihan_c_edit_' + soalId,
-        'pilihan_d_edit_' + soalId,
-        'pilihan_e_edit_' + soalId,
-        'pembahasan_edit_' + soalId
-    ];
-
-    // Destroy existing instances if any
-    destroyCKEditorInstances(editorIds);
-
-    // Initialize new instances
-    CKEDITOR.replace('pertanyaan_edit_' + soalId, ckEditorConfig);
-    CKEDITOR.replace('pilihan_a_edit_' + soalId, ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_b_edit_' + soalId, ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_c_edit_' + soalId, ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_d_edit_' + soalId, ckEditorConfigPilihan);
-    CKEDITOR.replace('pilihan_e_edit_' + soalId, ckEditorConfigPilihan);
-    CKEDITOR.replace('pembahasan_edit_' + soalId, ckEditorConfig);
-}
-
-// Destroy CKEditor instances
-function destroyCKEditorInstances(editorIds) {
-    editorIds.forEach(id => {
-        if (CKEDITOR.instances[id]) {
-            CKEDITOR.instances[id].destroy();
-        }
-    });
-}
-
-// Event listeners untuk modal
-document.addEventListener('DOMContentLoaded', function() {
-    // Modal tambah soal
-    document.getElementById('tambahSoalModal').addEventListener('shown.bs.modal', function() {
-        setTimeout(() => {
-            initializeCKEditorTambah();
-        }, 100);
-    });
-
-    document.getElementById('tambahSoalModal').addEventListener('hidden.bs.modal', function() {
+    // Initialize CKEditor untuk modal tambah
+    function initializeCKEditorTambah() {
+        // Destroy existing instances if any
         destroyCKEditorInstances([
-            'pertanyaan_tambah', 
-            'pilihan_a_tambah', 
-            'pilihan_b_tambah', 
-            'pilihan_c_tambah', 
-            'pilihan_d_tambah', 
-            'pilihan_e_tambah', 
+            'pertanyaan_tambah',
+            'pilihan_a_tambah',
+            'pilihan_b_tambah',
+            'pilihan_c_tambah',
+            'pilihan_d_tambah',
+            'pilihan_e_tambah',
             'pembahasan_tambah'
         ]);
-    });
 
-    // Modal edit soal
-    <?php foreach ($soal as $s): ?>
-    document.getElementById('editSoalModal<?= $s['soal_id'] ?>').addEventListener('shown.bs.modal', function() {
-        setTimeout(() => {
-            initializeCKEditorEdit(<?= $s['soal_id'] ?>);
-        }, 100);
-    });
-
-    document.getElementById('editSoalModal<?= $s['soal_id'] ?>').addEventListener('hidden.bs.modal', function() {
-        destroyCKEditorInstances([
-            'pertanyaan_edit_<?= $s['soal_id'] ?>',
-            'pilihan_a_edit_<?= $s['soal_id'] ?>',
-            'pilihan_b_edit_<?= $s['soal_id'] ?>',
-            'pilihan_c_edit_<?= $s['soal_id'] ?>',
-            'pilihan_d_edit_<?= $s['soal_id'] ?>',
-            'pilihan_e_edit_<?= $s['soal_id'] ?>',
-            'pembahasan_edit_<?= $s['soal_id'] ?>'
-        ]);
-    });
-    <?php endforeach; ?>
-});
-
-// Update form data before submit
-function updateCKEditorData() {
-    for (let instance in CKEDITOR.instances) {
-        CKEDITOR.instances[instance].updateElement();
+        // Initialize new instances
+        CKEDITOR.replace('pertanyaan_tambah', ckEditorConfig);
+        CKEDITOR.replace('pilihan_a_tambah', ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_b_tambah', ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_c_tambah', ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_d_tambah', ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_e_tambah', ckEditorConfigPilihan);
+        CKEDITOR.replace('pembahasan_tambah', ckEditorConfig);
     }
-}
 
-// Add event listeners to forms
-document.addEventListener('submit', function(e) {
-    if (e.target.tagName === 'FORM') {
-        updateCKEditorData();
+    // Initialize CKEditor untuk modal edit
+    function initializeCKEditorEdit(soalId) {
+        const editorIds = [
+            'pertanyaan_edit_' + soalId,
+            'pilihan_a_edit_' + soalId,
+            'pilihan_b_edit_' + soalId,
+            'pilihan_c_edit_' + soalId,
+            'pilihan_d_edit_' + soalId,
+            'pilihan_e_edit_' + soalId,
+            'pembahasan_edit_' + soalId
+        ];
+
+        // Destroy existing instances if any
+        destroyCKEditorInstances(editorIds);
+
+        // Initialize new instances
+        CKEDITOR.replace('pertanyaan_edit_' + soalId, ckEditorConfig);
+        CKEDITOR.replace('pilihan_a_edit_' + soalId, ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_b_edit_' + soalId, ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_c_edit_' + soalId, ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_d_edit_' + soalId, ckEditorConfigPilihan);
+        CKEDITOR.replace('pilihan_e_edit_' + soalId, ckEditorConfigPilihan);
+        CKEDITOR.replace('pembahasan_edit_' + soalId, ckEditorConfig);
     }
-});
 
-// Add quick math symbols toolbar
-function addQuickMathSymbols() {
-    // Create quick math symbols bar
-    const quickMathHtml = `
+    // Destroy CKEditor instances
+    function destroyCKEditorInstances(editorIds) {
+        editorIds.forEach(id => {
+            if (CKEDITOR.instances[id]) {
+                CKEDITOR.instances[id].destroy();
+            }
+        });
+    }
+
+    // Event listeners untuk modal
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal tambah soal
+        document.getElementById('tambahSoalModal').addEventListener('shown.bs.modal', function() {
+            setTimeout(() => {
+                initializeCKEditorTambah();
+            }, 100);
+        });
+
+        document.getElementById('tambahSoalModal').addEventListener('hidden.bs.modal', function() {
+            destroyCKEditorInstances([
+                'pertanyaan_tambah',
+                'pilihan_a_tambah',
+                'pilihan_b_tambah',
+                'pilihan_c_tambah',
+                'pilihan_d_tambah',
+                'pilihan_e_tambah',
+                'pembahasan_tambah'
+            ]);
+        });
+
+        // Modal edit soal
+        <?php foreach ($soal as $s): ?>
+            document.getElementById('editSoalModal<?= $s['soal_id'] ?>').addEventListener('shown.bs.modal', function() {
+                setTimeout(() => {
+                    initializeCKEditorEdit(<?= $s['soal_id'] ?>);
+                }, 100);
+            });
+
+            document.getElementById('editSoalModal<?= $s['soal_id'] ?>').addEventListener('hidden.bs.modal', function() {
+                destroyCKEditorInstances([
+                    'pertanyaan_edit_<?= $s['soal_id'] ?>',
+                    'pilihan_a_edit_<?= $s['soal_id'] ?>',
+                    'pilihan_b_edit_<?= $s['soal_id'] ?>',
+                    'pilihan_c_edit_<?= $s['soal_id'] ?>',
+                    'pilihan_d_edit_<?= $s['soal_id'] ?>',
+                    'pilihan_e_edit_<?= $s['soal_id'] ?>',
+                    'pembahasan_edit_<?= $s['soal_id'] ?>'
+                ]);
+            });
+        <?php endforeach; ?>
+    });
+
+    // Update form data before submit
+    function updateCKEditorData() {
+        for (let instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
+        }
+    }
+
+    // Add event listeners to forms
+    document.addEventListener('submit', function(e) {
+        if (e.target.tagName === 'FORM') {
+            updateCKEditorData();
+        }
+    });
+
+    // Add quick math symbols toolbar
+    function addQuickMathSymbols() {
+        // Create quick math symbols bar
+        const quickMathHtml = `
         <div class="quick-math-symbols p-2 bg-light border-bottom">
             <small class="text-muted me-2">Simbol Cepat:</small>
             <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="insertSymbol('²')" title="Kuadrat">x²</button>
@@ -897,268 +1133,268 @@ function addQuickMathSymbols() {
             <button type="button" class="btn btn-sm btn-outline-secondary me-1" onclick="insertSymbol('°')" title="Derajat">°</button>
         </div>
     `;
-    
-    // Add to modals when they're shown
-    document.addEventListener('shown.bs.modal', function(e) {
-        // Hanya tambahkan quick math symbols untuk modal tambah dan edit soal
-        if (e.target.id === 'tambahSoalModal' || e.target.id.startsWith('editSoalModal')) {
-            const modalBody = e.target.querySelector('.modal-body');
-            // Cari card dengan header "Pertanyaan Soal"
-            const pertanyaanCard = modalBody.querySelector('.card .card-header h6 i.fa-question-circle')?.closest('.card');
-            
-            if (pertanyaanCard && !modalBody.querySelector('.quick-math-symbols')) {
-                // Insert sebelum card pertanyaan
-                pertanyaanCard.insertAdjacentHTML('beforebegin', quickMathHtml);
+
+        // Add to modals when they're shown
+        document.addEventListener('shown.bs.modal', function(e) {
+            // Hanya tambahkan quick math symbols untuk modal tambah dan edit soal
+            if (e.target.id === 'tambahSoalModal' || e.target.id.startsWith('editSoalModal')) {
+                const modalBody = e.target.querySelector('.modal-body');
+                // Cari card dengan header "Pertanyaan Soal"
+                const pertanyaanCard = modalBody.querySelector('.card .card-header h6 i.fa-question-circle')?.closest('.card');
+
+                if (pertanyaanCard && !modalBody.querySelector('.quick-math-symbols')) {
+                    // Insert sebelum card pertanyaan
+                    pertanyaanCard.insertAdjacentHTML('beforebegin', quickMathHtml);
+                }
+            }
+        });
+    }
+
+    // Function to insert symbol into active CKEditor
+    function insertSymbol(symbol) {
+        // Cari editor yang sedang aktif/focus
+        for (let instanceName in CKEDITOR.instances) {
+            const editor = CKEDITOR.instances[instanceName];
+            if (editor.focusManager.hasFocus) {
+                editor.insertText(symbol);
+                editor.focus(); // Pastikan tetap focus
+                return;
             }
         }
-    });
-}
 
-// Function to insert symbol into active CKEditor
-function insertSymbol(symbol) {
-    // Cari editor yang sedang aktif/focus
-    for (let instanceName in CKEDITOR.instances) {
-        const editor = CKEDITOR.instances[instanceName];
-        if (editor.focusManager.hasFocus) {
-            editor.insertText(symbol);
-            editor.focus(); // Pastikan tetap focus
+        // Jika tidak ada yang focus, cari editor yang terakhir di-click atau yang visible
+        const visibleEditors = [];
+        for (let instanceName in CKEDITOR.instances) {
+            const editor = CKEDITOR.instances[instanceName];
+            if (editor.container && editor.container.isVisible()) {
+                visibleEditors.push(editor);
+            }
+        }
+
+        // Gunakan editor visible pertama
+        if (visibleEditors.length > 0) {
+            visibleEditors[0].insertText(symbol);
+            visibleEditors[0].focus();
             return;
         }
-    }
-    
-    // Jika tidak ada yang focus, cari editor yang terakhir di-click atau yang visible
-    const visibleEditors = [];
-    for (let instanceName in CKEDITOR.instances) {
-        const editor = CKEDITOR.instances[instanceName];
-        if (editor.container && editor.container.isVisible()) {
-            visibleEditors.push(editor);
+
+        // Fallback: gunakan editor pertama yang tersedia
+        const firstEditor = Object.keys(CKEDITOR.instances)[0];
+        if (firstEditor && CKEDITOR.instances[firstEditor]) {
+            CKEDITOR.instances[firstEditor].insertText(symbol);
+            CKEDITOR.instances[firstEditor].focus();
         }
     }
-    
-    // Gunakan editor visible pertama
-    if (visibleEditors.length > 0) {
-        visibleEditors[0].insertText(symbol);
-        visibleEditors[0].focus();
-        return;
-    }
-    
-    // Fallback: gunakan editor pertama yang tersedia
-    const firstEditor = Object.keys(CKEDITOR.instances)[0];
-    if (firstEditor && CKEDITOR.instances[firstEditor]) {
-        CKEDITOR.instances[firstEditor].insertText(symbol);
-        CKEDITOR.instances[firstEditor].focus();
-    }
-}
 
-// Initialize quick math symbols
-document.addEventListener('DOMContentLoaded', function() {
-    addQuickMathSymbols();
-});
+    // Initialize quick math symbols
+    document.addEventListener('DOMContentLoaded', function() {
+        addQuickMathSymbols();
+    });
 </script>
 
 <!-- Script untuk Import Bank Soal -->
 <script>
-let bankSoalData = [];
-let selectedBankUjian = null;
+    let bankSoalData = [];
+    let selectedBankUjian = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Load kategori ketika modal dibuka
-    document.getElementById('importBankSoalModal').addEventListener('shown.bs.modal', function() {
-        loadKategori();
-        resetImportModal();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load kategori ketika modal dibuka
+        document.getElementById('importBankSoalModal').addEventListener('shown.bs.modal', function() {
+            loadKategori();
+            resetImportModal();
+        });
+
+        // Setup event listeners untuk filter bertingkat
+        document.getElementById('filterKategoriImport').addEventListener('change', onKategoriChange);
+        document.getElementById('filterJenisUjianImport').addEventListener('change', onJenisUjianChange);
+        document.getElementById('filterBankUjianImport').addEventListener('change', onBankUjianChange);
+        document.getElementById('searchBankSoal').addEventListener('input', filterSoalBySearch);
+
+        // Select all checkbox
+        document.getElementById('selectAllSoal').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('input[name="soal_ids[]"]:not(:disabled)');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateImportButton();
+        });
+
+        // Import button
+        document.getElementById('btnImportSoal').addEventListener('click', function() {
+            if (confirm('Apakah Anda yakin ingin mengimport soal yang dipilih?')) {
+                document.getElementById('formImportSoal').submit();
+            }
+        });
     });
 
-    // Setup event listeners untuk filter bertingkat
-    document.getElementById('filterKategoriImport').addEventListener('change', onKategoriChange);
-    document.getElementById('filterJenisUjianImport').addEventListener('change', onJenisUjianChange);
-    document.getElementById('filterBankUjianImport').addEventListener('change', onBankUjianChange);
-    document.getElementById('searchBankSoal').addEventListener('input', filterSoalBySearch);
-
-    // Select all checkbox
-    document.getElementById('selectAllSoal').addEventListener('change', function() {
-        const checkboxes = document.querySelectorAll('input[name="soal_ids[]"]:not(:disabled)');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = this.checked;
-        });
-        updateImportButton();
-    });
-
-    // Import button
-    document.getElementById('btnImportSoal').addEventListener('click', function() {
-        if (confirm('Apakah Anda yakin ingin mengimport soal yang dipilih?')) {
-            document.getElementById('formImportSoal').submit();
-        }
-    });
-});
-
-function resetImportModal() {
-    document.getElementById('filterJenisUjianImport').disabled = true;
-    document.getElementById('filterBankUjianImport').disabled = true;
-    document.getElementById('searchBankSoal').disabled = true;
-    document.getElementById('bankUjianInfo').style.display = 'none';
-    document.getElementById('bankSoalContainer').style.display = 'none';
-    document.getElementById('noBankSoalMessage').style.display = 'block';
-    bankSoalData = [];
-    selectedBankUjian = null;
-}
-
-function loadKategori() {
-    fetch('<?= base_url('guru/bank-soal/api/kategori') ?>')
-        .then(response => response.json())
-        .then(data => {
-            const select = document.getElementById('filterKategoriImport');
-            select.innerHTML = '<option value="">Pilih Kategori</option>';
-
-            if (data.status === 'success') {
-                data.data.forEach(kategori => {
-                    const option = document.createElement('option');
-                    option.value = kategori;
-                    option.textContent = kategori.charAt(0).toUpperCase() + kategori.slice(1);
-                    select.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading kategori:', error);
-        });
-}
-
-function onKategoriChange() {
-    const kategori = this.value;
-    const jenisUjianSelect = document.getElementById('filterJenisUjianImport');
-    const bankUjianSelect = document.getElementById('filterBankUjianImport');
-
-    // Reset subsequent dropdowns
-    jenisUjianSelect.innerHTML = '<option value="">Pilih Jenis Ujian</option>';
-    bankUjianSelect.innerHTML = '<option value="">Pilih Bank Ujian</option>';
-    jenisUjianSelect.disabled = !kategori;
-    bankUjianSelect.disabled = true;
-    document.getElementById('searchBankSoal').disabled = true;
-
-    // Hide content
-    document.getElementById('bankUjianInfo').style.display = 'none';
-    document.getElementById('bankSoalContainer').style.display = 'none';
-
-    if (!kategori) return;
-
-    // Load jenis ujian untuk kategori ini
-    fetch(`<?= base_url('guru/bank-soal/api/jenis-ujian') ?>?kategori=${encodeURIComponent(kategori)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                data.data.forEach(jenisUjian => {
-                    const option = document.createElement('option');
-                    option.value = jenisUjian.jenis_ujian_id;
-                    option.textContent = `${jenisUjian.nama_jenis} (${jenisUjian.jumlah_bank} bank ujian)`;
-                    jenisUjianSelect.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading jenis ujian:', error);
-        });
-}
-
-function onJenisUjianChange() {
-    const kategori = document.getElementById('filterKategoriImport').value;
-    const jenisUjianId = this.value;
-    const bankUjianSelect = document.getElementById('filterBankUjianImport');
-
-    // Reset bank ujian dropdown
-    bankUjianSelect.innerHTML = '<option value="">Pilih Bank Ujian</option>';
-    bankUjianSelect.disabled = !jenisUjianId;
-    document.getElementById('searchBankSoal').disabled = true;
-
-    // Hide content
-    document.getElementById('bankUjianInfo').style.display = 'none';
-    document.getElementById('bankSoalContainer').style.display = 'none';
-
-    if (!jenisUjianId) return;
-
-    // Load bank ujian
-    fetch(`<?= base_url('guru/bank-soal/api/bank-ujian') ?>?kategori=${encodeURIComponent(kategori)}&jenis_ujian_id=${jenisUjianId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                data.data.forEach(bankUjian => {
-                    const option = document.createElement('option');
-                    option.value = bankUjian.bank_ujian_id;
-                    option.textContent = `${bankUjian.nama_ujian} (${bankUjian.jumlah_soal} soal) - ${bankUjian.creator_name}`;
-                    bankUjianSelect.appendChild(option);
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading bank ujian:', error);
-        });
-}
-
-function onBankUjianChange() {
-    const bankUjianId = this.value;
-    document.getElementById('searchBankSoal').disabled = !bankUjianId;
-
-    if (!bankUjianId) {
+    function resetImportModal() {
+        document.getElementById('filterJenisUjianImport').disabled = true;
+        document.getElementById('filterBankUjianImport').disabled = true;
+        document.getElementById('searchBankSoal').disabled = true;
         document.getElementById('bankUjianInfo').style.display = 'none';
         document.getElementById('bankSoalContainer').style.display = 'none';
-        return;
+        document.getElementById('noBankSoalMessage').style.display = 'block';
+        bankSoalData = [];
+        selectedBankUjian = null;
     }
 
-    // Show loading
-    document.getElementById('loadingBankSoal').style.display = 'block';
-    document.getElementById('bankSoalContainer').style.display = 'none';
+    function loadKategori() {
+        fetch('<?= base_url('guru/bank-soal/api/kategori') ?>')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('filterKategoriImport');
+                select.innerHTML = '<option value="">Pilih Kategori</option>';
 
-    // Load soal dari bank ujian
-    fetch(`<?= base_url('guru/bank-soal/api/soal') ?>?bank_ujian_id=${bankUjianId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                bankSoalData = data.data;
-                selectedBankUjian = data.bank_ujian;
-
-                // Show bank ujian info
-                showBankUjianInfo(selectedBankUjian, bankSoalData.length);
-
-                // Render soal
-                renderBankSoal(bankSoalData);
-
-                document.getElementById('bankSoalContainer').style.display = 'block';
-            } else {
-                alert(data.message || 'Error loading soal');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading soal:', error);
-            alert('Terjadi kesalahan saat memuat soal');
-        })
-        .finally(() => {
-            document.getElementById('loadingBankSoal').style.display = 'none';
-        });
-}
-
-function showBankUjianInfo(bankUjian, jumlahSoal) {
-    document.getElementById('infoBankNama').textContent = bankUjian.nama_ujian;
-    document.getElementById('infoBankKategori').textContent = bankUjian.kategori.charAt(0).toUpperCase() + bankUjian.kategori.slice(1);
-    document.getElementById('infoBankPembuat').textContent = bankUjian.creator_name || 'System';
-    document.getElementById('infoBankJumlahSoal').textContent = jumlahSoal;
-    document.getElementById('infoBankDeskripsi').textContent = bankUjian.deskripsi || 'Tidak ada deskripsi';
-
-    document.getElementById('bankUjianInfo').style.display = 'block';
-}
-
-function renderBankSoal(soalList) {
-    const tbody = document.getElementById('bankSoalTableBody');
-    const noDataMessage = document.getElementById('noBankSoalMessage');
-
-    if (soalList.length === 0) {
-        tbody.innerHTML = '';
-        noDataMessage.style.display = 'block';
-        noDataMessage.innerHTML = '<p class="text-muted">Tidak ada soal dalam bank ujian ini</p>';
-        return;
+                if (data.status === 'success') {
+                    data.data.forEach(kategori => {
+                        const option = document.createElement('option');
+                        option.value = kategori;
+                        option.textContent = kategori.charAt(0).toUpperCase() + kategori.slice(1);
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading kategori:', error);
+            });
     }
 
-    noDataMessage.style.display = 'none';
+    function onKategoriChange() {
+        const kategori = this.value;
+        const jenisUjianSelect = document.getElementById('filterJenisUjianImport');
+        const bankUjianSelect = document.getElementById('filterBankUjianImport');
 
-    tbody.innerHTML = soalList.map((soal, index) => `
+        // Reset subsequent dropdowns
+        jenisUjianSelect.innerHTML = '<option value="">Pilih Mata Pelajaran</option>';
+        bankUjianSelect.innerHTML = '<option value="">Pilih Bank Ujian</option>';
+        jenisUjianSelect.disabled = !kategori;
+        bankUjianSelect.disabled = true;
+        document.getElementById('searchBankSoal').disabled = true;
+
+        // Hide content
+        document.getElementById('bankUjianInfo').style.display = 'none';
+        document.getElementById('bankSoalContainer').style.display = 'none';
+
+        if (!kategori) return;
+
+        // Load Mata Pelajaran untuk kategori ini
+        fetch(`<?= base_url('guru/bank-soal/api/jenis-ujian') ?>?kategori=${encodeURIComponent(kategori)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    data.data.forEach(jenisUjian => {
+                        const option = document.createElement('option');
+                        option.value = jenisUjian.jenis_ujian_id;
+                        option.textContent = `${jenisUjian.nama_jenis} (${jenisUjian.jumlah_bank} bank ujian)`;
+                        jenisUjianSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Mata Pelajaran:', error);
+            });
+    }
+
+    function onJenisUjianChange() {
+        const kategori = document.getElementById('filterKategoriImport').value;
+        const jenisUjianId = this.value;
+        const bankUjianSelect = document.getElementById('filterBankUjianImport');
+
+        // Reset bank ujian dropdown
+        bankUjianSelect.innerHTML = '<option value="">Pilih Bank Ujian</option>';
+        bankUjianSelect.disabled = !jenisUjianId;
+        document.getElementById('searchBankSoal').disabled = true;
+
+        // Hide content
+        document.getElementById('bankUjianInfo').style.display = 'none';
+        document.getElementById('bankSoalContainer').style.display = 'none';
+
+        if (!jenisUjianId) return;
+
+        // Load bank ujian
+        fetch(`<?= base_url('guru/bank-soal/api/bank-ujian') ?>?kategori=${encodeURIComponent(kategori)}&jenis_ujian_id=${jenisUjianId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    data.data.forEach(bankUjian => {
+                        const option = document.createElement('option');
+                        option.value = bankUjian.bank_ujian_id;
+                        option.textContent = `${bankUjian.nama_ujian} (${bankUjian.jumlah_soal} soal) - ${bankUjian.creator_name}`;
+                        bankUjianSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading bank ujian:', error);
+            });
+    }
+
+    function onBankUjianChange() {
+        const bankUjianId = this.value;
+        document.getElementById('searchBankSoal').disabled = !bankUjianId;
+
+        if (!bankUjianId) {
+            document.getElementById('bankUjianInfo').style.display = 'none';
+            document.getElementById('bankSoalContainer').style.display = 'none';
+            return;
+        }
+
+        // Show loading
+        document.getElementById('loadingBankSoal').style.display = 'block';
+        document.getElementById('bankSoalContainer').style.display = 'none';
+
+        // Load soal dari bank ujian
+        fetch(`<?= base_url('guru/bank-soal/api/soal') ?>?bank_ujian_id=${bankUjianId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    bankSoalData = data.data;
+                    selectedBankUjian = data.bank_ujian;
+
+                    // Show bank ujian info
+                    showBankUjianInfo(selectedBankUjian, bankSoalData.length);
+
+                    // Render soal
+                    renderBankSoal(bankSoalData);
+
+                    document.getElementById('bankSoalContainer').style.display = 'block';
+                } else {
+                    alert(data.message || 'Error loading soal');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading soal:', error);
+                alert('Terjadi kesalahan saat memuat soal');
+            })
+            .finally(() => {
+                document.getElementById('loadingBankSoal').style.display = 'none';
+            });
+    }
+
+    function showBankUjianInfo(bankUjian, jumlahSoal) {
+        document.getElementById('infoBankNama').textContent = bankUjian.nama_ujian;
+        document.getElementById('infoBankKategori').textContent = bankUjian.kategori.charAt(0).toUpperCase() + bankUjian.kategori.slice(1);
+        document.getElementById('infoBankPembuat').textContent = bankUjian.creator_name || 'System';
+        document.getElementById('infoBankJumlahSoal').textContent = jumlahSoal;
+        document.getElementById('infoBankDeskripsi').textContent = bankUjian.deskripsi || 'Tidak ada deskripsi';
+
+        document.getElementById('bankUjianInfo').style.display = 'block';
+    }
+
+    function renderBankSoal(soalList) {
+        const tbody = document.getElementById('bankSoalTableBody');
+        const noDataMessage = document.getElementById('noBankSoalMessage');
+
+        if (soalList.length === 0) {
+            tbody.innerHTML = '';
+            noDataMessage.style.display = 'block';
+            noDataMessage.innerHTML = '<p class="text-muted">Tidak ada soal dalam bank ujian ini</p>';
+            return;
+        }
+
+        noDataMessage.style.display = 'none';
+
+        tbody.innerHTML = soalList.map((soal, index) => `
         <tr data-soal-id="${soal.soal_id}">
             <td>
                 <div class="form-check">
@@ -1195,44 +1431,44 @@ function renderBankSoal(soalList) {
         </tr>
     `).join('');
 
-    // Reset checkbox
-    document.getElementById('selectAllSoal').checked = false;
-    updateImportButton();
-}
+        // Reset checkbox
+        document.getElementById('selectAllSoal').checked = false;
+        updateImportButton();
+    }
 
-function filterSoalBySearch() {
-    const search = this.value.toLowerCase();
+    function filterSoalBySearch() {
+        const search = this.value.toLowerCase();
 
-    if (!bankSoalData || bankSoalData.length === 0) return;
+        if (!bankSoalData || bankSoalData.length === 0) return;
 
-    const filteredData = bankSoalData.filter(soal => {
-        return stripHtml(soal.pertanyaan).toLowerCase().includes(search) ||
-            stripHtml(soal.pilihan_a).toLowerCase().includes(search) ||
-            stripHtml(soal.pilihan_b).toLowerCase().includes(search) ||
-            stripHtml(soal.pilihan_c).toLowerCase().includes(search) ||
-            stripHtml(soal.pilihan_d).toLowerCase().includes(search) ||
-            (soal.pilihan_e && stripHtml(soal.pilihan_e).toLowerCase().includes(search));
-    });
+        const filteredData = bankSoalData.filter(soal => {
+            return stripHtml(soal.pertanyaan).toLowerCase().includes(search) ||
+                stripHtml(soal.pilihan_a).toLowerCase().includes(search) ||
+                stripHtml(soal.pilihan_b).toLowerCase().includes(search) ||
+                stripHtml(soal.pilihan_c).toLowerCase().includes(search) ||
+                stripHtml(soal.pilihan_d).toLowerCase().includes(search) ||
+                (soal.pilihan_e && stripHtml(soal.pilihan_e).toLowerCase().includes(search));
+        });
 
-    renderBankSoal(filteredData);
-}
+        renderBankSoal(filteredData);
+    }
 
-function updateImportButton() {
-    const checked = document.querySelectorAll('input[name="soal_ids[]"]:checked').length;
-    const btn = document.getElementById('btnImportSoal');
+    function updateImportButton() {
+        const checked = document.querySelectorAll('input[name="soal_ids[]"]:checked').length;
+        const btn = document.getElementById('btnImportSoal');
 
-    btn.disabled = checked === 0;
-    btn.innerHTML = checked > 0 ?
-        `<i class="fas fa-download me-2"></i>Import ${checked} Soal Terpilih` :
-        '<i class="fas fa-download me-2"></i>Import Soal Terpilih';
-}
+        btn.disabled = checked === 0;
+        btn.innerHTML = checked > 0 ?
+            `<i class="fas fa-download me-2"></i>Import ${checked} Soal Terpilih` :
+            '<i class="fas fa-download me-2"></i>Import Soal Terpilih';
+    }
 
-function previewSoal(soalId) {
-    const soal = bankSoalData.find(s => s.soal_id == soalId);
-    if (!soal) return;
+    function previewSoal(soalId) {
+        const soal = bankSoalData.find(s => s.soal_id == soalId);
+        if (!soal) return;
 
-    // Buat modal preview
-    const modalHtml = `
+        // Buat modal preview
+        const modalHtml = `
         <div class="modal fade" id="previewSoalModal" tabindex="-1">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -1278,197 +1514,198 @@ function previewSoal(soalId) {
         </div>
     `;
 
-    // Remove existing preview modal
-    const existingModal = document.getElementById('previewSoalModal');
-    if (existingModal) {
-        existingModal.remove();
+        // Remove existing preview modal
+        const existingModal = document.getElementById('previewSoalModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add new modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('previewSoalModal'));
+        modal.show();
     }
 
-    // Add new modal
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    function truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
 
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('previewSoalModal'));
-    modal.show();
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-}
-
-function stripHtml(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-}
+    function stripHtml(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
 </script>
 
 <style>
-/* Custom styles untuk CKEditor */
-.cke_editor {
-    margin-bottom: 10px;
-}
-
-.cke_contents {
-    border-radius: 0 0 4px 4px;
-}
-
-.cke_top {
-    border-radius: 4px 4px 0 0;
-}
-
-/* Ensure mathematical symbols display properly */
-.cke_editable {
-    font-family: 'Times New Roman', Times, serif;
-    line-height: 1.5;
-}
-
-/* Special characters button styling */
-.cke_button__specialchar {
-    background-color: #e3f2fd !important;
-}
-
-.cke_button__specialchar:hover {
-    background-color: #bbdefb !important;
-}
-
-/* Mathematical symbols in content */
-.math-symbols {
-    font-family: 'Times New Roman', 'Symbol', 'Arial Unicode MS', serif;
-    font-size: 1.1em;
-}
-
-/* Responsive table for better mobile view */
-@media (max-width: 768px) {
-    .table-responsive {
-        font-size: 0.8rem;
+    /* Custom styles untuk CKEditor */
+    .cke_editor {
+        margin-bottom: 10px;
     }
-    
-    .modal-xl {
-        max-width: 95%;
+
+    .cke_contents {
+        border-radius: 0 0 4px 4px;
     }
-    
-    .cke_toolbar {
-        white-space: normal !important;
+
+    .cke_top {
+        border-radius: 4px 4px 0 0;
     }
-}
 
-/* Quick math symbols bar */
-.quick-math-symbols {
-    border-radius: 4px 4px 0 0;
-    border-left: 1px solid #ddd;
-    border-right: 1px solid #ddd;
-    border-top: 1px solid #ddd;
-}
+    /* Ensure mathematical symbols display properly */
+    .cke_editable {
+        font-family: 'Times New Roman', Times, serif;
+        line-height: 1.5;
+    }
 
-.quick-math-symbols .btn {
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 14px;
-    padding: 2px 6px;
-    line-height: 1.2;
-}
+    /* Special characters button styling */
+    .cke_button__specialchar {
+        background-color: #e3f2fd !important;
+    }
 
-.quick-math-symbols .btn:hover {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
-}
+    .cke_button__specialchar:hover {
+        background-color: #bbdefb !important;
+    }
 
-/* Enhanced Modal Styling */
-.modal-header.bg-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
-}
+    /* Mathematical symbols in content */
+    .math-symbols {
+        font-family: 'Times New Roman', 'Symbol', 'Arial Unicode MS', serif;
+        font-size: 1.1em;
+    }
 
-.modal-footer.bg-light {
-    background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%) !important;
-}
+    /* Responsive table for better mobile view */
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.8rem;
+        }
 
-/* Card Styling for Modal Sections */
-.modal-body .card {
-    border: 1px solid #dee2e6;
-    transition: all 0.2s ease;
-}
+        .modal-xl {
+            max-width: 95%;
+        }
 
-.modal-body .card:hover {
-    border-color: #adb5bd;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
+        .cke_toolbar {
+            white-space: normal !important;
+        }
+    }
 
-.modal-body .card-header {
-    background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%) !important;
-    border-bottom: 1px solid #dee2e6;
-}
+    /* Quick math symbols bar */
+    .quick-math-symbols {
+        border-radius: 4px 4px 0 0;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        border-top: 1px solid #ddd;
+    }
 
-.modal-body .card-header h6 {
-    color: #495057;
-    font-weight: 600;
-}
+    .quick-math-symbols .btn {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 14px;
+        padding: 2px 6px;
+        line-height: 1.2;
+    }
 
-/* Input Group Styling */
-.input-group-text {
-    background-color: #e9ecef;
-    border-color: #ced4da;
-    color: #6c757d;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
+    .quick-math-symbols .btn:hover {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
 
-/* Form Control Enhancement */
-.form-control-lg, .form-select-lg {
-    padding: 0.75rem 1rem;
-    font-size: 1.1rem;
-    border-radius: 0.5rem;
-}
+    /* Enhanced Modal Styling */
+    .modal-header.bg-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    }
 
-/* Alert in Modal */
-.modal-body .alert-info {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
-    border-radius: 0.5rem;
-}
+    .modal-footer.bg-light {
+        background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%) !important;
+    }
 
-/* Label with Icons */
-.form-label i {
-    width: 16px;
-    text-align: center;
-}
+    /* Card Styling for Modal Sections */
+    .modal-body .card {
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
 
-/* Button Enhancement */
-.modal-footer .btn {
-    padding: 0.75rem 1.5rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-}
+    .modal-body .card:hover {
+        border-color: #adb5bd;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-.modal-footer .btn-primary {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    border: none;
-}
+    .modal-body .card-header {
+        background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%) !important;
+        border-bottom: 1px solid #dee2e6;
+    }
 
-.modal-footer .btn-primary:hover {
-    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
-}
+    .modal-body .card-header h6 {
+        color: #495057;
+        font-weight: 600;
+    }
 
-/* Alert styling for tips */
-.alert-info .text-muted {
-    color: #0c5460 !important;
-}
+    /* Input Group Styling */
+    .input-group-text {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+        color: #6c757d;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
 
-/* Keyboard key styling */
-kbd {
-    padding: 2px 4px;
-    font-size: 87.5%;
-    color: #fff;
-    background-color: #212529;
-    border-radius: 3px;
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,.25);
-}
+    /* Form Control Enhancement */
+    .form-control-lg,
+    .form-select-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1.1rem;
+        border-radius: 0.5rem;
+    }
+
+    /* Alert in Modal */
+    .modal-body .alert-info {
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+        color: #0c5460;
+        border-radius: 0.5rem;
+    }
+
+    /* Label with Icons */
+    .form-label i {
+        width: 16px;
+        text-align: center;
+    }
+
+    /* Button Enhancement */
+    .modal-footer .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .modal-footer .btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+    }
+
+    .modal-footer .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    /* Alert styling for tips */
+    .alert-info .text-muted {
+        color: #0c5460 !important;
+    }
+
+    /* Keyboard key styling */
+    kbd {
+        padding: 2px 4px;
+        font-size: 87.5%;
+        color: #fff;
+        background-color: #212529;
+        border-radius: 3px;
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .25);
+    }
 </style>
 
 <?= $this->endSection() ?>

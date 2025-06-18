@@ -20,7 +20,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Jenis Ujian</th>
+                        <th>Mata Pelajaran</th>
                         <th>Pertanyaan</th>
                         <th>Tingkat Kesulitan</th>
                         <th>Tanggal Dibuat</th>

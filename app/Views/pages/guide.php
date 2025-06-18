@@ -5,33 +5,31 @@
     <div class="container py-5">
         <h1 class="guide-title text-center mb-5">Panduan PHY-FA-CAT</h1>
 
-        <!-- Pengenalan -->
         <div class="guide-section">
             <div class="guide-card">
                 <div class="card-icon">
                     <i class="bi bi-info-circle-fill"></i>
                 </div>
                 <h2>Apa itu Phy-FA-CAT?</h2>
-                <p>Phy-FA-CAT merupakan media asesmen adaptif yang dapat digunakan siswa untuk mengerjakan soal berdasarkan kemampuan real-time dan memberikan pengukuran kemampuan kognitif yang lebih akurat.</p>
+                <p>Phy-FA-CAT merupakan media asesmen adaptif yang dapat digunakan siswa untuk mengerjakan soal berdasarkan kemampuan <i>real-time</i> dan memberikan pengukuran kemampuan kognitif yang lebih akurat.</p>
             </div>
         </div>
 
-        <!-- Cara Penggunaan -->
         <div class="guide-section">
             <h2 class="section-title">Langkah Penggunaan</h2>
             <div class="row g-4">
                 <div class="col-md-6 col-lg-3">
                     <div class="step-card">
                         <div class="step-number">1</div>
-                        <h3>Login</h3>
+                        <h3><i>Login</i></h3>
                         <p>Masuk menggunakan akun yang telah diberikan</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
                     <div class="step-card">
                         <div class="step-number">2</div>
-                        <h3>Token</h3>
-                        <p>Masukkan token ujian dari pengawas</p>
+                        <h3><i>Token</i></h3>
+                        <p>Masukkan <i>token</i> ujian dari pengawas</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
@@ -51,7 +49,6 @@
             </div>
         </div>
 
-        <!-- Peraturan Penting -->
         <div class="guide-section">
             <div class="rules-card">
                 <h2 class="mb-4">Peraturan Penting</h2>
@@ -60,7 +57,7 @@
                         <div class="rule-item not-allowed">
                             <h4><i class="bi bi-x-circle"></i> Tidak Diperbolehkan</h4>
                             <ul>
-                                <li>Membuka tab browser lain</li>
+                                <li>Membuka <i>tab browser</i> lain</li>
                                 <li>Menggunakan perangkat elektronik lain</li>
                                 <li>Meninggalkan halaman ujian</li>
                             </ul>
@@ -70,7 +67,7 @@
                         <div class="rule-item allowed">
                             <h4><i class="bi bi-check-circle"></i> Diperbolehkan</h4>
                             <ul>
-                                <li>Menggunakan kalkulator scientific</li>
+                                <li>Menggunakan kalkulator <i>scientific</i></li>
                                 <li>Menggunakan kertas coret-coretan</li>
                                 <li>Bertanya pada pengawas jika ada kendala</li>
                             </ul>

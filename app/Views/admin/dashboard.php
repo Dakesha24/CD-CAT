@@ -73,7 +73,7 @@
       ['title' => 'Kelola Siswa', 'desc' => 'Kelola data siswa dalam sistem.', 'icon' => 'bi-people', 'color' => 'success', 'url' => 'admin/siswa'],
       ['title' => 'Sekolah & Kelas', 'desc' => 'Kelola sekolah, kelas, dan siswa.', 'icon' => 'bi-building-gear', 'color' => 'info', 'url' => 'admin/sekolah'],
       ['title' => 'Bank Ujian', 'desc' => 'Kelola bank soal dan koleksi ujian.', 'icon' => 'bi-database', 'color' => 'purple', 'url' => 'admin/bank-soal'],
-      ['title' => 'Jenis Ujian', 'desc' => 'Monitor ujian yang dibuat oleh guru.', 'icon' => 'bi-journal-text', 'color' => 'info', 'url' => 'admin/jenis-ujian'],
+      ['title' => 'Mata Pelajaran', 'desc' => 'Monitor ujian yang dibuat oleh guru.', 'icon' => 'bi-journal-text', 'color' => 'info', 'url' => 'admin/jenis-ujian'],
       ['title' => 'Kelola Ujian', 'desc' => 'Monitor ujian yang dibuat oleh guru.', 'icon' => 'bi-file-earmark-text', 'color' => 'danger', 'url' => 'admin/ujian'],
       ['title' => 'Jadwal Ujian', 'desc' => 'Monitor jadwal dan peserta ujian.', 'icon' => 'bi-calendar-check', 'color' => 'secondary', 'url' => 'admin/jadwal'],
       ['title' => 'Hasil Ujian', 'desc' => 'Analisis hasil ujian para siswa.', 'icon' => 'bi-bar-chart-line', 'color' => 'success', 'url' => 'admin/hasil-ujian'],
@@ -115,14 +115,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0; /* Mencegah ikon menyusut */
+    flex-shrink: 0;
+    /* Mencegah ikon menyusut */
   }
 
   /* Desain Kartu Menu */
   .menu-card {
     border: 1px solid #e9ecef;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    border-radius: 0.75rem; /* Sedikit lebih bulat */
+    border-radius: 0.75rem;
+    /* Sedikit lebih bulat */
   }
 
   .menu-card:hover {
@@ -140,19 +142,21 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   /* Menghilangkan garis bawah pada tautan kartu */
   .menu-link {
-      color: inherit;
+    color: inherit;
   }
 
   /* Custom Color: Purple (untuk Bank Ujian) */
   .bg-purple-subtle {
     background-color: rgba(102, 16, 242, 0.1);
   }
+
   .text-purple {
     color: #6f42c1;
   }
+
   .menu-card:hover .text-purple {
     color: #6610f2 !important;
   }

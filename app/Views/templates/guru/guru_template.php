@@ -201,7 +201,7 @@
             <li class="nav-item">
                 <a href="<?= base_url('guru/jenis-ujian') ?>" class="nav-link <?= current_url() == base_url('guru/jenis-ujian') ? 'active' : '' ?>">
                     <i class="bi bi-journal-text"></i>
-                    <span>Jenis Ujian</span>
+                    <span>Mata Pelajaran</span>
                 </a>
             </li>
             <li class="nav-item">

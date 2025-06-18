@@ -76,7 +76,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->get('bank-soal/hapus-soal/(:num)', 'Admin::hapusSoalBankUjian/$1');
   $routes->get('bank-soal/hapus/(:num)', 'Admin::hapusBankUjian/$1');
 
-  // Kelola Jenis Ujian
+  // Kelola Mata Pelajaran
   $routes->get('jenis-ujian', 'Admin::jenisUjian');
   $routes->post('jenis-ujian/tambah', 'Admin::tambahJenisUjian');
   $routes->post('jenis-ujian/edit/(:num)', 'Admin::editJenisUjian/$1');
@@ -109,6 +109,9 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->get('hasil-ujian/siswa/(:num)', 'Admin::hasilUjianSiswa/$1');
   $routes->get('hasil-ujian/detail/(:num)', 'Admin::detailHasilSiswa/$1');
   $routes->get('hasil-ujian/hapus/(:num)', 'Admin::hapusHasilSiswa/$1');
+
+  $routes->get('hasil-ujian/download-excel/(:num)', 'Admin::downloadExcelHTML/$1');
+  $routes->get('hasil-ujian/download-pdf/(:num)', 'Admin::downloadPDFHTML/$1');
 
   // Kelola Pengumuman
   $routes->get('pengumuman', 'Admin::daftarPengumuman');

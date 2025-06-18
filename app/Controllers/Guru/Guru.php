@@ -53,7 +53,7 @@ class Guru extends Controller
         // Ambil ujian berdasarkan kelas yang diajar guru
         $data['ujian'] = $this->ujianModel->getByKelasGuru($guru['guru_id']);
 
-        // Ambil jenis ujian berdasarkan kelas yang diajar guru
+        // Ambil Mata Pelajaran berdasarkan kelas yang diajar guru
         $data['jenis_ujian'] = $this->jenisUjianModel->getByKelasGuru($guru['guru_id']);
 
         // Ambil kelas yang diajar guru untuk dropdown
@@ -90,11 +90,11 @@ class Guru extends Controller
             return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
         }
 
-        // Validasi jenis ujian (pastikan guru memiliki akses)
+        // Validasi Mata Pelajaran (pastikan guru memiliki akses)
         $jenisUjianId = $this->request->getPost('jenis_ujian_id');
         if (!$this->jenisUjianModel->hasAccess($jenisUjianId, $guru['guru_id'])) {
             return redirect()->to('guru/ujian')
-                ->with('error', 'Anda tidak memiliki akses untuk menggunakan jenis ujian tersebut.');
+                ->with('error', 'Anda tidak memiliki akses untuk menggunakan Mata Pelajaran tersebut.');
         }
 
         // Validasi kelas (jika dipilih)
@@ -168,11 +168,11 @@ class Guru extends Controller
                 ->with('error', 'Anda tidak memiliki akses untuk mengedit ujian ini.');
         }
 
-        // Validasi jenis ujian
+        // Validasi Mata Pelajaran
         $jenisUjianId = $this->request->getPost('jenis_ujian_id');
         if (!$this->jenisUjianModel->hasAccess($jenisUjianId, $guru['guru_id'])) {
             return redirect()->to('guru/ujian')
-                ->with('error', 'Anda tidak memiliki akses untuk menggunakan jenis ujian tersebut.');
+                ->with('error', 'Anda tidak memiliki akses untuk menggunakan Mata Pelajaran tersebut.');
         }
 
         // Validasi kelas (jika diubah)
@@ -305,7 +305,7 @@ class Guru extends Controller
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
             $newName = $fotoFile->getRandomName();
-            $uploadPath = 'uploads/soal';
+            $uploadPath = FCPATH . 'uploads/soal';
 
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
@@ -368,7 +368,7 @@ class Guru extends Controller
             'pembahasan' => $this->request->getPost('pembahasan')
         ];
 
-        $uploadPath = 'uploads/soal';
+        $uploadPath = FCPATH . 'uploads/soal';
 
         // Upload foto jika ada
         $fotoFile = $this->request->getFile('foto');
@@ -634,6 +634,90 @@ class Guru extends Controller
         return $hasilDenganDurasi;
     }
 
+    private function hitungKemampuanKognitif($detailJawaban, $totalSoal)
+    {
+        $totalBenar = 0;
+        $totalSalah = 0;
+        $totalPilihanJawaban = 0;
+
+        foreach ($detailJawaban as $jawaban) {
+            if ($jawaban['is_correct']) {
+                $totalBenar++;
+            } else {
+                $totalSalah++;
+            }
+
+            // Hitung jumlah pilihan jawaban untuk setiap soal
+            // Ambil data soal lengkap untuk menghitung pilihan
+            $soalLengkap = $this->soalUjianModel->find($jawaban['soal_id']);
+
+            $jumlahPilihan = 4; // Default A, B, C, D
+            if (!empty($soalLengkap['pilihan_e'])) {
+                $jumlahPilihan = 5; // Ada pilihan E
+            }
+
+            $totalPilihanJawaban += $jumlahPilihan;
+        }
+
+        // Hitung rata-rata pilihan jawaban per soal
+        $rataRataPilihan = $totalSoal > 0 ? $totalPilihanJawaban / $totalSoal : 4;
+
+        // Rumus: skor = (B - (S/(P-1))) / N x 100
+        $skor = 0;
+        if ($totalSoal > 0) {
+            $koreksiTebakan = $totalSalah / ($rataRataPilihan - 1);
+            $skor = (($totalBenar - $koreksiTebakan) / $totalSoal) * 100;
+
+            // Pastikan skor tidak negatif
+            $skor = max(0, $skor);
+        }
+
+        return [
+            'skor' => round($skor, 2),
+            'total_benar' => $totalBenar,
+            'total_salah' => $totalSalah,
+            'rata_rata_pilihan' => round($rataRataPilihan, 1)
+        ];
+    }
+
+    /**
+     * Dapatkan klasifikasi kemampuan kognitif berdasarkan skor
+     */
+    private function getKlasifikasiKognitif($skor)
+    {
+        if ($skor > 80 && $skor <= 100) {
+            return [
+                'kategori' => 'Sangat Tinggi',
+                'class' => 'text-success',
+                'bg_class' => 'bg-success'
+            ];
+        } elseif ($skor > 60 && $skor <= 80) {
+            return [
+                'kategori' => 'Tinggi',
+                'class' => 'text-info',
+                'bg_class' => 'bg-info'
+            ];
+        } elseif ($skor > 40 && $skor <= 60) {
+            return [
+                'kategori' => 'Rata-rata (Sedang)',
+                'class' => 'text-warning',
+                'bg_class' => 'bg-warning'
+            ];
+        } elseif ($skor > 20 && $skor <= 40) {
+            return [
+                'kategori' => 'Rendah',
+                'class' => 'text-orange',
+                'bg_class' => 'bg-orange'
+            ];
+        } else {
+            return [
+                'kategori' => 'Sangat Rendah',
+                'class' => 'text-danger',
+                'bg_class' => 'bg-danger'
+            ];
+        }
+    }
+
     public function hasilUjian()
     {
         $userId = session()->get('user_id');
@@ -806,9 +890,9 @@ class Guru extends Controller
         // Ambil info ujian dengan informasi waktu
         $ujian = $db->table('jadwal_ujian ju')
             ->select('ju.*, u.nama_ujian, u.deskripsi, u.kode_ujian, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
-                     s.nama_sekolah, g.nama_lengkap as nama_guru, ju.kode_akses,
-                     DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
-                     DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
+                 s.nama_sekolah, g.nama_lengkap as nama_guru, ju.kode_akses,
+                 DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
+                 DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
@@ -832,15 +916,15 @@ class Guru extends Controller
             return redirect()->to(base_url('guru/hasil-ujian'));
         }
 
-        // Ambil hasil siswa dengan perhitungan nilai dan informasi waktu
+        // Ambil hasil siswa dengan perhitungan nilai dan informasi waktu, TERMASUK JENIS KELAMIN
         $hasilSiswa = $db->table('peserta_ujian pu')
             ->select('pu.peserta_ujian_id, pu.status, pu.waktu_mulai, pu.waktu_selesai,
-                     siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
-                     u.username,
-                     TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
-                     TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
-                     DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-                     DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+                 siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta, siswa.jenis_kelamin,
+                 u.username,
+                 TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
+                 TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
+                 DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                 DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('siswa', 'siswa.siswa_id = pu.siswa_id', 'left')
             ->join('users u', 'u.user_id = siswa.user_id', 'left')
             ->where('pu.jadwal_id', $jadwalId)
@@ -889,6 +973,25 @@ class Guru extends Controller
                 $siswa['jawaban_benar'] = $jawabanBenar;
                 $siswa['total_soal'] = $totalSoal;
 
+                // Hitung kemampuan kognitif - PERBAIKAN: ambil data lengkap seperti di detailHasil
+                if ($totalSoal > 0) {
+                    $detailJawaban = $db->table('hasil_ujian')
+                        ->select('hasil_ujian.*, soal_ujian.soal_id, soal_ujian.pilihan_e')
+                        ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
+                        ->where('hasil_ujian.peserta_ujian_id', $siswa['peserta_ujian_id'])
+                        ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
+                        ->get()->getResultArray();
+
+                    $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawaban, $totalSoal);
+                    $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+
+                    $siswa['kemampuan_kognitif'] = $kemampuanKognitif;
+                    $siswa['klasifikasi_kognitif'] = $klasifikasiKognitif;
+                } else {
+                    $siswa['kemampuan_kognitif'] = ['skor' => 0];
+                    $siswa['klasifikasi_kognitif'] = $this->getKlasifikasiKognitif(0);
+                }
+
                 // Format durasi
                 if ($siswa['durasi_detik']) {
                     $jam = floor($siswa['durasi_detik'] / 3600);
@@ -918,6 +1021,8 @@ class Guru extends Controller
                 $siswa['total_soal'] = 0;
                 $siswa['durasi_format'] = '-';
                 $siswa['rata_rata_per_soal'] = '-';
+                $siswa['kemampuan_kognitif'] = ['skor' => 0];
+                $siswa['klasifikasi_kognitif'] = $this->getKlasifikasiKognitif(0);
             }
         }
 
@@ -928,17 +1033,16 @@ class Guru extends Controller
 
         return view('guru/daftar_siswa', $data);
     }
-
     public function detailHasil($pesertaUjianId)
     {
         // Ambil detail hasil ujian dengan informasi waktu
         $hasil = $this->pesertaUjianModel
             ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
-             siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
-             TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
-             TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
-             DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-             DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+         siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
+         TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+         TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+         DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+         DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -950,8 +1054,8 @@ class Guru extends Controller
         // Ambil detail jawaban dengan waktu
         $detailJawaban = $this->hasilUjianModel
             ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
-             soal_ujian.tingkat_kesulitan,
-             DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+         soal_ujian.tingkat_kesulitan,
+         DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -965,6 +1069,10 @@ class Guru extends Controller
         $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
             return $carry + ($item['is_correct'] ? 1 : 0);
         }, 0);
+
+        // Hitung kemampuan kognitif
+        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
 
         // Format durasi total
         if ($hasil['durasi_total_detik']) {
@@ -984,6 +1092,8 @@ class Guru extends Controller
             'detailJawaban' => $detailJawabanDenganDurasi,
             'totalSoal' => $totalSoal,
             'jawabanBenar' => $jawabanBenar,
+            'kemampuanKognitif' => $kemampuanKognitif,
+            'klasifikasiKognitif' => $klasifikasiKognitif,
             'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
             'statistikWaktu' => [
                 'waktu_tercepat' => min(array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik')),
@@ -1142,7 +1252,7 @@ class Guru extends Controller
 
         if (!$kelasAccess) {
             return redirect()->to('guru/jenis-ujian')
-                ->with('error', 'Anda tidak memiliki akses untuk menambahkan jenis ujian pada kelas tersebut.');
+                ->with('error', 'Anda tidak memiliki akses untuk menambahkan Mata Pelajaran pada kelas tersebut.');
         }
 
         $data = [
@@ -1154,9 +1264,9 @@ class Guru extends Controller
 
         try {
             $this->jenisUjianModel->insert($data);
-            return redirect()->to('guru/jenis-ujian')->with('success', 'Jenis ujian berhasil ditambahkan');
+            return redirect()->to('guru/jenis-ujian')->with('success', 'Mata Pelajaran berhasil ditambahkan');
         } catch (\Exception $e) {
-            return redirect()->to('guru/jenis-ujian')->with('error', 'Gagal menambahkan jenis ujian: ' . $e->getMessage());
+            return redirect()->to('guru/jenis-ujian')->with('error', 'Gagal menambahkan Mata Pelajaran: ' . $e->getMessage());
         }
     }
 
@@ -1166,29 +1276,29 @@ class Guru extends Controller
         $userId = session()->get('user_id');
         $guru = $this->guruModel->where('user_id', $userId)->first();
 
-        // Cek akses ke jenis ujian ini
+        // Cek akses ke Mata Pelajaran ini
         if (!$this->jenisUjianModel->hasAccess($id, $guru['guru_id'])) {
             return redirect()->to('guru/jenis-ujian')
-                ->with('error', 'Anda tidak memiliki akses untuk menghapus jenis ujian ini.');
+                ->with('error', 'Anda tidak memiliki akses untuk menghapus Mata Pelajaran ini.');
         }
 
-        // Cek apakah ada ujian yang menggunakan jenis ujian ini
+        // Cek apakah ada ujian yang menggunakan Mata Pelajaran ini
         $ujianTerkait = $this->db->table('ujian')
             ->where('jenis_ujian_id', $id)
             ->countAllResults();
 
         if ($ujianTerkait > 0) {
             return redirect()->to('guru/jenis-ujian')
-                ->with('error', 'Tidak dapat menghapus jenis ujian ini karena masih ada ' . $ujianTerkait . ' ujian yang menggunakan jenis ujian ini. Harap hapus ujian terkait terlebih dahulu.');
+                ->with('error', 'Tidak dapat menghapus Mata Pelajaran ini karena masih ada ' . $ujianTerkait . ' ujian yang menggunakan Mata Pelajaran ini. Harap hapus ujian terkait terlebih dahulu.');
         }
 
         try {
             $this->jenisUjianModel->delete($id);
             return redirect()->to('guru/jenis-ujian')
-                ->with('success', 'Jenis ujian berhasil dihapus');
+                ->with('success', 'Mata Pelajaran berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->to('guru/jenis-ujian')
-                ->with('error', 'Terjadi kesalahan saat menghapus jenis ujian');
+                ->with('error', 'Terjadi kesalahan saat menghapus Mata Pelajaran');
         }
     }
 
@@ -1196,11 +1306,11 @@ class Guru extends Controller
     {
         $hasil = $this->pesertaUjianModel
             ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
-     siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
-     TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
-     TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
-     DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-     DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+ siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
+ TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+ TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+ DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+ DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -1211,8 +1321,8 @@ class Guru extends Controller
 
         $detailJawaban = $this->hasilUjianModel
             ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
-     soal_ujian.tingkat_kesulitan,
-     DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+ soal_ujian.tingkat_kesulitan,
+ DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -1230,11 +1340,16 @@ class Guru extends Controller
             return $carry + ($item['is_correct'] ? 1 : 0);
         }, 0);
 
+        // **BARU: Hitung kemampuan kognitif**
+        $totalSoal = count($detailJawabanDenganDurasi);
+        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+
         // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
         if ($hasil['durasi_total_detik']) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
-            $detik = $hasil['durasi_total_detik'] % 60; // PERBAIKAN: ganti dari durasi_detik ke durasi_total_detik
+            $detik = $hasil['durasi_total_detik'] % 60;
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
         }
 
@@ -1263,6 +1378,8 @@ class Guru extends Controller
             'lastTheta' => $lastTheta,
             'finalScore' => $finalScore,
             'jawabanBenar' => $jawabanBenar,
+            'kemampuanKognitif' => $kemampuanKognitif, // **BARU: Data kemampuan kognitif**
+            'klasifikasiKognitif' => $klasifikasiKognitif, // **BARU: Klasifikasi kognitif**
             'thetaData' => $thetaData,
             'seData' => $seData,
             'labels' => $labels,
@@ -1284,15 +1401,16 @@ class Guru extends Controller
     }
 
 
+
     public function downloadPDFHTML($pesertaUjianId)
     {
         $hasil = $this->pesertaUjianModel
             ->select('peserta_ujian.*, jadwal_ujian.*, ujian.*, ujian.kode_ujian, jenis_ujian.nama_jenis, 
-       siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
-       TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
-       TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
-       DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-       DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+   siswa.nama_lengkap, siswa.nomor_peserta, kelas.nama_kelas,
+   TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai) as durasi_total,
+   TIME_TO_SEC(TIMEDIFF(peserta_ujian.waktu_selesai, peserta_ujian.waktu_mulai)) as durasi_total_detik,
+   DATE_FORMAT(peserta_ujian.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+   DATE_FORMAT(peserta_ujian.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian', 'jadwal_ujian.jadwal_id = peserta_ujian.jadwal_id')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id')
@@ -1303,8 +1421,8 @@ class Guru extends Controller
 
         $detailJawaban = $this->hasilUjianModel
             ->select('hasil_ujian.*, soal_ujian.pertanyaan, soal_ujian.kode_soal, soal_ujian.jawaban_benar, 
-       soal_ujian.tingkat_kesulitan,
-       DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+   soal_ujian.tingkat_kesulitan,
+   DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian', 'soal_ujian.soal_id = hasil_ujian.soal_id')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
@@ -1322,11 +1440,16 @@ class Guru extends Controller
             return $carry + ($item['is_correct'] ? 1 : 0);
         }, 0);
 
+        // **BARU: Hitung kemampuan kognitif**
+        $totalSoal = count($detailJawabanDenganDurasi);
+        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+
         // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
         if ($hasil['durasi_total_detik']) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
-            $detik = $hasil['durasi_total_detik'] % 60; // PERBAIKAN: ganti dari durasi_detik ke durasi_total_detik
+            $detik = $hasil['durasi_total_detik'] % 60;
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
         }
 
@@ -1355,6 +1478,8 @@ class Guru extends Controller
             'lastTheta' => $lastTheta,
             'finalScore' => $finalScore,
             'jawabanBenar' => $jawabanBenar,
+            'kemampuanKognitif' => $kemampuanKognitif, // **BARU: Data kemampuan kognitif**
+            'klasifikasiKognitif' => $klasifikasiKognitif, // **BARU: Klasifikasi kognitif**
             'thetaData' => $thetaData,
             'seData' => $seData,
             'labels' => $labels,
@@ -1373,6 +1498,7 @@ class Guru extends Controller
         echo $html;
         exit;
     }
+
 
     public function bankSoal()
     {
@@ -1413,7 +1539,7 @@ class Guru extends Controller
             ->get()->getRowArray();
 
         if ($existing) {
-            return redirect()->back()->with('error', 'Bank soal dengan kategori, jenis ujian, dan nama ujian yang sama sudah ada.');
+            return redirect()->back()->with('error', 'Bank soal dengan kategori, Mata Pelajaran, dan nama ujian yang sama sudah ada.');
         }
 
         // Insert ke tabel bank_ujian (kita perlu buat tabel baru ini)
@@ -1450,7 +1576,7 @@ class Guru extends Controller
             }
         }
 
-        // Ambil jenis ujian yang ada bank soalnya untuk kategori ini
+        // Ambil Mata Pelajaran yang ada bank soalnya untuk kategori ini
         $jenisUjianList = $this->db->table('bank_ujian')
             ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_ujian')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
@@ -1480,7 +1606,7 @@ class Guru extends Controller
     {
         $userId = session()->get('user_id');
 
-        // Ambil daftar ujian dalam jenis ujian dan kategori ini
+        // Ambil daftar ujian dalam Mata Pelajaran dan kategori ini
         $ujianList = $this->db->table('bank_ujian')
             ->select('bank_ujian.*, users.username as creator_name')
             ->join('users', 'users.user_id = bank_ujian.created_by')
@@ -1493,7 +1619,7 @@ class Guru extends Controller
 
         $ujianList = $ujianList->get()->getResultArray();
 
-        // Ambil info jenis ujian
+        // Ambil info Mata Pelajaran
         $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
 
         $data = [
@@ -1595,7 +1721,7 @@ class Guru extends Controller
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
             $newName = $fotoFile->getRandomName();
-            $uploadPath = 'uploads/soal';
+            $uploadPath = FCPATH . 'uploads/soal';
 
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);
@@ -1664,7 +1790,7 @@ class Guru extends Controller
         ];
 
         // Handle foto upload/delete
-        $uploadPath = 'uploads/soal';
+        $uploadPath = FCPATH . 'uploads/soal';
         $fotoFile = $this->request->getFile('foto');
 
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
@@ -1794,7 +1920,7 @@ class Guru extends Controller
             ]);
         }
 
-        // Ambil jenis ujian yang memiliki bank ujian di kategori ini
+        // Ambil Mata Pelajaran yang memiliki bank ujian di kategori ini
         $jenisUjian = $this->db->table('bank_ujian')
             ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_bank')
             ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
@@ -1825,15 +1951,15 @@ class Guru extends Controller
         $guru = $this->guruModel->where('user_id', $userId)->first();
 
         if ($kategori === 'umum') {
-            // Untuk kategori umum, ambil semua jenis ujian yang dibuat oleh guru ini
-            // atau jenis ujian yang tidak memiliki kelas_id (global)
+            // Untuk kategori umum, ambil semua Mata Pelajaran yang dibuat oleh guru ini
+            // atau Mata Pelajaran yang tidak memiliki kelas_id (global)
             $jenisUjian = $this->db->table('jenis_ujian')
                 ->select('jenis_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
                 ->where('jenis_ujian.created_by', $userId)
                 ->orWhere('jenis_ujian.kelas_id IS NULL')
                 ->get()->getResultArray();
         } else {
-            // Untuk kategori kelas tertentu, ambil jenis ujian untuk kelas tersebut
+            // Untuk kategori kelas tertentu, ambil Mata Pelajaran untuk kelas tersebut
             // Pertama, ambil kelas_id berdasarkan nama kelas
             $kelas = $this->db->table('kelas')
                 ->select('kelas.kelas_id')
@@ -1849,7 +1975,7 @@ class Guru extends Controller
                 ]);
             }
 
-            // Ambil jenis ujian untuk kelas ini yang dibuat oleh guru ini
+            // Ambil Mata Pelajaran untuk kelas ini yang dibuat oleh guru ini
             $jenisUjian = $this->db->table('jenis_ujian')
                 ->select('jenis_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
                 ->where('jenis_ujian.kelas_id', $kelas['kelas_id'])
@@ -1863,7 +1989,7 @@ class Guru extends Controller
         ]);
     }
 
-    // Method untuk mendapatkan nama ujian berdasarkan kategori dan jenis ujian
+    // Method untuk mendapatkan nama ujian berdasarkan kategori dan Mata Pelajaran
     public function getBankUjianByKategoriJenis()
     {
         $kategori = $this->request->getGet('kategori');
@@ -1873,7 +1999,7 @@ class Guru extends Controller
         if (!$kategori || !$jenisUjianId) {
             return $this->response->setJSON([
                 'status' => 'error',
-                'message' => 'Kategori dan jenis ujian harus dipilih'
+                'message' => 'Kategori dan Mata Pelajaran harus dipilih'
             ]);
         }
 

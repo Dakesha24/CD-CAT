@@ -29,7 +29,7 @@
             </div>
             <div class="text-end">
               <h5 class="mb-0">Soal</h5>
-              <div class="h4 mb-0"><?= $soal_dijawab + 1  ?>/<?= $total_soal ?></div>
+              <div class="h4 mb-0"><?= $soal_dijawab + 1  ?></div>
             </div>
           </div>
         </div>

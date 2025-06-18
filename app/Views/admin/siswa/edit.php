@@ -83,6 +83,19 @@
                                 </div>
 
                                 <div class="mb-3">
+                                    <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                                    <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
+                                        <option value="">Pilih Jenis Kelamin</option>
+                                        <option value="Laki-laki" <?= (old('jenis_kelamin', $siswa['jenis_kelamin'] ?? '') == 'Laki-laki') ? 'selected' : '' ?>>
+                                            Laki-laki
+                                        </option>
+                                        <option value="Perempuan" <?= (old('jenis_kelamin', $siswa['jenis_kelamin'] ?? '') == 'Perempuan') ? 'selected' : '' ?>>
+                                            Perempuan
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
                                     <label for="nomor_peserta" class="form-label">NIS *</label>
                                     <input type="text" class="form-control" id="nomor_peserta" name="nomor_peserta"
                                         value="<?= old('nomor_peserta', $siswa['nomor_peserta']) ?>" required>

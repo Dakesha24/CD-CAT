@@ -161,9 +161,9 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label fw-semibold">Jenis Ujian</label>
+              <label class="form-label fw-semibold">Mata Pelajaran</label>
               <select name="jenis_ujian_id" class="form-select" required>
-                <option value="">Pilih Jenis Ujian</option>
+                <option value="">Pilih Mata Pelajaran</option>
                 <?php if (!empty($jenis_ujian)): ?>
                   <?php foreach ($jenis_ujian as $ju): ?>
                     <option value="<?= $ju['jenis_ujian_id'] ?>"><?= esc($ju['nama_jenis']) ?></option>
@@ -244,7 +244,7 @@
           <div class="modal-body">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Jenis Ujian</label>
+                <label class="form-label fw-semibold">Mata Pelajaran</label>
                 <select name="jenis_ujian_id" class="form-select" required>
                   <?php if (!empty($jenis_ujian)): ?>
                     <?php foreach ($jenis_ujian as $ju): ?>

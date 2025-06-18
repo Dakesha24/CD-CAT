@@ -22,7 +22,7 @@
       <h2 class="fw-bold text-primary">
         <?= $kategori === 'umum' ? 'Bank Soal Umum' : 'Bank Soal Kelas ' . esc($kategori) ?>
       </h2>
-      <p class="text-muted">Jenis ujian yang tersedia dalam kategori ini</p>
+      <p class="text-muted">Mata Pelajaran yang tersedia dalam kategori ini</p>
     </div>
     <div class="col-auto">
       <a href="<?= base_url('admin/bank-soal') ?>" class="btn btn-outline-secondary">
@@ -46,7 +46,7 @@
     </div>
   <?php endif; ?>
 
-  <!-- Jenis Ujian List -->
+  <!-- Mata Pelajaran List -->
   <div class="row g-4">
     <?php if (!empty($jenisUjianList)): ?>
       <?php foreach ($jenisUjianList as $jenis): ?>
@@ -80,7 +80,7 @@
             <div class="mb-3">
               <i class="fas fa-inbox fa-3x text-muted"></i>
             </div>
-            <h5 class="card-title">Belum Ada Jenis Ujian</h5>
+            <h5 class="card-title">Belum Ada Mata Pelajaran</h5>
             <p class="card-text text-muted">
               Belum ada bank ujian yang dibuat untuk kategori "<?= esc($kategori) ?>"
             </p>

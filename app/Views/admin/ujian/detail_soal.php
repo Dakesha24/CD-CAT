@@ -31,7 +31,7 @@
                             <div class="col-md-6">
                                 <strong><i class="fas fa-file-alt me-1"></i>Ujian:</strong> 
                                 <?= esc($soal['nama_ujian']) ?><br>
-                                <strong><i class="fas fa-tag me-1"></i>Jenis:</strong> 
+                                <strong><i class="fas fa-tag me-1"></i>Mata Pelajaran:</strong> 
                                 <?= esc($soal['nama_jenis']) ?: '-' ?>
                             </div>
                             <div class="col-md-6">

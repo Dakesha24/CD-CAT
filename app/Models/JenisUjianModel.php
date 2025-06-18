@@ -14,7 +14,7 @@ class JenisUjianModel extends Model
     protected $updatedField = 'updated_at';
 
     /**
-     * Get jenis ujian berdasarkan kelas yang diajar guru
+     * Get Mata Pelajaran berdasarkan kelas yang diajar guru
      * Opsi 1: Menggunakan kelas_id
      */
     public function getByKelasGuru($guruId)
@@ -25,12 +25,12 @@ class JenisUjianModel extends Model
             ->join('kelas', 'kelas.kelas_id = jenis_ujian.kelas_id', 'left')
             ->join('kelas_guru', 'kelas_guru.kelas_id = jenis_ujian.kelas_id')
             ->where('kelas_guru.guru_id', $guruId)
-            ->orWhere('jenis_ujian.kelas_id IS NULL') // Jenis ujian umum
+            ->orWhere('jenis_ujian.kelas_id IS NULL') // Mata Pelajaran umum
             ->findAll();
     }
 
     /**
-     * Get jenis ujian berdasarkan created_by guru
+     * Get Mata Pelajaran berdasarkan created_by guru
      * Opsi 3: Menggunakan created_by
      */
     public function getByCreatedBy($userId)
@@ -39,7 +39,7 @@ class JenisUjianModel extends Model
     }
 
     /**
-     * Get jenis ujian dengan relasi kelas (menggunakan pivot table)
+     * Get Mata Pelajaran dengan relasi kelas (menggunakan pivot table)
      * Opsi 2: Menggunakan tabel pivot
      */
     public function getByKelasGuruPivot($guruId)
@@ -57,7 +57,7 @@ class JenisUjianModel extends Model
     }
 
     /**
-     * Cek apakah guru memiliki akses ke jenis ujian tertentu
+     * Cek apakah guru memiliki akses ke Mata Pelajaran tertentu
      */
     public function hasAccess($jenisUjianId, $guruId)
     {
@@ -74,7 +74,7 @@ class JenisUjianModel extends Model
     }
 
     /**
-     * Get kelas yang bisa dipilih untuk jenis ujian berdasarkan guru
+     * Get kelas yang bisa dipilih untuk Mata Pelajaran berdasarkan guru
      */
     public function getAvailableKelasForGuru($guruId)
     {

@@ -41,7 +41,7 @@
                   <td><?= esc($ujian['nama_ujian']) ?></td>
                 </tr>
                 <tr>
-                  <td><strong>Jenis Ujian:</strong></td>
+                  <td><strong>Mata Pelajaran:</strong></td>
                   <td><?= esc($ujian['nama_jenis']) ?: '-' ?></td>
                 </tr>
                 <tr>

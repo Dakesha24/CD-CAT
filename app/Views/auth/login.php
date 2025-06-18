@@ -8,11 +8,10 @@
                 <div class="card login-card">
                     <div class="card-body p-4">
                         <div class="text-center mb-4">
-                            <h2 class="login-title">Sign In</h2>
-                            <p class="text-muted">Welcome back to PHY-FA-CAT</p>
+                            <h2 class="login-title"><i>Sign In</i></h2>
+                            <p class="text-muted"><i>Welcome back to</i> PHY-FA-CAT</p>
                         </div>
 
-                        <!-- Flash Messages -->
                         <?php if(session()->getFlashdata('error')): ?>
                             <div class="alert alert-danger alert-dismissible fade show">
                                 <?= session()->getFlashdata('error') ?>
@@ -27,7 +26,6 @@
                             </div>
                         <?php endif; ?>
 
-                        <!-- Validation Errors -->
                         <?php if(session()->getFlashdata('errors')): ?>
                             <div class="alert alert-danger alert-dismissible fade show">
                                 <ul class="mb-0">
@@ -43,7 +41,7 @@
                             <?= csrf_field() ?>
                             
                             <div class="form-group mb-3">
-                                <label for="username" class="form-label">Username</label>
+                                <label for="username" class="form-label"><i>Username</i></label>
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="bi bi-person"></i>
@@ -58,7 +56,7 @@
                             </div>
                             
                             <div class="form-group mb-4">
-                                <label for="password" class="form-label">Password</label>
+                                <label for="password" class="form-label"><i>Password</i></label>
                                 <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="bi bi-lock"></i>
@@ -88,12 +86,12 @@
                             </script>
                             
                             <button type="submit" class="btn btn-primary w-100 mb-3">
-                                Sign In <i class="bi bi-box-arrow-in-right ms-1"></i>
+                                <i>Sign In</i> <i class="bi bi-box-arrow-in-right ms-1"></i>
                             </button>
                         </form>
                         
                         <div class="text-center">
-                            <p class="mb-0">Don't have an account? <a href="<?= base_url('register') ?>" class="register-link">Sign Up</a></p>
+                            <p class="mb-0"><i>Don't have an account?</i> <a href="<?= base_url('register') ?>" class="register-link"><i>Sign Up</i></a></p>
                         </div>
                     </div>
                 </div>

@@ -36,7 +36,7 @@
                         <div class="col-md-6">
                             <table class="table table-borderless">
                                 <tr>
-                                    <td><strong>Jenis Ujian:</strong></td>
+                                    <td><strong>Mata Pelajaran:</strong></td>
                                     <td><?= esc($ujian['nama_jenis']) ?></td>
                                 </tr>
                                 <tr>

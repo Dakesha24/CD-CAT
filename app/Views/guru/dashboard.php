@@ -6,17 +6,17 @@
         <div class="col">
             <h2 class="mb-4">Dashboard Guru</h2>
             <div class="row g-4">
-                <!-- Jenis Ujian Card -->
+                <!-- Mata Pelajaran Card -->
                 <div class="col-md-4">
                     <div class="card menu-card h-100">
                         <div class="card-body text-center">
                             <div class="icon-wrapper bg-primary-subtle mx-auto">
                                 <i class="bi bi-journal-text text-primary fs-1"></i>
                             </div>
-                            <h5 class="card-title">Jenis Ujian</h5>
-                            <p class="card-text">Kelola kategori dan jenis ujian</p>
+                            <h5 class="card-title">Mata Pelajaran</h5>
+                            <p class="card-text">Kelola kategori dan Mata Pelajaran</p>
                             <a href="<?= base_url('guru/jenis-ujian') ?>" class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Kelola Jenis Ujian
+                                <i class="bi bi-plus-circle me-2"></i>Kelola Mata Pelajaran
                             </a>
                         </div>
                     </div>

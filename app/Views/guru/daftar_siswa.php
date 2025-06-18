@@ -98,15 +98,22 @@
                 <div class="card-body">
                     <!-- Filter -->
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <input type="text" class="form-control" id="searchSiswa" placeholder="Cari nama/nomor peserta...">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <select class="form-select" id="filterStatus">
                                 <option value="">Semua Status</option>
                                 <option value="selesai">Selesai</option>
                                 <option value="sedang_mengerjakan">Sedang Mengerjakan</option>
                                 <option value="belum_mulai">Belum Mulai</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" id="filterJenisKelamin">
+                                <option value="">Semua Jenis Kelamin</option>
+                                <option value="Laki-laki">Laki-laki</option>
+                                <option value="Perempuan">Perempuan</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -162,85 +169,73 @@
                             <thead class="table-primary">
                                 <tr>
                                     <th>No</th>
-                                    <th>NIS</th>
                                     <th>Nama Siswa</th>
-                                    <th>Status</th>
-                                    <th>Waktu Mulai</th>
-                                    <th>Waktu Selesai</th>
-                                    <th>Durasi Total</th>
-                                    <th>Rata-rata/Soal</th>
-                                    <th>Skor</th>
-                                    <th>Benar/Total</th>
+                                    <th>Jenis Kelamin</th>
+                                    <th>No Peserta/NIS</th>
+                                    <th>Durasi Ujian</th>
+                                    <th>Hasil Akhir</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($hasilSiswa as $index => $siswa): ?>
-                                    <tr data-status="<?= $siswa['status'] ?>">
+                                    <tr data-status="<?= $siswa['status'] ?>" data-jenis-kelamin="<?= $siswa['jenis_kelamin'] ?>">
                                         <td><?= $index + 1 ?></td>
+                                        <td>
+                                            <strong><?= esc($siswa['nama_lengkap']) ?></strong>
+                                            <br>
+                                            <span class="badge <?= $siswa['status'] === 'selesai' ? 'bg-success' : ($siswa['status'] === 'sedang_mengerjakan' ? 'bg-primary' : 'bg-warning text-dark') ?>">
+                                                <?= $siswa['status'] === 'selesai' ? 'Selesai' : ($siswa['status'] === 'sedang_mengerjakan' ? 'Mengerjakan' : 'Belum Mulai') ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge <?= $siswa['jenis_kelamin'] === 'Laki-laki' ? 'bg-info' : ($siswa['jenis_kelamin'] === 'Perempuan' ? 'bg-pink' : 'bg-secondary') ?>">
+                                                <?php if ($siswa['jenis_kelamin'] === 'Laki-laki'): ?>
+                                                    Laki-laki
+                                                <?php elseif ($siswa['jenis_kelamin'] === 'Perempuan'): ?>
+                                                    Perempuan
+                                                <?php else: ?>
+                                                    Belum diisi
+                                                <?php endif; ?>
+                                            </span>
+                                        </td>
                                         <td><strong><?= esc($siswa['nomor_peserta']) ?></strong></td>
-                                        <td><?= esc($siswa['nama_lengkap']) ?></td>
                                         <td>
-                                            <?php
-                                            $statusClass = '';
-                                            $statusText = '';
-                                            switch ($siswa['status']) {
-                                                case 'selesai':
-                                                    $statusClass = 'bg-success';
-                                                    $statusText = 'Selesai';
-                                                    break;
-                                                case 'sedang_mengerjakan':
-                                                    $statusClass = 'bg-primary';
-                                                    $statusText = 'Mengerjakan';
-                                                    break;
-                                                case 'belum_mulai':
-                                                    $statusClass = 'bg-warning text-dark';
-                                                    $statusText = 'Belum Mulai';
-                                                    break;
-                                            }
-                                            ?>
-                                            <span class="badge <?= $statusClass ?>"><?= $statusText ?></span>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['waktu_mulai']): ?>
-                                                <small class="text-muted"><?= $siswa['waktu_mulai_format'] ?></small>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['waktu_selesai']): ?>
-                                                <small class="text-muted"><?= $siswa['waktu_selesai_format'] ?></small>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['status'] === 'selesai' && $siswa['durasi_format']): ?>
-                                                <span class="fw-bold"><?= $siswa['durasi_format'] ?></span>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['status'] === 'selesai' && $siswa['rata_rata_per_soal']): ?>
-                                                <small class="text-info"><?= $siswa['rata_rata_per_soal'] ?></small>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php if ($siswa['status'] === 'selesai' && $siswa['skor'] !== null): ?>
-                                                <strong class="fs-6 text-success"><?= number_format($siswa['skor'], 1) ?></strong>
+                                            <?php if ($siswa['status'] === 'selesai'): ?>
+                                                <div class="text-start">
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-play text-success"></i> <?= $siswa['waktu_mulai_format'] ?>
+                                                    </small>
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-stop text-danger"></i> <?= $siswa['waktu_selesai_format'] ?>
+                                                    </small>
+                                                    <strong class="text-primary">
+                                                        <i class="fas fa-clock"></i> <?= $siswa['durasi_format'] ?>
+                                                    </strong>
+                                                </div>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php if ($siswa['status'] === 'selesai'): ?>
-                                                <span class="badge bg-info">
-                                                    <?= $siswa['jawaban_benar'] ?>/<?= $siswa['total_soal'] ?>
-                                                </span>
+                                                <div class="text-start">
+                                                    <small class="text-muted d-block">
+                                                        <strong>Theta Akhir:</strong> <?= number_format($siswa['theta_akhir'], 3) ?>
+                                                    </small>
+                                                    <small class="text-muted d-block">
+                                                        <strong>SE Akhir:</strong> <?= number_format($siswa['se_akhir'], 3) ?>
+                                                    </small>
+                                                    <small class="text-muted d-block">
+                                                        <strong>Soal:</strong> <?= $siswa['jawaban_benar'] ?>/<?= $siswa['total_soal'] ?> benar
+                                                    </small>
+                                                    <span class="fs-6 fw-bold text-success d-block">
+                                                        <strong>Skor:</strong> <?= number_format($siswa['skor'], 1) ?>
+                                                    </span>
+                                                    <span class="badge <?= $siswa['klasifikasi_kognitif']['bg_class'] ?> mt-1">
+                                                        <?= $siswa['klasifikasi_kognitif']['kategori'] ?>
+                                                    </span>
+                                                </div>
                                             <?php else: ?>
                                                 <span class="text-muted">-</span>
                                             <?php endif; ?>
@@ -312,31 +307,94 @@
     </div>
 </div>
 
+<style>
+    .bg-pink {
+        background-color: #e91e63 !important;
+        color: white !important;
+    }
+
+    /* Tambahan CSS untuk klasifikasi kognitif */
+    .bg-orange {
+        background-color: #fd7e14 !important;
+        color: white !important;
+    }
+
+    .text-orange {
+        color: #fd7e14 !important;
+    }
+
+    /* Pastikan semua bg-class kognitif ada */
+    .bg-success {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+
+    .bg-info {
+        background-color: #17a2b8 !important;
+        color: white !important;
+    }
+
+    .bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .bg-danger {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+
+    @media print {
+
+        /* Sembunyikan kolom aksi saat print */
+        .table th:last-child,
+        .table td:last-child {
+            display: none !important;
+        }
+
+        /* Sembunyikan tombol export dan print */
+        .btn-group {
+            display: none !important;
+        }
+
+        /* Sembunyikan filter */
+        .row .col-md-3,
+        .row .col-md-2 {
+            display: none !important;
+        }
+    }
+</style>
+
 <script>
     // Filter functionality
     document.getElementById('searchSiswa').addEventListener('keyup', filterTable);
     document.getElementById('filterStatus').addEventListener('change', filterTable);
+    document.getElementById('filterJenisKelamin').addEventListener('change', filterTable);
 
     function filterTable() {
         const searchText = document.getElementById('searchSiswa').value.toLowerCase();
         const statusFilter = document.getElementById('filterStatus').value;
+        const jenisKelaminFilter = document.getElementById('filterJenisKelamin').value;
         const rows = document.querySelectorAll('#tableHasil tbody tr');
 
         rows.forEach(row => {
-            const nama = row.cells[2].textContent.toLowerCase();
-            const nomor = row.cells[1].textContent.toLowerCase();
+            const nama = row.cells[1].textContent.toLowerCase();
+            const nomor = row.cells[3].textContent.toLowerCase();
             const status = row.getAttribute('data-status');
+            const jenisKelamin = row.getAttribute('data-jenis-kelamin');
 
             const textMatch = !searchText || nama.includes(searchText) || nomor.includes(searchText);
             const statusMatch = !statusFilter || status === statusFilter;
+            const jenisKelaminMatch = !jenisKelaminFilter || jenisKelamin === jenisKelaminFilter;
 
-            row.style.display = (textMatch && statusMatch) ? '' : 'none';
+            row.style.display = (textMatch && statusMatch && jenisKelaminMatch) ? '' : 'none';
         });
     }
 
     function resetFilter() {
         document.getElementById('searchSiswa').value = '';
         document.getElementById('filterStatus').value = '';
+        document.getElementById('filterJenisKelamin').value = '';
         filterTable();
     }
 
@@ -345,17 +403,38 @@
         const namaKelas = '<?= addslashes($ujian['nama_kelas']) ?>';
 
         // Buat CSV content
-        let csvContent = "No,Nomor Peserta,Nama Siswa,Status,Waktu Mulai,Waktu Selesai,Durasi Total,Rata-rata per Soal,Skor,Benar/Total\n";
+        let csvContent = "No,Nama Siswa,Jenis Kelamin,No Peserta/NIS,Status,Waktu Mulai,Waktu Selesai,Durasi,Theta Akhir,SE Akhir,Total Soal,Jawaban Benar,Skor,Tingkat Kemampuan\n";
 
         const rows = document.querySelectorAll('#tableHasil tbody tr');
         rows.forEach((row, index) => {
             if (row.style.display !== 'none') {
                 const cells = row.querySelectorAll('td');
                 const rowData = [];
-                // Skip kolom aksi (index 10)
-                for (let i = 0; i < cells.length - 1; i++) {
-                    rowData.push('"' + cells[i].textContent.trim().replace(/"/g, '""') + '"');
-                }
+
+                // No
+                rowData.push(index + 1);
+                // Nama (ambil hanya text tanpa badge)
+                rowData.push('"' + cells[1].querySelector('strong').textContent.trim().replace(/"/g, '""') + '"');
+                // Jenis Kelamin
+                rowData.push('"' + cells[2].querySelector('.badge').textContent.trim().replace(/"/g, '""') + '"');
+                // No Peserta
+                rowData.push('"' + cells[3].textContent.trim().replace(/"/g, '""') + '"');
+
+                <?php foreach ($hasilSiswa as $siswa): ?>
+                    if (index === <?= array_search($siswa, $hasilSiswa) ?>) {
+                        rowData.push('"<?= $siswa['status'] ?>"');
+                        rowData.push('"<?= $siswa['waktu_mulai_format'] ?? '-' ?>"');
+                        rowData.push('"<?= $siswa['waktu_selesai_format'] ?? '-' ?>"');
+                        rowData.push('"<?= $siswa['durasi_format'] ?? '-' ?>"');
+                        rowData.push('"<?= $siswa['theta_akhir'] ? number_format($siswa['theta_akhir'], 3) : '-' ?>"');
+                        rowData.push('"<?= $siswa['se_akhir'] ? number_format($siswa['se_akhir'], 3) : '-' ?>"');
+                        rowData.push('"<?= $siswa['total_soal'] ?>"');
+                        rowData.push('"<?= $siswa['jawaban_benar'] ?>"');
+                        rowData.push('"<?= $siswa['skor'] ? number_format($siswa['skor'], 1) : '-' ?>"');
+                        rowData.push('"<?= $siswa['klasifikasi_kognitif']['kategori'] ?? '-' ?>"');
+                    }
+                <?php endforeach; ?>
+
                 csvContent += rowData.join(',') + '\n';
             }
         });
@@ -398,6 +477,7 @@
                     .bg-primary { background-color: #cce7ff; color: #004085; }
                     .bg-warning { background-color: #fff3cd; color: #856404; }
                     .bg-info { background-color: #d1ecf1; color: #0c5460; }
+                    .bg-pink { background-color: #e91e63; color: white; }
                     .d-grid { display: none; }
                 </style>
             </head>
@@ -482,9 +562,6 @@
         const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
         modal.show();
     }
-
-
-
 
     // TAMBAHAN: Function untuk konfirmasi reset status ujian
     function confirmReset(pesertaUjianId, namaSiswa, status) {

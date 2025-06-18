@@ -68,6 +68,46 @@
         .incorrect {
             color: red;
         }
+
+        /* BARU: Styles untuk kemampuan kognitif */
+        .kognitif-sangat-tinggi {
+            color: #008000;
+            font-weight: bold;
+        }
+
+        .kognitif-tinggi {
+            color: #0000ff;
+            font-weight: bold;
+        }
+
+        .kognitif-sedang {
+            color: #ff8c00;
+            font-weight: bold;
+        }
+
+        .kognitif-rendah {
+            color: #ff4500;
+            font-weight: bold;
+        }
+
+        .kognitif-sangat-rendah {
+            color: #ff0000;
+            font-weight: bold;
+        }
+
+        .kognitif-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        .recommendation-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 
@@ -102,41 +142,25 @@
             <td><?= esc($hasil['nomor_peserta']) ?></td>
         </tr>
         <tr>
-            <td>Jenis Ujian</td>
+            <td>Mata Pelajaran</td>
             <td>:</td>
             <td><?= esc($hasil['nama_jenis']) ?></td>
-            <td>NIS</td>
-            <td>:</td>
-            <td><?= esc($hasil['nomor_peserta']) ?></td>
-        </tr>
-        <tr>
             <td>Kelas</td>
             <td>:</td>
             <td><?= esc($hasil['nama_kelas']) ?></td>
+        </tr>
+        <tr>
             <td>Waktu Mulai</td>
             <td>:</td>
             <td><?= $hasil['waktu_mulai_format'] ?></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
             <td>Waktu Selesai</td>
             <td>:</td>
             <td><?= $hasil['waktu_selesai_format'] ?></td>
         </tr>
         <tr>
-            <td></td>
-            <td></td>
-            <td></td>
             <td>Total Durasi</td>
             <td>:</td>
             <td><?= $hasil['durasi_total_format'] ?></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
             <td>Rata-rata/Soal</td>
             <td>:</td>
             <td><?= $rataRataWaktuFormat ?></td>
@@ -180,6 +204,94 @@
         </tr>
     </table>
 
+    <!-- BARU: Analisis Kemampuan Kognitif -->
+    <div class="kognitif-box">
+        <h2>ANALISIS KEMAMPUAN KOGNITIF</h2>
+        <table class="info">
+            <tr>
+                <td width="180">Skor Kemampuan Kognitif</td>
+                <td width="10">:</td>
+                <td class="
+                    <?php
+                    if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
+                    elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
+                    elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
+                    elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
+                    else echo 'kognitif-sangat-rendah';
+                    ?>
+                "><?= $kemampuanKognitif['skor'] ?>% - <?= $klasifikasiKognitif['kategori'] ?></td>
+                <td width="150">Jawaban Benar</td>
+                <td width="10">:</td>
+                <td><?= $kemampuanKognitif['total_benar'] ?></td>
+            </tr>
+            <tr>
+                <td>Rumus Perhitungan</td>
+                <td>:</td>
+                <td>(B - (S/(P-1))) / N × 100</td>
+                <td>Jawaban Salah</td>
+                <td>:</td>
+                <td><?= $kemampuanKognitif['total_salah'] ?></td>
+            </tr>
+            <tr>
+                <td>Interpretasi</td>
+                <td>:</td>
+                <td>
+                    <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                        Kemampuan kognitif sangat tinggi - pemahaman excellent
+                    <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                        Kemampuan kognitif tinggi - pemahaman baik
+                    <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                        Kemampuan kognitif rata-rata - perlu peningkatan
+                    <?php elseif ($kemampuanKognitif['skor'] > 20): ?>
+                        Kemampuan kognitif rendah - perlu review materi
+                    <?php else: ?>
+                        Kemampuan kognitif sangat rendah - perlu pembelajaran ulang
+                    <?php endif; ?>
+                </td>
+                <td>Rata-rata Pilihan/Soal</td>
+                <td>:</td>
+                <td><?= $kemampuanKognitif['rata_rata_pilihan'] ?></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- BARU: Rekomendasi Pembelajaran -->
+    <div class="recommendation-box">
+        <h2>REKOMENDASI PEMBELAJARAN</h2>
+        <table class="info">
+            <tr>
+                <td width="150">Strategi Pengajaran</td>
+                <td width="10">:</td>
+                <td>
+                    <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                        Berikan tantangan tingkat tinggi dengan soal aplikatif dan analisis kompleks. 
+                        Fokuskan pada pengembangan kemampuan berpikir kritis dan problem solving.
+                    <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                        Pendalaman materi dan latihan soal dengan variasi kompleks. 
+                        Berikan kesempatan eksplorasi aplikasi konsep dalam konteks berbeda.
+                    <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                        Penjelasan ulang materi dengan pendekatan berbeda. Gunakan lebih banyak contoh konkret 
+                        dan sediakan latihan tambahan dengan tingkat kesulitan bertahap.
+                    <?php else: ?>
+                        Remedial pembelajaran dengan pendekatan individual. Evaluasi ulang metode pengajaran 
+                        dan pertimbangkan penggunaan media pembelajaran interaktif.
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
+                <td>Tindak Lanjut</td>
+                <td>:</td>
+                <td>
+                    <?php if ($kemampuanKognitif['skor'] > 60): ?>
+                        Lanjutkan dengan materi lanjutan, berikan proyek individual
+                    <?php else: ?>
+                        Perlu bimbingan khusus dan evaluasi berkala
+                    <?php endif; ?>
+                </td>
+            </tr>
+        </table>
+    </div>
+
     <h2>DETAIL JAWABAN</h2>
     <table class="detail">
         <thead>
@@ -187,7 +299,6 @@
                 <th width="30">No</th>
                 <th width="60">Kode Soal</th>
                 <th width="50">ID Soal</th>
-                <th>Pertanyaan</th>
                 <th width="60">Tingkat Kesulitan</th>
                 <th width="50">Jawaban</th>
                 <th width="60">Status</th>
@@ -207,7 +318,6 @@
                     <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
                     <td class="text-center"><?= esc($jawaban['kode_soal']) ?></td>
                     <td class="text-center"><?= $jawaban['soal_id'] ?></td>
-                    <td><?= esc($jawaban['pertanyaan']) ?></td>
                     <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
                     <td class="text-center"><?= $jawaban['jawaban_siswa'] ?></td>
                     <td class="text-center <?= $jawaban['is_correct'] ? 'correct' : 'incorrect' ?>">
@@ -223,6 +333,51 @@
                     <td class="text-center"><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
                 </tr>
             <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <!-- BARU: Tabel Klasifikasi Kemampuan Kognitif -->
+    <h2>KLASIFIKASI KEMAMPUAN KOGNITIF</h2>
+    <table class="detail">
+        <thead>
+            <tr>
+                <th>Rentang Skor</th>
+                <th>Kategori</th>
+                <th>Deskripsi</th>
+                <th>Rekomendasi Pengajaran</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>80% - 100%</td>
+                <td class="kognitif-sangat-tinggi">Sangat Tinggi</td>
+                <td>Pemahaman excellent, analisis dan aplikasi sangat baik</td>
+                <td>Tantangan tingkat tinggi, problem solving kompleks</td>
+            </tr>
+            <tr>
+                <td>60% - 80%</td>
+                <td class="kognitif-tinggi">Tinggi</td>
+                <td>Pemahaman baik, analisis dan aplikasi baik</td>
+                <td>Pendalaman materi, variasi soal kompleks</td>
+            </tr>
+            <tr>
+                <td>40% - 60%</td>
+                <td class="kognitif-sedang">Rata-rata (Sedang)</td>
+                <td>Pemahaman cukup, perlu peningkatan analisis</td>
+                <td>Penjelasan ulang, pendekatan berbeda, latihan tambahan</td>
+            </tr>
+            <tr>
+                <td>20% - 40%</td>
+                <td class="kognitif-rendah">Rendah</td>
+                <td>Pemahaman terbatas, perlu review konsep dasar</td>
+                <td>Remedial pembelajaran, media interaktif</td>
+            </tr>
+            <tr>
+                <td>0% - 20%</td>
+                <td class="kognitif-sangat-rendah">Sangat Rendah</td>
+                <td>Pemahaman sangat terbatas, pembelajaran ulang</td>
+                <td>Pendekatan individual, evaluasi metode pengajaran</td>
+            </tr>
         </tbody>
     </table>
 
@@ -281,6 +436,41 @@
         echo "</tr>";
         echo "</table>";
         ?>
+
+        <!-- BARU: Data Kemampuan Kognitif untuk Analisis -->
+        <h3>Data Kemampuan Kognitif</h3>
+        <table class="detail">
+            <tr>
+                <th>Parameter</th>
+                <th>Nilai</th>
+                <th>Keterangan</th>
+            </tr>
+            <tr>
+                <td>Skor Kognitif</td>
+                <td><?= $kemampuanKognitif['skor'] ?>%</td>
+                <td><?= $klasifikasiKognitif['kategori'] ?></td>
+            </tr>
+            <tr>
+                <td>Total Jawaban Benar</td>
+                <td><?= $kemampuanKognitif['total_benar'] ?></td>
+                <td>Dari <?= count($detailJawaban) ?> soal</td>
+            </tr>
+            <tr>
+                <td>Total Jawaban Salah</td>
+                <td><?= $kemampuanKognitif['total_salah'] ?></td>
+                <td>Terkoreksi faktor menebak</td>
+            </tr>
+            <tr>
+                <td>Rata-rata Pilihan per Soal</td>
+                <td><?= $kemampuanKognitif['rata_rata_pilihan'] ?></td>
+                <td>A, B, C, D atau + E</td>
+            </tr>
+            <tr>
+                <td>Persentase Benar</td>
+                <td><?= round(($kemampuanKognitif['total_benar'] / count($detailJawaban)) * 100, 1) ?>%</td>
+                <td>Tanpa koreksi</td>
+            </tr>
+        </table>
     </div>
 
     <div style="text-align: right; margin-top: 30px;">

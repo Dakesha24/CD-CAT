@@ -143,9 +143,52 @@
             box-sizing: border-box;
         }
 
+        /* BARU: Styles untuk kemampuan kognitif */
+        .kognitif-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .kognitif-sangat-tinggi {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-tinggi {
+            color: #17a2b8 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sedang {
+            color: #ffc107 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-rendah {
+            color: #fd7e14 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sangat-rendah {
+            color: #dc3545 !important;
+            font-weight: bold;
+        }
+
+        .recommendation-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
         @media print {
             body {
-                font-size: 12px;
+                padding: 0;
+                background-color: white;
             }
 
             .container {
@@ -200,7 +243,7 @@
                         <td>: <?= esc($hasil['kode_ujian']) ?></td>
                     </tr>
                     <tr>
-                        <td>Jenis Ujian</td>
+                        <td>Mata Pelajaran</td>
                         <td>: <?= esc($hasil['nama_jenis']) ?></td>
                     </tr>
                     <tr>
@@ -253,9 +296,29 @@
             <div class="col">
                 <table class="info">
                     <tr>
+                        <td>Total Soal</td>
+                        <td>: <b><?= count($detailJawaban) ?></b> soal</td>
+                    </tr>
+                    <tr>
+                        <td>Jawaban Benar</td>
+                        <td>: <b><?= $jawabanBenar ?></b> soal</td>
+                    </tr>
+                    <tr>
                         <td>Theta Akhir (θ)</td>
                         <td>: <b><?= number_format($lastTheta, 3) ?></b></td>
                     </tr>
+                    <tr>
+                        <td>Standard Error Akhir</td>
+                        <td>: <b><?= number_format(end($detailJawaban)['se_saat_ini'], 3) ?></b></td>
+                    </tr>
+
+
+                </table>
+            </div>
+            <div class="col">
+                <table class="info">
+
+
                     <tr>
                         <td>Skor</td>
                         <td>: <span class="highlight"><?= number_format($finalScore, 1) ?></span></td>
@@ -266,22 +329,78 @@
                     </tr>
                 </table>
             </div>
-            <div class="col">
-                <table class="info">
-                    <tr>
-                        <td>Total Soal</td>
-                        <td>: <b><?= count($detailJawaban) ?></b> soal</td>
-                    </tr>
-                    <tr>
-                        <td>Jawaban Benar</td>
-                        <td>: <b><?= $jawabanBenar ?></b> soal</td>
-                    </tr>
-                    <tr>
-                        <td>Standard Error Akhir</td>
-                        <td>: <b><?= number_format(end($detailJawaban)['se_saat_ini'], 3) ?></b></td>
-                    </tr>
-                </table>
+        </div>
+
+        <!-- BARU: Analisis Kemampuan Kognitif -->
+        <div class="kognitif-box">
+            <h2>Analisis Kemampuan Kognitif</h2>
+            <div class="row">
+                <div class="col">
+                    <div class="info-label">Skor Kemampuan Kognitif:</div>
+                    <div class="info-value">
+                        <span class="
+                            <?php
+                            if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
+                            elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
+                            elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
+                            elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
+                            else echo 'kognitif-sangat-rendah';
+                            ?>
+                        ">
+                            <?= $kemampuanKognitif['skor'] ?>% - <?= $klasifikasiKognitif['kategori'] ?>
+                        </span>
+                    </div>
+
+                    <div class="info-label mt-3">Interpretasi:</div>
+                    <div class="info-value">
+                        <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                            Kemampuan kognitif sangat tinggi. Siswa menunjukkan pemahaman yang excellent terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                            Kemampuan kognitif tinggi. Siswa memiliki pemahaman yang baik terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                            Kemampuan kognitif rata-rata. Masih ada ruang untuk peningkatan pemahaman.
+                        <?php elseif ($kemampuanKognitif['skor'] > 20): ?>
+                            Kemampuan kognitif rendah. Disarankan untuk review ulang materi pembelajaran.
+                        <?php else: ?>
+                            Kemampuan kognitif sangat rendah. Sangat disarankan untuk mempelajari kembali materi secara menyeluruh.
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="info-label">Detail Perhitungan:</div>
+                    <small>
+                        • Jawaban Benar: <?= $kemampuanKognitif['total_benar'] ?><br>
+                        • Jawaban Salah: <?= $kemampuanKognitif['total_salah'] ?><br>
+                        • Rata-rata Pilihan: <?= $kemampuanKognitif['rata_rata_pilihan'] ?><br>
+                        • Total Soal: <?= count($detailJawaban) ?><br>
+                        <br>
+                        <strong>Rumus:</strong><br>
+                        <code>Skor = (B - (S/(P-1))) / N × 100</code>
+                    </small>
+                </div>
             </div>
+        </div>
+
+        <!-- BARU: Rekomendasi Pembelajaran untuk Guru -->
+        <div class="recommendation-box">
+            <h3><i class="bi bi-lightbulb"></i> Rekomendasi Pembelajaran</h3>
+            <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                <p><strong>Strategi Pengajaran:</strong> Siswa menunjukkan pemahaman yang sangat baik.
+                    Berikan tantangan lebih lanjut dengan soal-soal aplikatif dan analisis tingkat tinggi.
+                    Fokuskan pada pengembangan kemampuan berpikir kritis dan problem solving.</p>
+            <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                <p><strong>Strategi Pengajaran:</strong> Kemampuan siswa sudah baik.
+                    Fokuskan pada pendalaman materi dan latihan soal dengan variasi yang lebih kompleks.
+                    Berikan kesempatan untuk mengeksplorasi aplikasi konsep dalam konteks yang berbeda.</p>
+            <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                <p><strong>Strategi Pengajaran:</strong> Perlu perbaikan dalam pemahaman konsep dasar.
+                    Berikan penjelasan ulang materi dengan pendekatan yang berbeda, gunakan lebih banyak contoh konkret,
+                    dan sediakan latihan tambahan dengan tingkat kesulitan bertahap.</p>
+            <?php else: ?>
+                <p><strong>Strategi Pengajaran:</strong> Kemampuan memerlukan perhatian khusus.
+                    Lakukan remedial pembelajaran dengan pendekatan individual, evaluasi ulang metode pengajaran,
+                    dan pertimbangkan penggunaan media pembelajaran yang lebih interaktif dan mudah dipahami.</p>
+            <?php endif; ?>
         </div>
 
         <h2>Grafik Perkembangan</h2>
@@ -329,7 +448,7 @@
                         <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
                         <td class="text-center"><?= esc($jawaban['kode_soal']) ?></td>
                         <td class="text-center"><?= $jawaban['soal_id'] ?></td>
-                        <td><?= esc($jawaban['pertanyaan']) ?></td>
+                        <td><?= $jawaban['pertanyaan'] ?></td>
                         <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
                         <td class="text-center"><?= $jawaban['jawaban_siswa'] ?></td>
                         <td class="text-center <?= $jawaban['is_correct'] ? 'text-success' : 'text-danger' ?>">
@@ -345,6 +464,53 @@
                         <td class="text-center"><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
                     </tr>
                 <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <div class="page-break"></div>
+
+        <!-- BARU: Klasifikasi Kemampuan Kognitif -->
+        <h2>Klasifikasi Kemampuan Kognitif</h2>
+        <table class="detail">
+            <thead>
+                <tr>
+                    <th>Rentang Skor</th>
+                    <th>Kategori</th>
+                    <th>Deskripsi</th>
+                    <th>Rekomendasi Pengajaran</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>80% - 100%</td>
+                    <td class="kognitif-sangat-tinggi">Sangat Tinggi</td>
+                    <td>Pemahaman excellent, mampu analisis dan aplikasi sangat baik</td>
+                    <td>Berikan tantangan tingkat tinggi dan problem solving kompleks</td>
+                </tr>
+                <tr>
+                    <td>60% - 80%</td>
+                    <td class="kognitif-tinggi">Tinggi</td>
+                    <td>Pemahaman baik, mampu analisis dan aplikasi dengan baik</td>
+                    <td>Pendalaman materi dan variasi soal kompleks</td>
+                </tr>
+                <tr>
+                    <td>40% - 60%</td>
+                    <td class="kognitif-sedang">Rata-rata (Sedang)</td>
+                    <td>Pemahaman cukup, perlu peningkatan analisis dan aplikasi</td>
+                    <td>Penjelasan ulang dengan pendekatan berbeda dan latihan tambahan</td>
+                </tr>
+                <tr>
+                    <td>20% - 40%</td>
+                    <td class="kognitif-rendah">Rendah</td>
+                    <td>Pemahaman terbatas, perlu review konsep dasar</td>
+                    <td>Remedial pembelajaran dengan media interaktif</td>
+                </tr>
+                <tr>
+                    <td>0% - 20%</td>
+                    <td class="kognitif-sangat-rendah">Sangat Rendah</td>
+                    <td>Pemahaman sangat terbatas, perlu pembelajaran ulang menyeluruh</td>
+                    <td>Pendekatan individual dan evaluasi metode pengajaran</td>
+                </tr>
             </tbody>
         </table>
 
@@ -370,7 +536,6 @@
         const seData = <?= json_encode(array_map(function ($item) {
                             return $item['se_saat_ini'];
                         }, $detailJawaban)) ?>;
-
 
         // Fungsi untuk membuat grafik Theta
         function createThetaChart() {

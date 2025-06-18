@@ -71,6 +71,19 @@
                 </div>
 
                 <div class="mb-3">
+                  <label for="jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                  <select class="form-select" id="jenis_kelamin" name="jenis_kelamin">
+                    <option value="">Pilih Jenis Kelamin</option>
+                    <option value="Laki-laki" <?= (old('jenis_kelamin') == 'Laki-laki') ? 'selected' : '' ?>>
+                      Laki-laki
+                    </option>
+                    <option value="Perempuan" <?= (old('jenis_kelamin') == 'Perempuan') ? 'selected' : '' ?>>
+                      Perempuan
+                    </option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
                   <label for="nomor_peserta" class="form-label">Nomor Peserta *</label>
                   <input type="text" class="form-control" id="nomor_peserta" name="nomor_peserta"
                     value="<?= old('nomor_peserta') ?>" required>
@@ -124,7 +137,7 @@
 
           <form id="batchForm">
             <div class="row">
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label for="batch_sekolah" class="form-label">Sekolah</label>
                 <select class="form-select" id="batch_sekolah" required onchange="filterKelasBatch()">
                   <option value="">Pilih Sekolah</option>
@@ -135,26 +148,34 @@
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label for="batch_kelas" class="form-label">Kelas</label>
                 <select class="form-select" id="batch_kelas" required disabled>
                   <option value="">Pilih Sekolah Dulu</option>
                 </select>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
+                <label for="batch_jenis_kelamin" class="form-label">Jenis Kelamin</label>
+                <select class="form-select" id="batch_jenis_kelamin">
+                  <option value="">Acak</option>
+                  <option value="Laki-laki">Semua Laki-laki</option>
+                  <option value="Perempuan">Semua Perempuan</option>
+                </select>
+              </div>
+              <div class="col-md-2">
                 <label for="batch_jumlah" class="form-label">Jumlah Siswa</label>
                 <input type="number" class="form-control" id="batch_jumlah" min="1" max="50" value="10">
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <label for="batch_prefix" class="form-label">Prefix No. Peserta</label>
                 <input type="text" class="form-control" id="batch_prefix" value="SISWA" maxlength="10">
               </div>
-            </div>
-
-            <div class="mt-3">
-              <button type="button" class="btn btn-info" onclick="generateBatch()">
-                <i class="bi bi-magic me-2"></i>Generate Preview
-              </button>
+              <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="button" class="btn btn-info w-100" onclick="generateBatch()">
+                  <i class="bi bi-magic me-2"></i>Generate Preview
+                </button>
+              </div>
             </div>
           </form>
 
@@ -167,6 +188,7 @@
                     <th>Username</th>
                     <th>Email</th>
                     <th>Nama Lengkap</th>
+                    <th>Jenis Kelamin</th>
                     <th>No. Peserta</th>
                   </tr>
                 </thead>
@@ -185,120 +207,140 @@
 </div>
 
 <script>
-// Data kelas dari PHP
-const kelasData = <?= json_encode($kelas) ?>;
+  // Data kelas dari PHP
+  const kelasData = <?= json_encode($kelas) ?>;
 
-function filterKelas() {
+  function filterKelas() {
     const sekolahId = document.getElementById('sekolah_id').value;
     const kelasSelect = document.getElementById('kelas_id');
-    
+
     // Clear existing options
     kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
-    
-    if (sekolahId) {
-        kelasSelect.disabled = false;
-        
-        // Filter kelas berdasarkan sekolah yang dipilih
-        const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
-        
-        filteredKelas.forEach(kelas => {
-            const option = new Option(
-                `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
-                kelas.kelas_id
-            );
-            kelasSelect.add(option);
-        });
-        
-        // Restore selected value if exists (for edit form)
-        const oldKelasId = '<?= old('kelas_id') ?>';
-        if (oldKelasId) {
-            kelasSelect.value = oldKelasId;
-        }
-    } else {
-        kelasSelect.disabled = true;
-        kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
-    }
-}
 
-function filterKelasBatch() {
+    if (sekolahId) {
+      kelasSelect.disabled = false;
+
+      // Filter kelas berdasarkan sekolah yang dipilih
+      const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
+
+      filteredKelas.forEach(kelas => {
+        const option = new Option(
+          `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
+          kelas.kelas_id
+        );
+        kelasSelect.add(option);
+      });
+
+      // Restore selected value if exists (for edit form)
+      const oldKelasId = '<?= old('kelas_id') ?>';
+      if (oldKelasId) {
+        kelasSelect.value = oldKelasId;
+      }
+    } else {
+      kelasSelect.disabled = true;
+      kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
+    }
+  }
+
+  function filterKelasBatch() {
     const sekolahId = document.getElementById('batch_sekolah').value;
     const kelasSelect = document.getElementById('batch_kelas');
-    
+
     // Clear existing options
     kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
-    
-    if (sekolahId) {
-        kelasSelect.disabled = false;
-        
-        // Filter kelas berdasarkan sekolah yang dipilih
-        const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
-        
-        filteredKelas.forEach(kelas => {
-            const option = new Option(
-                `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
-                kelas.kelas_id
-            );
-            kelasSelect.add(option);
-        });
-    } else {
-        kelasSelect.disabled = true;
-        kelasSelect.innerHTML = '<option value="">Pilih Sekolah Dulu</option>';
-    }
-}
 
-function generateBatch() {
+    if (sekolahId) {
+      kelasSelect.disabled = false;
+
+      // Filter kelas berdasarkan sekolah yang dipilih
+      const filteredKelas = kelasData.filter(k => k.sekolah_id == sekolahId);
+
+      filteredKelas.forEach(kelas => {
+        const option = new Option(
+          `${kelas.nama_kelas} - ${kelas.tahun_ajaran}`,
+          kelas.kelas_id
+        );
+        kelasSelect.add(option);
+      });
+    } else {
+      kelasSelect.disabled = true;
+      kelasSelect.innerHTML = '<option value="">Pilih Sekolah Dulu</option>';
+    }
+  }
+
+  function generateBatch() {
     const kelas = document.getElementById('batch_kelas').value;
+    const jenisKelamin = document.getElementById('batch_jenis_kelamin').value;
     const jumlah = parseInt(document.getElementById('batch_jumlah').value);
     const prefix = document.getElementById('batch_prefix').value;
 
     if (!kelas || !jumlah || !prefix) {
-        alert('Harap lengkapi semua field');
-        return;
+      alert('Harap lengkapi semua field');
+      return;
     }
 
     const tableBody = document.getElementById('batchTable');
     tableBody.innerHTML = '';
 
     for (let i = 1; i <= jumlah; i++) {
-        const num = i.toString().padStart(3, '0');
-        const username = `${prefix.toLowerCase()}${num}`;
-        const email = `${username}@sekolah.com`;
-        const nama = `${prefix} ${num}`;
-        const noPeserta = `${prefix}${num}`;
+      const num = i.toString().padStart(3, '0');
+      const username = `${prefix.toLowerCase()}${num}`;
+      const email = `${username}@sekolah.com`;
+      const nama = `${prefix} ${num}`;
+      const noPeserta = `${prefix}${num}`;
 
-        const row = `
+      // Tentukan jenis kelamin
+      let gender = '';
+      if (jenisKelamin) {
+        gender = jenisKelamin;
+      } else {
+        // Jika acak, alternate antara Laki-laki dan Perempuan
+        gender = (i % 2 === 1) ? 'Laki-laki' : 'Perempuan';
+      }
+
+      const row = `
             <tr>
                 <td>${username}</td>
                 <td>${email}</td>
                 <td>${nama}</td>
+                <td>
+                    <span class="badge ${gender === 'Laki-laki' ? 'bg-primary' : 'bg-danger'}">
+                        ${gender === 'Laki-laki' ? 'L' : 'P'}
+                    </span>
+                </td>
                 <td>${noPeserta}</td>
             </tr>
         `;
-        tableBody.innerHTML += row;
+      tableBody.innerHTML += row;
     }
 
     document.getElementById('batchPreview').style.display = 'block';
-}
+  }
 
-function createBatch() {
+  function createBatch() {
     const kelas = document.getElementById('batch_kelas').value;
+    const jenisKelamin = document.getElementById('batch_jenis_kelamin').value;
     const jumlah = parseInt(document.getElementById('batch_jumlah').value);
     const prefix = document.getElementById('batch_prefix').value;
 
     if (confirm(`Yakin ingin membuat ${jumlah} siswa sekaligus?`)) {
-        // Implementasi AJAX untuk create batch
-        // Untuk sementara, redirect ke halaman dengan parameter
-        window.location.href = `<?= base_url('admin/siswa/batch') ?>?kelas=${kelas}&jumlah=${jumlah}&prefix=${prefix}`;
+      // Implementasi AJAX untuk create batch
+      // Untuk sementara, redirect ke halaman dengan parameter
+      let url = `<?= base_url('admin/siswa/batch') ?>?kelas=${kelas}&jumlah=${jumlah}&prefix=${prefix}`;
+      if (jenisKelamin) {
+        url += `&jenis_kelamin=${jenisKelamin}`;
+      }
+      window.location.href = url;
     }
-}
+  }
 
-// Trigger filter when page loads if sekolah is already selected
-document.addEventListener('DOMContentLoaded', function() {
+  // Trigger filter when page loads if sekolah is already selected
+  document.addEventListener('DOMContentLoaded', function() {
     const sekolahId = document.getElementById('sekolah_id').value;
     if (sekolahId) {
-        filterKelas();
+      filterKelas();
     }
-});
+  });
 </script>
 
 <?= $this->endSection() ?>

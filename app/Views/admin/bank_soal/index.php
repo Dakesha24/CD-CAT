@@ -103,9 +103,9 @@
             </div>
 
             <div class="col-12">
-              <label for="jenis_ujian_id" class="form-label fw-semibold">Jenis Ujian</label>
+              <label for="jenis_ujian_id" class="form-label fw-semibold">Mata Pelajaran</label>
               <select class="form-select" id="jenis_ujian_id" name="jenis_ujian_id" required>
-                <option value="">Pilih Jenis Ujian</option>
+                <option value="">Pilih Mata Pelajaran</option>
                 <?php foreach ($jenisUjianList as $jenis): ?>
                   <option value="<?= $jenis['jenis_ujian_id'] ?>"><?= esc($jenis['nama_jenis']) ?></option>
                 <?php endforeach; ?>

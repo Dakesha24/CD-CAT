@@ -52,12 +52,21 @@ class Siswa extends Controller
   public function profil()
   {
     $userId = session()->get('user_id');
+
+    // Ambil data siswa dengan JOIN untuk mendapatkan sekolah_id dari kelas
+    $siswa = $this->siswaModel
+      ->select('siswa.*, kelas.sekolah_id')
+      ->join('kelas', 'kelas.kelas_id = siswa.kelas_id', 'left')
+      ->where('siswa.user_id', $userId)
+      ->first();
+
     $data = [
-      'siswa' => $this->siswaModel->where('user_id', $userId)->first(),
-      'sekolah' => $this->sekolahModel->findAll(), // Tambahkan ini
+      'siswa' => $siswa,
+      'sekolah' => $this->sekolahModel->findAll(),
       'kelas' => [], // Kosongkan karena akan di-load via AJAX
       'isNewUser' => !$this->siswaModel->checkSiswaExists($userId)
     ];
+
     return view('siswa/profil', $data);
   }
 
@@ -69,14 +78,15 @@ class Siswa extends Controller
       'user_id' => $userId,
       'nomor_peserta' => $this->request->getPost('nomor_peserta'),
       'nama_lengkap' => $this->request->getPost('nama_lengkap'),
-      'sekolah_id' => $this->request->getPost('sekolah_id'), // Tambahkan ini
-      'kelas_id' => $this->request->getPost('kelas_id')
+      'jenis_kelamin' => $this->request->getPost('jenis_kelamin'),
+      'kelas_id' => $this->request->getPost('kelas_id') // HAPUS sekolah_id
     ];
 
     $rules = [
       'nomor_peserta' => 'required|min_length[5]',
       'nama_lengkap' => 'required|min_length[3]',
-      'sekolah_id' => 'required|numeric', // Tambahkan ini
+      'jenis_kelamin' => 'required|in_list[Laki-laki,Perempuan]',
+      'sekolah_id' => 'required|numeric', // Tetap validasi untuk form
       'kelas_id' => 'required|numeric'
     ];
 
@@ -740,6 +750,89 @@ class Siswa extends Controller
     return view('siswa/hasil', $data);
   }
 
+  //fungsi kemampuan kognitif
+
+  private function hitungKemampuanKognitif($detailJawaban, $totalSoal)
+  {
+    $totalBenar = 0;
+    $totalSalah = 0;
+    $totalPilihanJawaban = 0;
+
+    foreach ($detailJawaban as $jawaban) {
+      if ($jawaban['is_correct']) {
+        $totalBenar++;
+      } else {
+        $totalSalah++;
+      }
+
+      // Hitung jumlah pilihan jawaban untuk setiap soal
+      // Ambil data soal lengkap untuk menghitung pilihan
+      $soalLengkap = $this->soalUjianModel->find($jawaban['soal_id']);
+
+      $jumlahPilihan = 4; // Default A, B, C, D
+      if (!empty($soalLengkap['pilihan_e'])) {
+        $jumlahPilihan = 5; // Ada pilihan E
+      }
+
+      $totalPilihanJawaban += $jumlahPilihan;
+    }
+
+    // Hitung rata-rata pilihan jawaban per soal
+    $rataRataPilihan = $totalSoal > 0 ? $totalPilihanJawaban / $totalSoal : 4;
+
+    // Rumus: skor = (B - (S/(P-1))) / N x 100
+    $skor = 0;
+    if ($totalSoal > 0) {
+      $koreksiTebakan = $totalSalah / ($rataRataPilihan - 1);
+      $skor = (($totalBenar - $koreksiTebakan) / $totalSoal) * 100;
+
+      // Pastikan skor tidak negatif
+      $skor = max(0, $skor);
+    }
+
+    return [
+      'skor' => round($skor, 2),
+      'total_benar' => $totalBenar,
+      'total_salah' => $totalSalah,
+      'rata_rata_pilihan' => round($rataRataPilihan, 1)
+    ];
+  }
+
+  private function getKlasifikasiKognitif($skor)
+  {
+    if ($skor > 80 && $skor <= 100) {
+      return [
+        'kategori' => 'Sangat Tinggi',
+        'class' => 'text-success',
+        'bg_class' => 'bg-success'
+      ];
+    } elseif ($skor > 60 && $skor <= 80) {
+      return [
+        'kategori' => 'Tinggi',
+        'class' => 'text-info',
+        'bg_class' => 'bg-info'
+      ];
+    } elseif ($skor > 40 && $skor <= 60) {
+      return [
+        'kategori' => 'Rata-rata (Sedang)',
+        'class' => 'text-warning',
+        'bg_class' => 'bg-warning'
+      ];
+    } elseif ($skor > 20 && $skor <= 40) {
+      return [
+        'kategori' => 'Rendah',
+        'class' => 'text-orange',
+        'bg_class' => 'bg-orange'
+      ];
+    } else {
+      return [
+        'kategori' => 'Sangat Rendah',
+        'class' => 'text-danger',
+        'bg_class' => 'bg-danger'
+      ];
+    }
+  }
+
 
   public function detailHasil($pesertaUjianId)
   {
@@ -806,6 +899,10 @@ class Siswa extends Controller
       $skor = round($skor, 1); // Bulatkan 1 desimal
     }
 
+    // **BARU: Hitung kemampuan kognitif**
+    $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
+    $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+
     // Hitung rata-rata waktu per soal
     $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
     $rataRataMenit = floor($rataRataWaktu / 60);
@@ -824,7 +921,9 @@ class Siswa extends Controller
       'detailJawaban' => $detailJawabanDenganDurasi,
       'totalSoal' => $totalSoal,
       'jawabanBenar' => $jawabanBenar,
-      'skor' => $skor, // **TAMBAHAN: Kirim skor ke view**
+      'skor' => $skor, // Kirim skor ke view
+      'kemampuanKognitif' => $kemampuanKognitif, // Data kemampuan kognitif
+      'klasifikasiKognitif' => $klasifikasiKognitif, // Klasifikasi kognitif
       'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
       'statistikWaktu' => [
         'waktu_tercepat' => min(array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik')),
@@ -898,7 +997,6 @@ class Siswa extends Controller
       return $carry + ($item['is_correct'] ? 1 : 0);
     }, 0);
 
-    // **TAMBAHAN: Hitung skor berdasarkan theta terakhir**
     $lastResult = $this->hasilUjianModel
       ->select('theta_saat_ini, se_saat_ini')
       ->where('peserta_ujian_id', $pesertaUjianId)
@@ -912,6 +1010,10 @@ class Siswa extends Controller
       $skor = 50 + (16.6 * $theta);
       $skor = round($skor, 1); // Bulatkan 1 desimal
     }
+
+
+    $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
+    $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
 
     // Format durasi total
     if ($hasil['durasi_total_detik']) {
@@ -932,7 +1034,9 @@ class Siswa extends Controller
       'totalSoal' => $totalSoal,
       'jawabanBenar' => $jawabanBenar,
       'siswa' => $siswa,
-      'skor' => $skor, // **TAMBAHAN: Kirim skor ke view**
+      'skor' => $skor, // Kirim skor ke view
+      'kemampuanKognitif' => $kemampuanKognitif, // Data kemampuan kognitif
+      'klasifikasiKognitif' => $klasifikasiKognitif, // Klasifikasi kognitif
       'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik)
     ];
 

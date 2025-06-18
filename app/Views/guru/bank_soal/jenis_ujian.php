@@ -49,7 +49,7 @@
             </div>
             <h5 class="fw-bold text-muted mb-3">Belum Ada Bank Ujian</h5>
             <p class="text-muted mb-4">
-              Belum ada bank ujian yang dibuat untuk jenis ujian
+              Belum ada bank ujian yang dibuat untuk Mata Pelajaran
               <strong><?= esc($jenisUjian['nama_jenis']) ?></strong>
               pada kategori <strong><?= $kategori === 'umum' ? 'Umum' : 'Kelas ' . esc($kategori) ?></strong>
             </p>
@@ -65,7 +65,7 @@
     <div class="alert alert-info alert-dismissible fade show" role="alert">
       <i class="fas fa-clipboard-list me-2"></i>
       <strong><?= esc($jenisUjian['nama_jenis']) ?></strong> -
-      Daftar bank ujian yang tersedia untuk jenis ujian ini pada kategori
+      Daftar bank ujian yang tersedia untuk Mata Pelajaran ini pada kategori
       <strong><?= $kategori === 'umum' ? 'Umum' : 'Kelas ' . esc($kategori) ?></strong>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -127,7 +127,7 @@
           <div class="card-body text-center py-3">
             <small class="text-muted">
               <i class="fas fa-chart-bar me-2"></i>
-              Total <strong><?= count($ujianList) ?></strong> bank ujian tersedia untuk jenis ujian
+              Total <strong><?= count($ujianList) ?></strong> bank ujian tersedia untuk Mata Pelajaran
               <strong><?= esc($jenisUjian['nama_jenis']) ?></strong>
             </small>
           </div>

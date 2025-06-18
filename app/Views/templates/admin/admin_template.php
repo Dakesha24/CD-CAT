@@ -258,11 +258,11 @@
                     <span>Bank Ujian</span>
                 </a>
             </li>
-            <!-- kelola jenis ujian -->
+            <!-- kelola Mata Pelajaran -->
             <li class="nav-item">
-                <a href="<?= base_url('admin/jenis-ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/bank-soal') !== false) ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/jenis-ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/jenis-ujian') !== false) ? 'active' : '' ?>">
                     <i class="bi bi-journal"></i>
-                    <span>Jenis Ujian</span>
+                    <span>Mata Pelajaran</span>
                 </a>
             </li>
 

@@ -55,6 +55,26 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="jenis_kelamin" class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+                            <select class="form-select" id="jenis_kelamin" name="jenis_kelamin" required>
+                                <option value="">Pilih Jenis Kelamin</option>
+                                <option value="Laki-laki"
+                                    <?= old('jenis_kelamin', isset($siswa['jenis_kelamin']) ? $siswa['jenis_kelamin'] : '') == 'Laki-laki' ? 'selected' : '' ?>>
+                                    Laki-laki
+                                </option>
+                                <option value="Perempuan"
+                                    <?= old('jenis_kelamin', isset($siswa['jenis_kelamin']) ? $siswa['jenis_kelamin'] : '') == 'Perempuan' ? 'selected' : '' ?>>
+                                    Perempuan
+                                </option>
+                            </select>
+                            <?php if (session()->getFlashdata('errors')): ?>
+                                <div class="invalid-feedback d-block">
+                                    <?= session()->getFlashdata('errors')['jenis_kelamin'] ?? '' ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="sekolah_id" class="form-label">Sekolah <span class="text-danger">*</span></label>
                             <select class="form-select" id="sekolah_id" name="sekolah_id" required>
                                 <option value="">Pilih Sekolah</option>

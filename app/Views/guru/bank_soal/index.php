@@ -36,7 +36,7 @@
     <p class="mb-2">Bank soal diorganisir dalam struktur hierarki untuk memudahkan pengelolaan:</p>
     <ol class="mb-2">
       <li><strong>Kategori:</strong> Pilih "Umum" (dapat diakses semua guru) atau "Kelas" tertentu</li>
-      <li><strong>Jenis Ujian:</strong> Tentukan jenis ujian (UTS, UAS, Quiz, dll)</li>
+      <li><strong>Mata Pelajaran:</strong> Tentukan Mata Pelajaran (UTS, UAS, Quiz, dll)</li>
       <li><strong>Nama Ujian:</strong> Beri nama spesifik untuk bank ujian</li>
       <li><strong>Kelola Soal:</strong> Tambah, edit, dan hapus soal dalam bank ujian</li>
     </ol>
@@ -135,16 +135,16 @@
             </div>
 
             <div class="col-12">
-              <label for="jenis_ujian_id" class="form-label fw-semibold">Jenis Ujian</label>
+              <label for="jenis_ujian_id" class="form-label fw-semibold">Mata Pelajaran</label>
               <select class="form-select" id="jenis_ujian_id" name="jenis_ujian_id" required disabled>
                 <option value="">Pilih kategori terlebih dahulu</option>
               </select>
-              <div class="form-text">Pilih jenis ujian yang sesuai dengan bank soal yang akan dibuat</div>
+              <div class="form-text">Pilih Mata Pelajaran yang sesuai dengan bank soal yang akan dibuat</div>
               <div id="loading-jenis-ujian" class="d-none">
                 <div class="spinner-border spinner-border-sm text-primary" role="status">
                   <span class="visually-hidden">Loading...</span>
                 </div>
-                <span class="ms-2 text-muted">Memuat jenis ujian...</span>
+                <span class="ms-2 text-muted">Memuat Mata Pelajaran...</span>
               </div>
             </div>
 
@@ -235,7 +235,7 @@
       const selectedKategori = this.value;
 
       if (!selectedKategori) {
-        // Reset jenis ujian dropdown
+        // Reset Mata Pelajaran dropdown
         jenisUjianSelect.innerHTML = '<option value="">Pilih kategori terlebih dahulu</option>';
         jenisUjianSelect.disabled = true;
         return;
@@ -246,14 +246,14 @@
       jenisUjianSelect.disabled = true;
       jenisUjianSelect.innerHTML = '<option value="">Memuat...</option>';
 
-      // Fetch jenis ujian for selected kategori
+      // Fetch Mata Pelajaran for selected kategori
       fetch(`<?= base_url('guru/bank-soal/api/jenis-ujian-kelas') ?>?kategori=${encodeURIComponent(selectedKategori)}`)
         .then(response => response.json())
         .then(data => {
           loadingIndicator.classList.add('d-none');
 
           if (data.status === 'success') {
-            jenisUjianSelect.innerHTML = '<option value="">Pilih Jenis Ujian</option>';
+            jenisUjianSelect.innerHTML = '<option value="">Pilih Mata Pelajaran</option>';
 
             if (data.data && data.data.length > 0) {
               data.data.forEach(jenis => {
@@ -264,15 +264,15 @@
               });
               jenisUjianSelect.disabled = false;
             } else {
-              jenisUjianSelect.innerHTML = '<option value="" disabled>Tidak ada jenis ujian tersedia untuk kategori ini</option>';
+              jenisUjianSelect.innerHTML = '<option value="" disabled>Tidak ada Mata Pelajaran tersedia untuk kategori ini</option>';
 
               // Show info message
               const alert = document.createElement('div');
               alert.className = 'alert alert-info alert-dismissible fade show mt-2';
               alert.innerHTML = `
                             <i class="fas fa-info-circle me-2"></i>
-                            Belum ada jenis ujian untuk kategori "${selectedKategori}". 
-                            Silakan buat jenis ujian terlebih dahulu di menu <strong>Jenis Ujian</strong>.
+                            Belum ada Mata Pelajaran untuk kategori "${selectedKategori}". 
+                            Silakan buat Mata Pelajaran terlebih dahulu di menu <strong>Mata Pelajaran</strong>.
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         `;
 
@@ -298,7 +298,7 @@
           loadingIndicator.classList.add('d-none');
           jenisUjianSelect.innerHTML = '<option value="" disabled>Error memuat data</option>';
           console.error('Fetch error:', error);
-          alert('Terjadi kesalahan saat memuat jenis ujian. Silakan coba lagi.');
+          alert('Terjadi kesalahan saat memuat Mata Pelajaran. Silakan coba lagi.');
         });
     });
 

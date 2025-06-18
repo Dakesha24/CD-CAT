@@ -5,12 +5,12 @@
 <div class="container-fluid py-4">
   <div class="row mb-4 align-items-center">
     <div class="col">
-      <h2 class="fw-bold text-primary">Kelola Jenis Ujian</h2>
-      <p class="text-muted">Kelola semua jenis ujian dari seluruh sekolah dan guru</p>
+      <h2 class="fw-bold text-primary">Kelola Mata Pelajaran</h2>
+      <p class="text-muted">Kelola semua Mata Pelajaran dari seluruh sekolah dan guru</p>
     </div>
     <div class="col-auto">
       <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#tambahModal">
-        <i class="bi bi-plus-circle me-2"></i>Tambah Jenis Ujian
+        <i class="bi bi-plus-circle me-2"></i>Tambah Mata Pelajaran
       </button>
     </div>
   </div>
@@ -42,7 +42,7 @@
     </div>
   <?php endif; ?>
 
-  <!-- Daftar Jenis Ujian -->
+  <!-- Daftar Mata Pelajaran -->
   <div class="row g-4">
     <?php if (!empty($jenis_ujian)): ?>
       <?php foreach ($jenis_ujian as $jenis): ?>
@@ -96,7 +96,7 @@
                     </li>
                     <li>
                       <a class="dropdown-item text-danger" href="<?= base_url('admin/jenis-ujian/hapus/' . $jenis['jenis_ujian_id']) ?>"
-                        onclick="return confirm('Apakah Anda yakin ingin menghapus jenis ujian ini?')">
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus Mata Pelajaran ini?')">
                         <i class="bi bi-trash me-2"></i>Hapus
                       </a>
                     </li>
@@ -114,10 +114,10 @@
             <div class="mb-3">
               <i class="bi bi-journal-x text-muted" style="font-size: 4rem;"></i>
             </div>
-            <h5 class="text-muted">Belum ada jenis ujian</h5>
-            <p class="text-muted">Tambahkan jenis ujian pertama untuk sistem</p>
+            <h5 class="text-muted">Belum ada Mata Pelajaran</h5>
+            <p class="text-muted">Tambahkan Mata Pelajaran pertama untuk sistem</p>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahModal">
-              <i class="bi bi-plus-circle me-2"></i>Tambah Jenis Ujian
+              <i class="bi bi-plus-circle me-2"></i>Tambah Mata Pelajaran
             </button>
           </div>
         </div>
@@ -132,14 +132,14 @@
     <div class="modal-content">
       <div class="modal-header border-0">
         <h5 class="modal-title fw-bold">
-          <i class="bi bi-plus-circle text-primary me-2"></i>Tambah Jenis Ujian
+          <i class="bi bi-plus-circle text-primary me-2"></i>Tambah Mata Pelajaran
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form action="<?= base_url('admin/jenis-ujian/tambah') ?>" method="post">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Nama Jenis <span class="text-danger">*</span></label>
+            <label class="form-label fw-semibold">Nama Mata Pelajaran<span class="text-danger">*</span></label>
             <input type="text" class="form-control" name="nama_jenis" placeholder="Contoh: UTS, UAS, Quiz" required>
           </div>
           <div class="mb-3">
@@ -169,11 +169,11 @@
                   <?php endif; ?>
                 <?php endif; ?>
             </select>
-            <div class="form-text">Pilih kelas untuk jenis ujian ini</div>
+            <div class="form-text">Pilih kelas untuk Mata Pelajaran ini</div>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">Deskripsi <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="deskripsi" rows="3" placeholder="Deskripsi singkat tentang jenis ujian..." required></textarea>
+            <textarea class="form-control" name="deskripsi" rows="3" placeholder="Deskripsi singkat tentang Mata Pelajaran..." required></textarea>
           </div>
         </div>
         <div class="modal-footer border-0">
@@ -194,14 +194,14 @@
       <div class="modal-content">
         <div class="modal-header border-0">
           <h5 class="modal-title fw-bold">
-            <i class="bi bi-pencil text-warning me-2"></i>Edit Jenis Ujian
+            <i class="bi bi-pencil text-warning me-2"></i>Edit Mata Pelajaran
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <form action="<?= base_url('admin/jenis-ujian/edit/' . $jenis['jenis_ujian_id']) ?>" method="post">
           <div class="modal-body">
             <div class="mb-3">
-              <label class="form-label fw-semibold">Nama Jenis <span class="text-danger">*</span></label>
+              <label class="form-label fw-semibold">Nama Mata Pelajaran <span class="text-danger">*</span></label>
               <input type="text" class="form-control" name="nama_jenis" value="<?= esc($jenis['nama_jenis']) ?>" required>
             </div>
             <div class="mb-3">
@@ -232,7 +232,7 @@
                     <?php endif; ?>
                   <?php endif; ?>
               </select>
-              <div class="form-text">Pilih kelas untuk jenis ujian ini</div>
+              <div class="form-text">Pilih kelas untuk Mata Pelajaran ini</div>
             </div>
             <div class="mb-3">
               <label class="form-label fw-semibold">Deskripsi <span class="text-danger">*</span></label>

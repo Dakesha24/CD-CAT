@@ -46,7 +46,7 @@ class UjianModel extends Model
   }
 
   /**
-   * Get ujian dengan filter jenis ujian berdasarkan kelas guru
+   * Get ujian dengan filter Mata Pelajaran berdasarkan kelas guru
    */
   public function getWithJenisUjianByKelasGuru($guruId)
   {

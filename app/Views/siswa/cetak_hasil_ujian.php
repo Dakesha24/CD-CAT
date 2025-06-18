@@ -71,18 +71,64 @@
         }
 
         .correct {
-            color: #28a745;
+            color: #28a745 !important;
+            /* Hijau */
             font-weight: bold;
         }
 
         .incorrect {
-            color: #dc3545;
+            color: #dc3545 !important;
+            /* Merah */
+            font-weight: bold;
+        }
+
+        td.correct {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+
+        td.incorrect {
+            color: #dc3545 !important;
             font-weight: bold;
         }
 
         .score {
             color: #007bff;
             font-weight: bold;
+        }
+
+        /* BARU: Styles untuk kemampuan kognitif */
+        .kognitif-sangat-tinggi {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-tinggi {
+            color: #17a2b8 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sedang {
+            color: #ffc107 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-rendah {
+            color: #fd7e14 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sangat-rendah {
+            color: #dc3545 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
         .pembahasan-container {
@@ -175,7 +221,7 @@
                     <div class="info-label">NIS:</div>
                     <div class="info-value"><?= esc($siswa['nomor_peserta']) ?></div>
 
-                    <div class="info-label">Jenis Ujian:</div>
+                    <div class="info-label">Mata Pelajaran:</div>
                     <div class="info-value"><?= esc($hasil['nama_jenis']) ?></div>
                 </div>
             </div>
@@ -197,6 +243,56 @@
             </div>
         </div>
 
+        <!-- BARU: Box Kemampuan Kognitif -->
+        <div class="kognitif-box">
+            <h4 class="mb-3">Analisis Kemampuan Kognitif</h4>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="info-label">Skor Kemampuan Kognitif:</div>
+                    <div class="info-value">
+                        <span class="
+                            <?php
+                            if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
+                            elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
+                            elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
+                            elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
+                            else echo 'kognitif-sangat-rendah';
+                            ?>
+                        ">
+                            <?= $kemampuanKognitif['skor'] ?>% - <?= $klasifikasiKognitif['kategori'] ?>
+                        </span>
+                    </div>
+
+                    <div class="info-label mt-3">Interpretasi:</div>
+                    <div class="info-value">
+                        <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                            Kemampuan kognitif sangat tinggi. Siswa menunjukkan pemahaman yang excellent terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                            Kemampuan kognitif tinggi. Siswa memiliki pemahaman yang baik terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                            Kemampuan kognitif rata-rata. Masih ada ruang untuk peningkatan pemahaman.
+                        <?php elseif ($kemampuanKognitif['skor'] > 20): ?>
+                            Kemampuan kognitif rendah. Disarankan untuk review ulang materi pembelajaran.
+                        <?php else: ?>
+                            Kemampuan kognitif sangat rendah. Sangat disarankan untuk mempelajari kembali materi secara menyeluruh.
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="info-label">Detail Perhitungan:</div>
+                    <small>
+                        • Jawaban Benar: <?= $kemampuanKognitif['total_benar'] ?><br>
+                        • Jawaban Salah: <?= $kemampuanKognitif['total_salah'] ?><br>
+                        • Rata-rata Pilihan: <?= $kemampuanKognitif['rata_rata_pilihan'] ?><br>
+                        • Total Soal: <?= $totalSoal ?><br>
+                        <br>
+                        <!-- <strong>Rumus:</strong><br>
+                        <code>Skor = (B - (S/(P-1))) / N × 100</code> -->
+                    </small>
+                </div>
+            </div>
+        </div>
+
         <div class="statistics">
             <h4 class="mb-3">Statistik Hasil</h4>
             <div class="table-responsive">
@@ -206,7 +302,8 @@
                             <th>Total Soal</th>
                             <th>Jawaban Benar</th>
                             <th>Jawaban Salah</th>
-                            <th>Skor Ujian</th>
+                            <th>Skor Ujian (Theta)</th>
+                            <th>Skor Kognitif</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -215,6 +312,15 @@
                             <td class="correct"><?= $jawabanBenar ?></td>
                             <td class="incorrect"><?= $totalSoal - $jawabanBenar ?></td>
                             <td class="score"><?= $skor ?></td>
+                            <td class="
+                                <?php
+                                if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
+                                elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
+                                elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
+                                elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
+                                else echo 'kognitif-sangat-rendah';
+                                ?>
+                            "><?= $kemampuanKognitif['skor'] ?>%</td>
                         </tr>
                     </tbody>
                 </table>
@@ -231,7 +337,7 @@
                             <th width="10%">Kode Soal</th>
                             <th width="30%">Pertanyaan</th>
                             <th width="10%">Jawaban Anda</th>
-                            <th width="10%">Jawaban Benar</th>
+                            <!-- <th width="10%">Jawaban Benar</th> -->
                             <th width="10%">Status</th>
                             <th width="12.5%">Waktu Jawab</th>
                             <th width="12.5%">Durasi</th>
@@ -243,9 +349,13 @@
                                 <td><?= $jawaban['nomor_soal'] ?></td>
                                 <!-- TAMBAHAN: Tampilkan kode soal -->
                                 <td><small><?= esc($jawaban['kode_soal']) ?></small></td>
-                                <td><?= esc($jawaban['pertanyaan']) ?></td>
+                                <td>
+                                    <div style="max-width: 300px; overflow-x: auto;">
+                                        <?= $jawaban['pertanyaan'] ?>
+                                    </div>
+                                </td>
                                 <td><?= $jawaban['jawaban_siswa'] ?></td>
-                                <td><?= $jawaban['jawaban_benar'] ?></td>
+                                <!-- <td><?= $jawaban['jawaban_benar'] ?></td> -->
                                 <td class="<?= $jawaban['is_correct'] ? 'correct' : 'incorrect' ?>">
                                     <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
                                 </td>
@@ -260,6 +370,7 @@
 
         <div class="page-break"></div>
 
+
         <div class="pembahasan-container">
             <h4 class="mb-4">Pembahasan Soal</h4>
 
@@ -267,7 +378,7 @@
                 <?php if (isset($jawaban['pembahasan']) && !empty($jawaban['pembahasan'])): ?>
                     <div class="pembahasan-item">
                         <div class="fw-bold mb-2">Soal #<?= $jawaban['nomor_soal'] ?> (<?= esc($jawaban['kode_soal']) ?>):</div>
-                        <div class="mb-3"><?= esc($jawaban['pertanyaan']) ?></div>
+                        <div class="mb-3"><?= ($jawaban['pertanyaan']) ?></div>
                         <div class="fw-bold mb-2">Pembahasan:</div>
                         <div><?= $jawaban['pembahasan'] ?></div>
                     </div>

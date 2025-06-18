@@ -38,7 +38,14 @@
                                 <option value="inactive">Nonaktif</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
+                            <select class="form-select" id="filterJenisKelamin">
+                                <option value="">Semua Jenis Kelamin</option>
+                                <option value="Laki-laki">Laki-laki</option>
+                                <option value="Perempuan">Perempuan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <select class="form-select" id="filterSekolah">
                                 <option value="">Semua Sekolah</option>
                                 <?php
@@ -62,9 +69,11 @@
                                 endforeach; ?>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <input type="text" class="form-control" id="searchSiswa" placeholder="Cari nama, NIS, atau email...">
                         </div>
+                    </div>
+                    <div class="row mt-2">
                         <div class="col-md-2">
                             <button class="btn btn-outline-secondary w-100" onclick="resetFilter()">
                                 <i class="bi bi-arrow-clockwise"></i> Reset
@@ -85,6 +94,7 @@
                                     <th>Username</th>
                                     <th>Email</th>
                                     <th>Nama Lengkap</th>
+                                    <th>Jenis Kelamin</th>
                                     <th>No. Peserta</th>
                                     <th>Sekolah</th>
                                     <th>Kelas</th>
@@ -97,17 +107,33 @@
                             <tbody>
                                 <?php if (empty($siswa)): ?>
                                     <tr>
-                                        <td colspan="11" class="text-center">Tidak ada data siswa</td>
+                                        <td colspan="12" class="text-center">Tidak ada data siswa</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($siswa as $index => $s): ?>
                                         <tr data-status="<?= $s['status'] ?>"
+                                            data-jenis-kelamin="<?= $s['jenis_kelamin'] ?? '' ?>"
                                             data-sekolah="<?= $s['nama_sekolah'] ?>"
                                             data-kelas="<?= $s['nama_kelas'] ?>">
                                             <td><?= $index + 1 ?></td>
                                             <td><?= esc($s['username']) ?></td>
                                             <td><?= esc($s['email']) ?></td>
                                             <td><?= esc($s['nama_lengkap'] ?? '-') ?></td>
+                                            <td>
+                                                <?php if (!empty($s['jenis_kelamin'])): ?>
+                                                    <?php if ($s['jenis_kelamin'] == 'Laki-laki'): ?>
+                                                        <span class="badge bg-primary">
+                                                            <i class="bi bi-person-standing me-1"></i>L
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-person-standing-dress me-1"></i>P
+                                                        </span>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <span class="text-muted">-</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td><?= esc($s['nomor_peserta'] ?? '-') ?></td>
                                             <td>
                                                 <small class="text-muted"><?= esc($s['nama_sekolah'] ?? '-') ?></small>
@@ -161,12 +187,14 @@
 <script>
     // Filter dan Search
     document.getElementById('filterStatus').addEventListener('change', filterTable);
+    document.getElementById('filterJenisKelamin').addEventListener('change', filterTable);
     document.getElementById('filterSekolah').addEventListener('change', filterTable);
     document.getElementById('filterKelas').addEventListener('change', filterTable);
     document.getElementById('searchSiswa').addEventListener('keyup', filterTable);
 
     function filterTable() {
         const statusFilter = document.getElementById('filterStatus').value;
+        const jenisKelaminFilter = document.getElementById('filterJenisKelamin').value;
         const sekolahFilter = document.getElementById('filterSekolah').value;
         const kelasFilter = document.getElementById('filterKelas').value;
         const searchText = document.getElementById('searchSiswa').value.toLowerCase();
@@ -176,14 +204,16 @@
             if (row.cells.length === 1) return; // Skip "no data" row
 
             const status = row.getAttribute('data-status');
+            const jenisKelamin = row.getAttribute('data-jenis-kelamin');
             const sekolah = row.getAttribute('data-sekolah') || '';
             const kelas = row.getAttribute('data-kelas') || '';
             const username = row.cells[1].textContent.toLowerCase();
             const email = row.cells[2].textContent.toLowerCase();
             const nama = row.cells[3].textContent.toLowerCase();
-            const noPeserta = row.cells[4].textContent.toLowerCase();
+            const noPeserta = row.cells[5].textContent.toLowerCase();
 
             const statusMatch = !statusFilter || status === statusFilter;
+            const jenisKelaminMatch = !jenisKelaminFilter || jenisKelamin === jenisKelaminFilter;
             const sekolahMatch = !sekolahFilter || sekolah === sekolahFilter;
             const kelasMatch = !kelasFilter || kelas === kelasFilter;
             const textMatch = !searchText ||
@@ -192,12 +222,13 @@
                 nama.includes(searchText) ||
                 noPeserta.includes(searchText);
 
-            row.style.display = (statusMatch && sekolahMatch && kelasMatch && textMatch) ? '' : 'none';
+            row.style.display = (statusMatch && jenisKelaminMatch && sekolahMatch && kelasMatch && textMatch) ? '' : 'none';
         });
     }
 
     function resetFilter() {
         document.getElementById('filterStatus').value = '';
+        document.getElementById('filterJenisKelamin').value = '';
         document.getElementById('filterSekolah').value = '';
         document.getElementById('filterKelas').value = '';
         document.getElementById('searchSiswa').value = '';
