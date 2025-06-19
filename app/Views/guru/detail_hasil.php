@@ -36,18 +36,22 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-6">
-          <table class="table table-borderless mb-0">
+          <table class="table table-borderless">
             <tr>
-              <td style="width: 150px">Nama Siswa</td>
-              <td>: <?= esc($hasil['nama_lengkap']) ?></td>
+              <td width="200">Theta Akhir (θ)</td>
+              <td width="20">:</td>
+              <?php $lastResult = end($detailJawaban); ?>
+              <td><strong><?= $lastResult ? number_format($lastResult['theta_saat_ini'], 3) : 'N/A' ?></strong></td>
             </tr>
             <tr>
-              <td>NIS</td>
-              <td>: <?= esc($hasil['nomor_peserta']) ?></td>
+              <td>Skor Akhir</td>
+              <td>:</td>
+              <td><strong class="fs-4 text-primary"><?= $kemampuanKognitif['skor'] ?></strong></td>
             </tr>
             <tr>
-              <td>Kelas</td>
-              <td>: <?= esc($hasil['nama_kelas']) ?></td>
+              <td>Nilai (Skala 0-100)</td>
+              <td>:</td>
+              <td><strong class="fs-4 text-success"><?= min(100, max(0, round($kemampuanKognitif['skor']))) ?></strong></td>
             </tr>
           </table>
         </div>
@@ -80,7 +84,7 @@
   // Ambil theta terakhir (dari jawaban terakhir)
   $lastTheta = end($detailJawaban)['theta_saat_ini'];
   // Hitung nilai akhir: 50 + 16.6 * theta
-  $finalScore = 50 + (16.6 * $lastTheta);
+  $finalScore = 50 + (16.67 * $lastTheta);
   // Nilai dalam skala 0-100
   $finalGrade = min(100, max(0, round(($finalScore / 100) * 100)));
   ?>
@@ -121,7 +125,7 @@
                 <tr>
                   <td>Skor</td>
                   <td>:</td>
-                  <td><strong class="fs-4 text-primary"><?= number_format($finalScore, 1) ?></strong></td>
+                  <td><strong class="fs-4 text-primary"><?= number_format($finalScore, 2) ?></strong></td>
                 </tr>
                 <tr>
                   <td>Nilai (Skala 0-100)</td>
@@ -160,9 +164,9 @@
           </div>
 
           <div class="mt-3">
-            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#rumusKognitifModal">
-              <i class="bi bi-calculator"></i> Lihat Rumus
-            </button>
+            <!-- <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#rumusKognitifModal">
+                <i class="bi bi-calculator"></i> Lihat Rumus
+              </button> -->
           </div>
         </div>
       </div>

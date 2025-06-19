@@ -75,7 +75,7 @@
       ['title' => 'Bank Ujian', 'desc' => 'Kelola bank soal dan koleksi ujian.', 'icon' => 'bi-database', 'color' => 'purple', 'url' => 'admin/bank-soal'],
       ['title' => 'Mata Pelajaran', 'desc' => 'Monitor ujian yang dibuat oleh guru.', 'icon' => 'bi-journal-text', 'color' => 'info', 'url' => 'admin/jenis-ujian'],
       ['title' => 'Kelola Ujian', 'desc' => 'Monitor ujian yang dibuat oleh guru.', 'icon' => 'bi-file-earmark-text', 'color' => 'danger', 'url' => 'admin/ujian'],
-      ['title' => 'Jadwal Ujian', 'desc' => 'Monitor jadwal dan peserta ujian.', 'icon' => 'bi-calendar-check', 'color' => 'secondary', 'url' => 'admin/jadwal'],
+      ['title' => 'Jadwal Ujian', 'desc' => 'Monitor jadwal dan peserta ujian.', 'icon' => 'bi-calendar-check', 'color' => 'secondary', 'url' => 'admin/jadwal-ujian'],
       ['title' => 'Hasil Ujian', 'desc' => 'Analisis hasil ujian para siswa.', 'icon' => 'bi-bar-chart-line', 'color' => 'success', 'url' => 'admin/hasil-ujian'],
       ['title' => 'Pengumuman', 'desc' => 'Kelola pengumuman untuk semua user.', 'icon' => 'bi-megaphone', 'color' => 'dark', 'url' => 'admin/pengumuman'],
     ];

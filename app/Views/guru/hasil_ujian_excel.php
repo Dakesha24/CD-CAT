@@ -206,53 +206,24 @@
 
     <!-- BARU: Analisis Kemampuan Kognitif -->
     <div class="kognitif-box">
-        <h2>ANALISIS KEMAMPUAN KOGNITIF</h2>
-        <table class="info">
+        <h3>ANALISIS KEMAMPUAN KOGNITIF</h3>
+        <table class="info-table">
             <tr>
-                <td width="180">Skor Kemampuan Kognitif</td>
-                <td width="10">:</td>
-                <td class="
-                    <?php
-                    if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
-                    elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
-                    elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
-                    elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
-                    else echo 'kognitif-sangat-rendah';
-                    ?>
-                "><?= $kemampuanKognitif['skor'] ?>% - <?= $klasifikasiKognitif['kategori'] ?></td>
-                <td width="150">Jawaban Benar</td>
-                <td width="10">:</td>
-                <td><?= $kemampuanKognitif['total_benar'] ?></td>
+                <td class="label">Skor Kemampuan Kognitif</td>
+                <td><strong style="font-size: 14px; color: #6c757d;"><?= $kemampuanKognitif['skor'] ?></strong></td>
+                <td class="label">Total Benar</td>
+                <td><strong style="color: #28a745;"><?= $kemampuanKognitif['total_benar'] ?> soal</strong></td>
             </tr>
             <tr>
-                <td>Rumus Perhitungan</td>
-                <td>:</td>
-                <td>(B - (S/(P-1))) / N × 100</td>
-                <td>Jawaban Salah</td>
-                <td>:</td>
-                <td><?= $kemampuanKognitif['total_salah'] ?></td>
-            </tr>
-            <tr>
-                <td>Interpretasi</td>
-                <td>:</td>
-                <td>
-                    <?php if ($kemampuanKognitif['skor'] > 80): ?>
-                        Kemampuan kognitif sangat tinggi - pemahaman excellent
-                    <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
-                        Kemampuan kognitif tinggi - pemahaman baik
-                    <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
-                        Kemampuan kognitif rata-rata - perlu peningkatan
-                    <?php elseif ($kemampuanKognitif['skor'] > 20): ?>
-                        Kemampuan kognitif rendah - perlu review materi
-                    <?php else: ?>
-                        Kemampuan kognitif sangat rendah - perlu pembelajaran ulang
-                    <?php endif; ?>
-                </td>
-                <td>Rata-rata Pilihan/Soal</td>
-                <td>:</td>
-                <td><?= $kemampuanKognitif['rata_rata_pilihan'] ?></td>
+                <td class="label">Kategori</td>
+                <td><strong><?= $klasifikasiKognitif['kategori'] ?></strong></td>
+                <td class="label">Total Salah</td>
+                <td><strong style="color: #dc3545;"><?= $kemampuanKognitif['total_salah'] ?> soal</strong></td>
             </tr>
         </table>
+        <p style="font-size: 10px; margin: 10px 0 0 0; color: #666;">
+            <strong>Formula:</strong> Skor Akhir = 50 + (16.67 * &theta;)
+        </p>
     </div>
 
     <!-- BARU: Rekomendasi Pembelajaran -->
@@ -264,16 +235,16 @@
                 <td width="10">:</td>
                 <td>
                     <?php if ($kemampuanKognitif['skor'] > 80): ?>
-                        Berikan tantangan tingkat tinggi dengan soal aplikatif dan analisis kompleks. 
+                        Berikan tantangan tingkat tinggi dengan soal aplikatif dan analisis kompleks.
                         Fokuskan pada pengembangan kemampuan berpikir kritis dan problem solving.
                     <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
-                        Pendalaman materi dan latihan soal dengan variasi kompleks. 
+                        Pendalaman materi dan latihan soal dengan variasi kompleks.
                         Berikan kesempatan eksplorasi aplikasi konsep dalam konteks berbeda.
                     <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
-                        Penjelasan ulang materi dengan pendekatan berbeda. Gunakan lebih banyak contoh konkret 
+                        Penjelasan ulang materi dengan pendekatan berbeda. Gunakan lebih banyak contoh konkret
                         dan sediakan latihan tambahan dengan tingkat kesulitan bertahap.
                     <?php else: ?>
-                        Remedial pembelajaran dengan pendekatan individual. Evaluasi ulang metode pengajaran 
+                        Remedial pembelajaran dengan pendekatan individual. Evaluasi ulang metode pengajaran
                         dan pertimbangkan penggunaan media pembelajaran interaktif.
                     <?php endif; ?>
                 </td>

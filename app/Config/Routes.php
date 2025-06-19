@@ -93,16 +93,24 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
 
 
   // Kelola Ujian
-  $routes->get('ujian', 'Admin::daftarUjian');
-  $routes->get('ujian/detail/(:num)', 'Admin::detailUjian/$1');
+  $routes->get('ujian', 'Admin::ujian');
+  $routes->post('ujian/tambah', 'Admin::tambahUjian');
+  $routes->post('ujian/edit/(:num)', 'Admin::editUjian/$1');
   $routes->get('ujian/hapus/(:num)', 'Admin::hapusUjian/$1');
-  $routes->get('soal/detail/(:num)', 'Admin::detailSoal/$1');
-  $routes->get('soal/hapus/(:num)', 'Admin::hapusSoal/$1');
+
+  // Kelola soal ujian
+
+  $routes->get('soal/(:num)', 'Admin::kelolaSoal/$1');
+  $routes->post('soal/tambah', 'Admin::tambahSoal');
+  $routes->post('soal/edit/(:num)', 'Admin::editSoal/$1');
+  $routes->get('soal/hapus/(:num)/(:num)', 'Admin::hapusSoal/$1/$2');
+  $routes->post('soal/import-bank', 'Admin::importSoalDariBank');
 
   // Kelola Jadwal Ujian
-  $routes->get('jadwal', 'Admin::daftarJadwal');
-  $routes->get('jadwal/detail/(:num)', 'Admin::detailJadwal/$1');
-  $routes->get('jadwal/hapus/(:num)', 'Admin::hapusJadwal/$1');
+  $routes->get('jadwal-ujian', 'Admin::jadwalUjian');
+  $routes->post('jadwal-ujian/tambah', 'Admin::tambahJadwal');
+  $routes->post('jadwal-ujian/edit/(:num)', 'Admin::editJadwal/$1');
+  $routes->get('jadwal-ujian/hapus/(:num)', 'Admin::hapusJadwal/$1');
 
   // Kelola Hasil Ujian
   $routes->get('hasil-ujian', 'Admin::daftarHasilUjian');
@@ -188,10 +196,18 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
   $routes->get('bank-soal/api/bank-ujian', 'Guru::getBankUjianByKategoriJenis');
   $routes->get('bank-soal/api/soal', 'Guru::getSoalBankUjian');
   $routes->post('soal/import-bank', 'Guru::importSoalDariBank');
+
+  $routes->post('upload-ckeditor5-image', 'Guru::uploadCKEditor5Image');
+
+  $routes->post('upload-ckeditor5-image', 'Guru::uploadCKEditor5Image');
+
+  // Jika ingin tetap support CKEditor 4 (untuk backward compatibility)
+  $routes->post('upload-ckeditor-image', 'Guru::uploadCKEditor5Image');
 });
 
 $routes->get('guru/hasil-ujian/download-excel-html/(:num)', 'Guru\Guru::downloadExcelHTML/$1');
 $routes->get('guru/hasil-ujian/download-pdf-html/(:num)', 'Guru\Guru::downloadPDFHTML/$1');
+
 
 // Siswa routes
 $routes->group('siswa', ['namespace' => 'App\Controllers\Siswa'], function ($routes) {

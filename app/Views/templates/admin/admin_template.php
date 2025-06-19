@@ -276,7 +276,7 @@
 
             <!-- Jadwal Ujian -->
             <li class="nav-item">
-                <a href="<?= base_url('admin/jadwal') ?>" class="nav-link <?= (strpos(current_url(), 'admin/jadwal') !== false) ? 'active' : '' ?>">
+                <a href="<?= base_url('admin/jadwal-ujian') ?>" class="nav-link <?= (strpos(current_url(), 'admin/jadwal') !== false) ? 'active' : '' ?>">
                     <i class="bi bi-calendar-check"></i>
                     <span>Jadwal Ujian</span>
                 </a>

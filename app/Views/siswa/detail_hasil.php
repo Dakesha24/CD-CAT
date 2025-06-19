@@ -139,7 +139,7 @@
             <div class="mt-2">
               <small class="text-muted">Jawaban Benar: <?= $kemampuanKognitif['total_benar'] ?></small><br>
               <small class="text-muted">Jawaban Salah: <?= $kemampuanKognitif['total_salah'] ?></small><br>
-              <small class="text-muted">Rata-rata Pilihan: <?= $kemampuanKognitif['rata_rata_pilihan'] ?></small><br>
+              <!-- <small class="text-muted">Rata-rata Pilihan: <?= $kemampuanKognitif['rata_rata_pilihan'] ?></small><br> -->
               <small class="text-muted">Total Soal: <?= $totalSoal ?></small>
             </div>
             <div class="mt-3">
@@ -158,42 +158,41 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="rumusModalLabel">Rumus Perhitungan Skor Kognitif</h5>
+          <h5 class="modal-title" id="rumusModalLabel">Rumus Perhitungan Skor Kemampuan Kognitif</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-4">
-            <h6>Rumus Dasar:</h6>
-            <div class="bg-light p-3 rounded">
-              <code>Skor = (B - (S/(P-1))) / N × 100</code>
+            <h6>Rumus Konversi Skor:</h6>
+            <div class="bg-light p-3 rounded text-center">
+              <p style="font-size: 1.2rem; margin-bottom: 0;">
+                $$ \text{Skor Akhir} (x) = 50 + (16.67 \times \theta) $$
+              </p>
             </div>
           </div>
 
           <div class="mb-4">
             <h6>Keterangan:</h6>
             <ul>
-              <li><strong>B</strong> = Jumlah jawaban benar</li>
-              <li><strong>S</strong> = Jumlah jawaban salah</li>
-              <li><strong>P</strong> = Rata-rata jumlah pilihan jawaban per soal</li>
-              <li><strong>N</strong> = Total jumlah soal</li>
+              <li><strong>$x$</strong> = Skor akhir siswa dalam skala 0-100 (kurang lebih).</li>
+              <li><strong>$\theta$ (theta)</strong> = Estimasi tingkat kemampuan akhir siswa yang dihitung oleh sistem CAT (Computerized Adaptive Testing). Nilai ini merepresentasikan tingkat kesulitan soal di mana siswa memiliki peluang 50% untuk menjawab dengan benar.</li>
             </ul>
           </div>
 
           <div class="mb-4">
             <h6>Klasifikasi Kemampuan:</h6>
-            <ul>
-              <li><span class="badge bg-success">Sangat Tinggi</span>: 80% - 100%</li>
-              <li><span class="badge bg-info">Tinggi</span>: 60% - 80%</li>
-              <li><span class="badge bg-warning">Rata-rata (Sedang)</span>: 40% - 60%</li>
-              <li><span class="badge bg-orange text-white">Rendah</span>: 20% - 40%</li>
-              <li><span class="badge bg-danger">Sangat Rendah</span>: 0% - 20%</li>
+            <ul class="list-unstyled">
+              <li><span class="badge bg-success" style="width: 120px;">Sangat Baik</span> : Skor &ge; 75</li>
+              <li><span class="badge bg-info" style="width: 120px;">Baik</span> : 58 &le; Skor &lt; 75</li>
+              <li><span class="badge bg-warning" style="width: 120px;">Cukup</span> : 42 &le; Skor &lt; 58</li>
+              <li><span class="badge bg-orange text-white" style="width: 120px;">Rendah</span> : 25 &le; Skor &lt; 42</li>
+              <li><span class="badge bg-danger" style="width: 120px;">Sangat Rendah</span> : Skor &lt; 25</li>
             </ul>
           </div>
 
           <div class="bg-info-subtle p-3 rounded">
             <small>
-              <strong>Catatan:</strong> Rumus ini menggunakan koreksi untuk faktor menebak,
-              sehingga memberikan estimasi yang lebih akurat tentang kemampuan kognitif siswa.
+              <strong>Catatan:</strong> Skor ini dihasilkan dari model Teori Respons Butir (Item Response Theory) yang secara adaptif mengukur kemampuan siswa. Semakin tinggi nilai theta, semakin tinggi pula estimasi kemampuan kognitif siswa.
             </small>
           </div>
         </div>

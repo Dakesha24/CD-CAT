@@ -752,83 +752,49 @@ class Siswa extends Controller
 
   //fungsi kemampuan kognitif
 
-  private function hitungKemampuanKognitif($detailJawaban, $totalSoal)
+  private function hitungKemampuanKognitif($theta)
   {
-    $totalBenar = 0;
-    $totalSalah = 0;
-    $totalPilihanJawaban = 0;
+    // Rumus baru: skor akhir siswa (x) = 50 + (16.67 * tetha)
+    $skor_akhir = 50 + (16.67 * $theta);
 
-    foreach ($detailJawaban as $jawaban) {
-      if ($jawaban['is_correct']) {
-        $totalBenar++;
-      } else {
-        $totalSalah++;
-      }
+    // Pastikan skor tidak negatif
+    $skor_akhir = max(0, $skor_akhir);
 
-      // Hitung jumlah pilihan jawaban untuk setiap soal
-      // Ambil data soal lengkap untuk menghitung pilihan
-      $soalLengkap = $this->soalUjianModel->find($jawaban['soal_id']);
-
-      $jumlahPilihan = 4; // Default A, B, C, D
-      if (!empty($soalLengkap['pilihan_e'])) {
-        $jumlahPilihan = 5; // Ada pilihan E
-      }
-
-      $totalPilihanJawaban += $jumlahPilihan;
-    }
-
-    // Hitung rata-rata pilihan jawaban per soal
-    $rataRataPilihan = $totalSoal > 0 ? $totalPilihanJawaban / $totalSoal : 4;
-
-    // Rumus: skor = (B - (S/(P-1))) / N x 100
-    $skor = 0;
-    if ($totalSoal > 0) {
-      $koreksiTebakan = $totalSalah / ($rataRataPilihan - 1);
-      $skor = (($totalBenar - $koreksiTebakan) / $totalSoal) * 100;
-
-      // Pastikan skor tidak negatif
-      $skor = max(0, $skor);
-    }
-
-    return [
-      'skor' => round($skor, 2),
-      'total_benar' => $totalBenar,
-      'total_salah' => $totalSalah,
-      'rata_rata_pilihan' => round($rataRataPilihan, 1)
-    ];
+    // Mengembalikan skor yang sudah dibulatkan
+    return round($skor_akhir, 2);
   }
 
   private function getKlasifikasiKognitif($skor)
   {
-    if ($skor > 80 && $skor <= 100) {
+    if ($skor < 25) {
       return [
-        'kategori' => 'Sangat Tinggi',
-        'class' => 'text-success',
-        'bg_class' => 'bg-success'
+        'kategori' => 'Sangat Rendah',
+        'class' => 'text-danger',
+        'bg_class' => 'bg-danger'
       ];
-    } elseif ($skor > 60 && $skor <= 80) {
-      return [
-        'kategori' => 'Tinggi',
-        'class' => 'text-info',
-        'bg_class' => 'bg-info'
-      ];
-    } elseif ($skor > 40 && $skor <= 60) {
-      return [
-        'kategori' => 'Rata-rata (Sedang)',
-        'class' => 'text-warning',
-        'bg_class' => 'bg-warning'
-      ];
-    } elseif ($skor > 20 && $skor <= 40) {
+    } elseif ($skor >= 25 && $skor < 42) {
       return [
         'kategori' => 'Rendah',
         'class' => 'text-orange',
         'bg_class' => 'bg-orange'
       ];
-    } else {
+    } elseif ($skor >= 42 && $skor < 58) {
       return [
-        'kategori' => 'Sangat Rendah',
-        'class' => 'text-danger',
-        'bg_class' => 'bg-danger'
+        'kategori' => 'Cukup',
+        'class' => 'text-warning',
+        'bg_class' => 'bg-warning'
+      ];
+    } elseif ($skor >= 58 && $skor < 75) {
+      return [
+        'kategori' => 'Baik',
+        'class' => 'text-info',
+        'bg_class' => 'bg-info'
+      ];
+    } else { // $skor >= 75
+      return [
+        'kategori' => 'Sangat Baik',
+        'class' => 'text-success',
+        'bg_class' => 'bg-success'
       ];
     }
   }
@@ -884,7 +850,6 @@ class Siswa extends Controller
       return $carry + ($item['is_correct'] ? 1 : 0);
     }, 0);
 
-    // **TAMBAHAN: Hitung skor berdasarkan theta terakhir**
     $lastResult = $this->hasilUjianModel
       ->select('theta_saat_ini, se_saat_ini')
       ->where('peserta_ujian_id', $pesertaUjianId)
@@ -892,16 +857,23 @@ class Siswa extends Controller
       ->limit(1)
       ->first();
 
-    $skor = 0;
-    if ($lastResult) {
-      $theta = $lastResult['theta_saat_ini'];
-      $skor = 50 + (16.6 * $theta);
-      $skor = round($skor, 1); // Bulatkan 1 desimal
-    }
+    $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
 
-    // **BARU: Hitung kemampuan kognitif**
-    $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
-    $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+    // 1. Hitung skor akhir menggunakan fungsi yang sudah diubah
+    $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
+
+    // 2. Dapatkan klasifikasi berdasarkan skor akhir
+    $klasifikasiKognitif = $this->getKlasifikasiKognitif($skor_akhir);
+
+    // 3. Siapkan array data kognitif untuk dikirim ke view.
+    //    Ini menggantikan array lama yang dihasilkan oleh fungsi hitungKemampuanKognitif yang lama.
+    $kemampuanKognitif = [
+      'skor' => $skor_akhir,
+      'total_benar' => $jawabanBenar,
+      'total_salah' => $totalSoal - $jawabanBenar,
+      // Rata-rata pilihan tidak lagi relevan untuk rumus baru, namun bisa tetap dikirim agar tidak error di view.
+      'rata_rata_pilihan' => 0
+    ];
 
     // Hitung rata-rata waktu per soal
     $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
@@ -921,7 +893,7 @@ class Siswa extends Controller
       'detailJawaban' => $detailJawabanDenganDurasi,
       'totalSoal' => $totalSoal,
       'jawabanBenar' => $jawabanBenar,
-      'skor' => $skor, // Kirim skor ke view
+      'skor' => $skor_akhir, // Kirim skor ke view
       'kemampuanKognitif' => $kemampuanKognitif, // Data kemampuan kognitif
       'klasifikasiKognitif' => $klasifikasiKognitif, // Klasifikasi kognitif
       'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
@@ -997,23 +969,30 @@ class Siswa extends Controller
       return $carry + ($item['is_correct'] ? 1 : 0);
     }, 0);
 
+    // Ambil theta terakhir dari database
     $lastResult = $this->hasilUjianModel
-      ->select('theta_saat_ini, se_saat_ini')
+      ->select('theta_saat_ini')
       ->where('peserta_ujian_id', $pesertaUjianId)
       ->orderBy('waktu_menjawab', 'DESC')
       ->limit(1)
       ->first();
 
-    $skor = 0;
-    if ($lastResult) {
-      $theta = $lastResult['theta_saat_ini'];
-      $skor = 50 + (16.6 * $theta);
-      $skor = round($skor, 1); // Bulatkan 1 desimal
-    }
+    // Ekstrak nilai numerik dari array $lastResult.
+    $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
 
+    // Hitung skor akhir menggunakan fungsi yang sudah diubah
+    $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
 
-    $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
-    $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+    // Dapatkan klasifikasi berdasarkan skor akhir
+    $klasifikasiKognitif = $this->getKlasifikasiKognitif($skor_akhir);
+
+    // Siapkan array data kognitif untuk dikirim ke view.
+    $kemampuanKognitif = [
+      'skor' => $skor_akhir,
+      'total_benar' => $jawabanBenar,
+      'total_salah' => $totalSoal - $jawabanBenar,
+      'rata_rata_pilihan' => 0 // Tidak lagi relevan
+    ];
 
     // Format durasi total
     if ($hasil['durasi_total_detik']) {
@@ -1024,7 +1003,7 @@ class Siswa extends Controller
     }
 
     // Hitung rata-rata waktu per soal
-    $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+    $rataRataWaktu = $totalSoal > 0 ? ($hasil['durasi_total_detik'] / $totalSoal) : 0;
     $rataRataMenit = floor($rataRataWaktu / 60);
     $rataRataDetik = $rataRataWaktu % 60;
 
@@ -1034,9 +1013,9 @@ class Siswa extends Controller
       'totalSoal' => $totalSoal,
       'jawabanBenar' => $jawabanBenar,
       'siswa' => $siswa,
-      'skor' => $skor, // Kirim skor ke view
-      'kemampuanKognitif' => $kemampuanKognitif, // Data kemampuan kognitif
-      'klasifikasiKognitif' => $klasifikasiKognitif, // Klasifikasi kognitif
+      'skor' => $skor_akhir, // Gunakan skor baru yang konsisten
+      'kemampuanKognitif' => $kemampuanKognitif,
+      'klasifikasiKognitif' => $klasifikasiKognitif,
       'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik)
     ];
 

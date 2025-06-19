@@ -1,505 +1,654 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <title>Hasil Ujian - <?= esc($hasil['nama_lengkap']) ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Ujian - <?= $hasil['nama_lengkap'] ?></title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
             margin: 0;
             padding: 20px;
-            line-height: 1.6;
             color: #333;
+            font-size: 12px;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 3px solid #333;
-            padding-bottom: 20px;
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
         }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: bold;
+
+        h1,
+        h2,
+        h3 {
             color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
         }
-        
-        .header h2 {
-            margin: 5px 0;
-            font-size: 18px;
-            color: #34495e;
+
+        h1 {
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            font-size: 20px;
         }
-        
-        .header p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        
-        .section {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
-        }
-        
-        .section h3 {
-            background-color: #34495e;
-            color: white;
-            padding: 8px 15px;
-            margin: 0 0 15px 0;
+
+        h2 {
             font-size: 16px;
-            border-radius: 4px;
+            background-color: #f5f5f5;
+            padding: 5px 10px;
+            border-left: 4px solid #3498db;
         }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+
+        .report-header {
+            text-align: center;
             margin-bottom: 20px;
         }
-        
-        .info-item {
-            display: flex;
-            margin-bottom: 8px;
-        }
-        
-        .info-label {
+
+        .report-header .report-title {
+            font-size: 18px;
             font-weight: bold;
-            width: 150px;
-            color: #2c3e50;
-        }
-        
-        .info-value {
-            flex: 1;
-            color: #333;
-        }
-        
-        .summary-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        
-        .summary-item {
-            text-align: center;
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 6px;
-        }
-        
-        .summary-value {
-            font-size: 24px;
-            font-weight: bold;
-            display: block;
             margin-bottom: 5px;
         }
-        
-        .summary-label {
-            font-size: 12px;
-            opacity: 0.9;
+
+        .report-header .report-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
         }
-        
-        /* **BARU: Style untuk kemampuan kognitif** */
-        .cognitive-box {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        
-        .cognitive-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .cognitive-item {
-            text-align: center;
-            background: rgba(255,255,255,0.1);
-            padding: 10px;
-            border-radius: 6px;
-        }
-        
-        .cognitive-value {
-            font-size: 20px;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 3px;
-        }
-        
-        .cognitive-label {
-            font-size: 11px;
-            opacity: 0.9;
-        }
-        
-        .detail-table {
+
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            font-size: 11px;
+            margin-bottom: 15px;
         }
-        
-        .detail-table th {
-            background-color: #2c3e50;
-            color: white;
-            padding: 10px 6px;
+
+        table.info {
+            margin-bottom: 20px;
+        }
+
+        table.info td {
+            padding: 5px 10px;
+        }
+
+        table.info td:first-child {
+            width: 150px;
+            font-weight: bold;
+        }
+
+        table.detail {
+            border: 1px solid #ccc;
+        }
+
+        table.detail th {
+            background-color: #f2f2f2;
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #ccc;
+        }
+
+        table.detail td {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .text-success {
+            color: #27ae60;
+        }
+
+        .text-danger {
+            color: #e74c3c;
+        }
+
+        .text-center {
             text-align: center;
+        }
+
+        .highlight {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 18px;
+            color: #2980b9;
         }
-        
-        .detail-table td {
-            padding: 8px 6px;
-            border: 1px solid #bdc3c7;
-            text-align: center;
+
+        .row {
+            display: flex;
+            margin-bottom: 15px;
         }
-        
-        .detail-table tr:nth-child(even) {
-            background-color: #f8f9fa;
+
+        .col {
+            flex: 1;
+            padding: 0 10px;
         }
-        
-        .correct-row {
-            background-color: #d4edda !important;
-        }
-        
-        .incorrect-row {
-            background-color: #f8d7da !important;
-        }
-        
-        .status-correct {
-            background-color: #28a745;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        
-        .status-incorrect {
-            background-color: #dc3545;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        
-        .answer-badge {
-            background-color: #007bff;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: bold;
-            font-size: 10px;
-        }
-        
-        .graph-section {
-            margin-top: 30px;
-            page-break-before: always;
-        }
-        
-        .graph-container {
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
             margin: 20px 0;
-            text-align: center;
         }
-        
-        .footer {
-            margin-top: 40px;
-            border-top: 2px solid #333;
-            padding-top: 15px;
-            text-align: center;
-            color: #7f8c8d;
-            font-size: 12px;
+
+        .chart-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
         }
-        
-        .page-break {
-            page-break-before: always;
+
+        .chart-col {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
-        
+
+        /* BARU: Styles untuk kemampuan kognitif */
+        .kognitif-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .kognitif-sangat-tinggi {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-tinggi {
+            color: #17a2b8 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sedang {
+            color: #ffc107 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-rendah {
+            color: #fd7e14 !important;
+            font-weight: bold;
+        }
+
+        .kognitif-sangat-rendah {
+            color: #dc3545 !important;
+            font-weight: bold;
+        }
+
+        .recommendation-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
         @media print {
             body {
-                margin: 0;
-                padding: 15px;
+                padding: 0;
+                background-color: white;
             }
+
+            .container {
+                width: 100%;
+                max-width: none;
+                padding: 0;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            h2 {
+                font-size: 14px;
+            }
+
+            h3 {
+                font-size: 13px;
+            }
+
             .page-break {
                 page-break-before: always;
             }
+
+            .chart-col {
+                flex: 0 0 100%;
+                max-width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        .cognitive-box {
+            background-color: #f8f9fa;
+            /* Warna latar abu-abu sangat muda */
+            border: 1px solid #dee2e6;
+            /* Garis batas halus */
+            border-radius: 8px;
+            /* Sudut yang sedikit melengkung */
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        /* Judul box */
+        .cognitive-box-title {
+            font-size: 1rem;
+            /* Ukuran font 16px, tidak terlalu besar */
+            font-weight: 600;
+            /* Semi-bold, lebih halus dari bold biasa */
+            color: #495057;
+            /* Warna abu-abu gelap untuk teks */
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+            /* Garis pemisah di bawah judul */
+        }
+
+        /* Grid untuk statistik */
+        .cognitive-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            /* 4 kolom dengan lebar sama */
+            gap: 15px;
+            /* Jarak antar item */
+        }
+
+        /* Setiap item statistik */
+        .cognitive-item {
+            text-align: center;
+            padding: 10px 5px;
+            border-right: 1px solid #e9ecef;
+            /* Garis pemisah vertikal */
+        }
+
+        /* Hapus garis pemisah pada item terakhir */
+        .cognitive-item:last-child {
+            border-right: none;
+        }
+
+        /* Nilai/skor utama */
+        .cognitive-value {
+            display: block;
+            font-size: 1.4rem;
+            /* Ukuran font 22px */
+            font-weight: 700;
+            color: #212529;
+            /* Warna hitam pekat */
+            margin-bottom: 4px;
+        }
+
+        /* Label di bawah nilai */
+        .cognitive-label {
+            display: block;
+            font-size: 0.75rem;
+            /* Ukuran font 12px, kecil dan subtil */
+            color: #6c757d;
+            /* Warna abu-abu untuk teks label */
+            text-transform: uppercase;
+            /* Membuatnya terlihat seperti label */
+            letter-spacing: 0.5px;
+        }
+
+        /* Teks formula di bagian bawah */
+        .cognitive-formula {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #868e96;
+            border-top: 1px solid #e9ecef;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-    <!-- Header -->
-    <div class="header">
-        <h1>LAPORAN HASIL UJIAN ADAPTIVE TEST</h1>
-        <h2><?= esc($hasil['nama_ujian']) ?></h2>
-        <p><strong><?= esc($hasil['nama_jenis']) ?></strong></p>
-        <p>Dicetak pada: <?= date('d/m/Y H:i:s') ?> WIB</p>
-    </div>
+    <div class="container">
+        <div class="report-header">
+            <div class="report-title">HASIL UJIAN ADAPTIF SISWA</div>
+            <div class="report-subtitle"><?= esc($hasil['nama_ujian']) ?> - <?= esc($hasil['nama_jenis']) ?></div>
+            <div class="report-subtitle">Kode Ujian: <?= esc($hasil['kode_ujian']) ?></div>
+        </div>
 
-    <!-- Informasi Siswa -->
-    <div class="section">
-        <h3>INFORMASI SISWA & UJIAN</h3>
-        <div class="info-grid">
-            <div>
-                <div class="info-item">
-                    <span class="info-label">Nama Lengkap:</span>
-                    <span class="info-value"><?= esc($hasil['nama_lengkap']) ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Nomor Peserta:</span>
-                    <span class="info-value"><?= esc($hasil['nomor_peserta']) ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Kelas:</span>
-                    <span class="info-value"><?= esc($hasil['nama_kelas']) ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Sekolah:</span>
-                    <span class="info-value"><?= esc($hasil['nama_sekolah']) ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Guru Pengawas:</span>
-                    <span class="info-value"><?= esc($hasil['nama_guru']) ?></span>
-                </div>
+        <div class="row">
+            <div class="col">
+                <h2>Informasi Ujian</h2>
+                <table class="info">
+                    <tr>
+                        <td>Nama Ujian</td>
+                        <td>: <?= esc($hasil['nama_ujian']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Kode Ujian</td>
+                        <td>: <?= esc($hasil['kode_ujian']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Mata Pelajaran</td>
+                        <td>: <?= esc($hasil['nama_jenis']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Kelas</td>
+                        <td>: <?= esc($hasil['nama_kelas']) ?></td>
+                    </tr>
+                </table>
             </div>
-            <div>
-                <div class="info-item">
-                    <span class="info-label">Waktu Mulai:</span>
-                    <span class="info-value"><?= $hasil['waktu_mulai_format'] ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Waktu Selesai:</span>
-                    <span class="info-value"><?= $hasil['waktu_selesai_format'] ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Total Durasi:</span>
-                    <span class="info-value"><?= $hasil['durasi_total_format'] ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Rata-rata per Soal:</span>
-                    <span class="info-value"><?= $rataRataWaktuFormat ?></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Kode Akses:</span>
-                    <span class="info-value"><?= esc($hasil['kode_akses']) ?></span>
-                </div>
+            <div class="col">
+                <h2>Informasi Siswa</h2>
+                <table class="info">
+                    <tr>
+                        <td>Nama Siswa</td>
+                        <td>: <?= esc($hasil['nama_lengkap']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>NIS</td>
+                        <td>: <?= esc($hasil['nomor_peserta']) ?></td>
+                    </tr>
+                    <tr>
+                        <td>Waktu Mulai</td>
+                        <td>: <?= $hasil['waktu_mulai_format'] ?></td>
+                    </tr>
+                    <tr>
+                        <td>Waktu Selesai</td>
+                        <td>: <?= $hasil['waktu_selesai_format'] ?></td>
+                    </tr>
+                    <tr>
+                        <td>Total Durasi</td>
+                        <td>: <?= $hasil['durasi_total_format'] ?></td>
+                    </tr>
+                    <tr>
+                        <td>Rata-rata/Soal</td>
+                        <td>: <?= $rataRataWaktuFormat ?></td>
+                    </tr>
+                </table>
             </div>
         </div>
-    </div>
 
-    <!-- Hasil Akhir -->
-    <div class="summary-box">
-        <h3 style="background: none; color: white; padding: 0; margin: 0 0 15px 0;">HASIL AKHIR</h3>
-        <div class="summary-grid">
-            <div class="summary-item">
-                <span class="summary-value"><?= number_format($finalScore, 1) ?></span>
-                <span class="summary-label">SKOR AKHIR</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-value"><?= min(100, max(0, round(($finalScore / 100) * 100))) ?></span>
-                <span class="summary-label">NILAI (0-100)</span>
-            </div>
-            <div class="summary-item">
-                <span class="summary-value"><?= round(($jawabanBenar / count($detailJawaban)) * 100, 1) ?>%</span>
-                <span class="summary-label">PERSENTASE BENAR</span>
-            </div>
-        </div>
-        <div style="margin-top: 15px; text-align: center; font-size: 14px;">
-            <strong>Theta Akhir (θ): <?= number_format($lastTheta, 3) ?></strong> | 
-            <strong>Total Soal: <?= count($detailJawaban) ?></strong> | 
-            <strong>Jawaban Benar: <?= $jawabanBenar ?></strong>
-        </div>
-    </div>
+        <h2>Hasil Akhir</h2>
+        <?php
+        // Ambil theta terakhir (dari jawaban terakhir)
+        $lastTheta = end($detailJawaban)['theta_saat_ini'];
+        // Hitung nilai akhir: 50 + 16.6 * theta
+        $finalScore = 50 + (16.67 * $lastTheta);
+        // Nilai dalam skala 0-100
+        $finalGrade = min(100, max(0, round(($finalScore / 100) * 100)));
+        ?>
+        <div class="row">
+            <div class="col">
+                <table class="info">
+                    <tr>
+                        <td>Total Soal</td>
+                        <td>: <b><?= count($detailJawaban) ?></b> soal</td>
+                    </tr>
+                    <tr>
+                        <td>Jawaban Benar</td>
+                        <td>: <b><?= $jawabanBenar ?></b> soal</td>
+                    </tr>
+                    <tr>
+                        <td>Theta Akhir (θ)</td>
+                        <td>: <b><?= number_format($lastTheta, 3) ?></b></td>
+                    </tr>
+                    <tr>
+                        <td>Standard Error Akhir</td>
+                        <td>: <b><?= number_format(end($detailJawaban)['se_saat_ini'], 3) ?></b></td>
+                    </tr>
 
-    <!-- **BARU: Kemampuan Kognitif** -->
-    <div class="cognitive-box">
-        <h3 style="background: none; color: white; padding: 0; margin: 0 0 15px 0;">ANALISIS KEMAMPUAN KOGNITIF</h3>
-        <div class="cognitive-grid">
-            <div class="cognitive-item">
-                <span class="cognitive-value"><?= $kemampuanKognitif['skor'] ?></span>
-                <span class="cognitive-label">SKOR KOGNITIF</span>
-            </div>
-            <div class="cognitive-item">
-                <span class="cognitive-value"><?= $klasifikasiKognitif['kategori'] ?></span>
-                <span class="cognitive-label">KATEGORI</span>
-            </div>
-            <div class="cognitive-item">
-                <span class="cognitive-value"><?= $kemampuanKognitif['total_benar'] ?>/<?= $kemampuanKognitif['total_salah'] ?></span>
-                <span class="cognitive-label">BENAR/SALAH</span>
-            </div>
-            <div class="cognitive-item">
-                <span class="cognitive-value"><?= $kemampuanKognitif['rata_rata_pilihan'] ?></span>
-                <span class="cognitive-label">AVG PILIHAN</span>
-            </div>
-        </div>
-        <div style="margin-top: 10px; text-align: center; font-size: 12px; opacity: 0.9;">
-            <strong>Formula:</strong> Skor = (B - (S/(P-1))) / N × 100 
-            <br><em>B=Benar, S=Salah, P=Rata-rata pilihan, N=Total soal</em>
-        </div>
-    </div>
 
-    <!-- Detail Jawaban -->
-    <div class="section page-break">
-        <h3>DETAIL JAWABAN SOAL</h3>
-        <table class="detail-table">
+                </table>
+            </div>
+            <div class="col">
+                <table class="info">
+
+
+                    <tr>
+                        <td>Skor</td>
+                        <td>: <span class="highlight"><?= number_format($finalScore, 2) ?></span></td>
+                    </tr>
+                    <tr>
+                        <td>Nilai (Skala 0-100)</td>
+                        <td>: <span class="highlight"><?= $finalGrade ?></span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="cognitive-box">
+            <h3 class="cognitive-box-title">ANALISIS KEMAMPUAN KOGNITIF</h3>
+            <div class="cognitive-grid">
+                <div class="cognitive-item">
+                    <span class="cognitive-value"><?= $kemampuanKognitif['skor'] ?></span>
+                    <span class="cognitive-label">SKOR KOGNITIF</span>
+                </div>
+                <div class="cognitive-item">
+                    <span class="cognitive-value"><?= $klasifikasiKognitif['kategori'] ?></span>
+                    <span class="cognitive-label">KATEGORI</span>
+                </div>
+                <div class="cognitive-item">
+                    <span class="cognitive-value"><?= $kemampuanKognitif['total_benar'] ?>/<?= count($detailJawaban) ?></span>
+                    <span class="cognitive-label">BENAR/TOTAL</span>
+                </div>
+                <div class="cognitive-item">
+                    <span class="cognitive-value"><?= $kemampuanKognitif['total_salah'] ?></span>
+                    <span class="cognitive-label">SALAH</span>
+                </div>
+            </div>
+            <div class="cognitive-formula">
+                <strong>Formula:</strong> Skor Akhir = 50 + (16.67 * &theta;)
+            </div>
+        </div>
+
+        <div class="recommendation-box">
+            <h3><i class="bi bi-lightbulb"></i> Rekomendasi Pembelajaran</h3>
+            <?php if ($kemampuanKognitif['skor'] > 80): ?>
+                <p><strong>Strategi Pengajaran:</strong> Siswa menunjukkan pemahaman yang sangat baik.
+                    Berikan tantangan lebih lanjut dengan soal-soal aplikatif dan analisis tingkat tinggi.
+                    Fokuskan pada pengembangan kemampuan berpikir kritis dan problem solving.</p>
+            <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
+                <p><strong>Strategi Pengajaran:</strong> Kemampuan siswa sudah baik.
+                    Fokuskan pada pendalaman materi dan latihan soal dengan variasi yang lebih kompleks.
+                    Berikan kesempatan untuk mengeksplorasi aplikasi konsep dalam konteks yang berbeda.</p>
+            <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
+                <p><strong>Strategi Pengajaran:</strong> Perlu perbaikan dalam pemahaman konsep dasar.
+                    Berikan penjelasan ulang materi dengan pendekatan yang berbeda, gunakan lebih banyak contoh konkret,
+                    dan sediakan latihan tambahan dengan tingkat kesulitan bertahap.</p>
+            <?php else: ?>
+                <p><strong>Strategi Pengajaran:</strong> Kemampuan memerlukan perhatian khusus.
+                    Lakukan remedial pembelajaran dengan pendekatan individual, evaluasi ulang metode pengajaran,
+                    dan pertimbangkan penggunaan media pembelajaran yang lebih interaktif dan mudah dipahami.</p>
+            <?php endif; ?>
+        </div>
+
+        <h2>Grafik Perkembangan</h2>
+        <div class="chart-row">
+            <div class="chart-col">
+                <h3>Grafik Theta (θ)</h3>
+                <div class="chart-container">
+                    <canvas id="thetaChart"></canvas>
+                </div>
+                <div id="thetaChartImage"></div>
+            </div>
+            <div class="chart-col">
+                <h3>Grafik Standard Error (SE)</h3>
+                <div class="chart-container">
+                    <canvas id="seChart"></canvas>
+                </div>
+                <div id="seChartImage"></div>
+            </div>
+        </div>
+
+        <h2>Detail Jawaban</h2>
+        <table class="detail">
             <thead>
                 <tr>
-                    <th style="width: 5%">No</th>
-                    <th style="width: 6%">ID</th>
-                    <th style="width: 35%">Pertanyaan</th>
-                    <th style="width: 8%">Tingkat Kesulitan</th>
-                    <th style="width: 6%">Jawaban</th>
-                    <th style="width: 6%">Benar</th>
-                    <th style="width: 8%">Status</th>
-                    <th style="width: 8%">Waktu</th>
-                    <th style="width: 8%">Durasi</th>
-                    <th style="width: 5%">θ</th>
-                    <th style="width: 5%">SE</th>
+                    <th>No</th>
+                    <th>Kode Soal</th>
+                    <th>ID Soal</th>
+                    <th>Pertanyaan</th>
+                    <th>Tingkat Kesulitan</th>
+                    <th>Jawaban</th>
+                    <th>Status</th>
+                    <th>Waktu Jawab</th>
+                    <th>Durasi</th>
+                    <th>Pi</th>
+                    <th>Qi</th>
+                    <th>Ii</th>
+                    <th>SE</th>
+                    <th>ΔSE</th>
+                    <th>θ</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($detailJawaban as $i => $jawaban): ?>
-                    <tr class="<?= $jawaban['is_correct'] ? 'correct-row' : 'incorrect-row' ?>">
-                        <td><strong><?= $jawaban['nomor_soal'] ?></strong></td>
-                        <td><?= $jawaban['soal_id'] ?></td>
-                        <td style="text-align: left; padding: 5px;">
-                            <?= strlen($jawaban['pertanyaan']) > 120 ? substr(esc($jawaban['pertanyaan']), 0, 120) . '...' : esc($jawaban['pertanyaan']) ?>
-                            <?php if (!empty($jawaban['foto'])): ?>
-                                <br><em style="color: #666; font-size: 9px;">[Soal dengan gambar]</em>
-                            <?php endif; ?>
+                    <tr>
+                        <td class="text-center"><?= $jawaban['nomor_soal'] ?></td>
+                        <td class="text-center"><?= esc($jawaban['kode_soal']) ?></td>
+                        <td class="text-center"><?= $jawaban['soal_id'] ?></td>
+                        <td><?= $jawaban['pertanyaan'] ?></td>
+                        <td class="text-center"><?= number_format($jawaban['tingkat_kesulitan'], 3) ?></td>
+                        <td class="text-center"><?= $jawaban['jawaban_siswa'] ?></td>
+                        <td class="text-center <?= $jawaban['is_correct'] ? 'text-success' : 'text-danger' ?>">
+                            <?= $jawaban['is_correct'] ? 'Benar' : 'Salah' ?>
                         </td>
-                        <td><?= number_format($jawaban['tingkat_kesulitan'], 2) ?></td>
-                        <td><span class="answer-badge"><?= $jawaban['jawaban_siswa'] ?></span></td>
-                        <td><span class="answer-badge"><?= $jawaban['jawaban_benar'] ?></span></td>
-                        <td>
-                            <span class="<?= $jawaban['is_correct'] ? 'status-correct' : 'status-incorrect' ?>">
-                                <?= $jawaban['is_correct'] ? 'BENAR' : 'SALAH' ?>
-                            </span>
-                        </td>
-                        <td style="font-size: 9px;"><?= $jawaban['waktu_menjawab_format'] ?></td>
-                        <td style="font-size: 9px; font-weight: bold;"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
-                        <td><?= number_format($jawaban['theta_saat_ini'], 2) ?></td>
-                        <td><?= number_format($jawaban['se_saat_ini'], 2) ?></td>
+                        <td class="text-center"><?= $jawaban['waktu_menjawab_format'] ?></td>
+                        <td class="text-center"><?= $jawaban['durasi_pengerjaan_format'] ?></td>
+                        <td class="text-center"><?= isset($jawaban['pi_saat_ini']) ? number_format($jawaban['pi_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= isset($jawaban['qi_saat_ini']) ? number_format($jawaban['qi_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= isset($jawaban['ii_saat_ini']) ? number_format($jawaban['ii_saat_ini'], 3) : '-' ?></td>
+                        <td class="text-center"><?= number_format($jawaban['se_saat_ini'], 3) ?></td>
+                        <td class="text-center"><?= number_format(abs($jawaban['delta_se_saat_ini']), 3) ?></td>
+                        <td class="text-center"><?= number_format($jawaban['theta_saat_ini'], 3) ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-    </div>
 
-    <!-- Grafik -->
-    <div class="graph-section">
-        <h3>GRAFIK PERKEMBANGAN</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-            <div class="graph-container">
-                <h4>Perkembangan Theta (θ)</h4>
-                <canvas id="thetaChart" width="300" height="200"></canvas>
-            </div>
-            <div class="graph-container">
-                <h4>Perkembangan Standard Error</h4>
-                <canvas id="seChart" width="300" height="200"></canvas>
-            </div>
+
+        <div style="text-align: right; margin-top: 30px; margin-bottom: 50px;">
+            <p>
+                <?= date('d F Y') ?><br>
+                Guru Pengampu<br><br><br><br>
+                .................................
+            </p>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <p><strong>Sistem Computer Based Adaptive Test (CD-CAT)</strong></p>
-        <p>Laporan ini dibuat secara otomatis • Dicetak pada: <?= date('d/m/Y H:i:s') ?> WIB</p>
-        <p>© <?= date('Y') ?> - Semua hak cipta dilindungi</p>
     </div>
 
     <script>
         // Data untuk grafik
-        const thetaData = <?= $thetaData ?>;
-        const seData = <?= $seData ?>;
-        const labels = <?= $labels ?>;
+        const labels = <?= json_encode(array_map(function ($item) {
+                            return 'Soal ' . $item['nomor_soal'];
+                        }, $detailJawaban)) ?>;
 
-        // Grafik Theta
-        new Chart(document.getElementById('thetaChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Theta (θ)',
-                    data: thetaData,
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    tension: 0.1,
-                    fill: true,
-                    pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: false }
+        const thetaData = <?= json_encode(array_map(function ($item) {
+                                return $item['theta_saat_ini'];
+                            }, $detailJawaban)) ?>;
+
+        const seData = <?= json_encode(array_map(function ($item) {
+                            return $item['se_saat_ini'];
+                        }, $detailJawaban)) ?>;
+
+        // Fungsi untuk membuat grafik Theta
+        function createThetaChart() {
+            const ctx = document.getElementById('thetaChart').getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Theta (θ)',
+                        data: thetaData,
+                        borderColor: '#4e73df',
+                        tension: 0.1,
+                        fill: false
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: '#e0e0e0' },
-                        ticks: { font: { size: 10 } }
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Perkembangan Estimasi Kemampuan (θ)'
+                        }
                     },
-                    x: {
-                        grid: { color: '#e0e0e0' },
-                        ticks: { font: { size: 9 } }
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Nilai Theta'
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // Grafik SE
-        new Chart(document.getElementById('seChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Standard Error',
-                    data: seData,
-                    borderColor: '#764ba2',
-                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                    tension: 0.1,
-                    fill: true,
-                    pointBackgroundColor: '#764ba2',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: false }
+        // Fungsi untuk membuat grafik SE
+        function createSEChart() {
+            const ctx = document.getElementById('seChart').getContext('2d');
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Standard Error',
+                        data: seData,
+                        borderColor: '#1cc88a',
+                        tension: 0.1,
+                        fill: false
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: '#e0e0e0' },
-                        ticks: { font: { size: 10 } }
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Perkembangan Standard Error'
+                        }
                     },
-                    x: {
-                        grid: { color: '#e0e0e0' },
-                        ticks: { font: { size: 9 } }
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Nilai SE'
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Fungsi untuk mengkonversi chart ke gambar
+        async function chartToImage(chart, containerId) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const canvas = chart.canvas;
+
+            html2canvas(canvas).then(canvas => {
+                const container = document.getElementById(containerId);
+
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL('image/png');
+                img.style.width = '100%';
+                img.style.maxWidth = '100%';
+                container.appendChild(img);
+
+                chart.canvas.parentNode.style.display = 'none';
+            });
+        }
+
+        // Jalankan saat window load
+        window.onload = async function() {
+            const thetaChart = createThetaChart();
+            const seChart = createSEChart();
+
+            await chartToImage(thetaChart, 'thetaChartImage');
+            await chartToImage(seChart, 'seChartImage');
+
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        }
     </script>
 </body>
+
 </html>

@@ -108,25 +108,6 @@
                 <div class="col-md-6">
                     <table class="table table-borderless">
                         <tr>
-                            <td width="200">Theta Akhir (θ)</td>
-                            <td width="20">:</td>
-                            <td><strong><?= number_format(end($detailJawaban)['theta_saat_ini'], 3) ?></strong></td>
-                        </tr>
-                        <tr>
-                            <td>Skor</td>
-                            <td>:</td>
-                            <td><strong class="fs-4 text-primary"><?= number_format(50 + (16.6 * end($detailJawaban)['theta_saat_ini']), 1) ?></strong></td>
-                        </tr>
-                        <tr>
-                            <td>Nilai (Skala 0-100)</td>
-                            <td>:</td>
-                            <td><strong class="fs-4 text-success"><?= min(100, max(0, round(((50 + (16.6 * end($detailJawaban)['theta_saat_ini'])) / 100) * 100))) ?></strong></td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-borderless">
-                        <tr>
                             <td width="200">Total Soal</td>
                             <td width="20">:</td>
                             <td><strong><?= $totalSoal ?></strong> soal</td>
@@ -140,6 +121,28 @@
                             <td>Standard Error Akhir</td>
                             <td>:</td>
                             <td><strong><?= number_format(end($detailJawaban)['se_saat_ini'], 3) ?></strong></td>
+                        </tr>
+                        <tr>
+                            <td width="200">Theta Akhir (θ)</td>
+                            <td width="20">:</td>
+                            <td><strong><?= number_format(end($detailJawaban)['theta_saat_ini'], 3) ?></strong></td>
+                        </tr>
+
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+
+
+                        <tr>
+                            <td>Skor</td>
+                            <td>:</td>
+                            <td><strong class="fs-4 text-primary"><?= number_format(50 + (16.6 * end($detailJawaban)['theta_saat_ini']), 1) ?></strong></td>
+                        </tr>
+                        <tr>
+                            <td>Nilai (Skala 0-100)</td>
+                            <td>:</td>
+                            <td><strong class="fs-4 text-success"><?= min(100, max(0, round(((50 + (16.6 * end($detailJawaban)['theta_saat_ini'])) / 100) * 100))) ?></strong></td>
                         </tr>
                     </table>
                 </div>

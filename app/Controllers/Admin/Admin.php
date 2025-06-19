@@ -14,6 +14,8 @@ use App\Models\JadwalUjianModel;
 use App\Models\HasilUjianModel;
 use App\Models\PesertaUjianModel;
 use App\Models\PengumumanModel;
+use App\Models\SekolahModel;
+use Config\Database;
 
 class Admin extends Controller
 {
@@ -28,9 +30,12 @@ class Admin extends Controller
     protected $hasilUjianModel;
     protected $pesertaUjianModel;
     protected $pengumumanModel;
+    protected $sekolahModel;
+    protected $db;
 
     public function __construct()
     {
+        $this->db = Database::connect();
         $this->userModel = new UserModel();
         $this->guruModel = new GuruModel();
         $this->siswaModel = new SiswaModel();
@@ -42,6 +47,7 @@ class Admin extends Controller
         $this->hasilUjianModel = new HasilUjianModel();
         $this->pesertaUjianModel = new PesertaUjianModel();
         $this->pengumumanModel = new PengumumanModel();
+        $this->sekolahModel = new SekolahModel();
     }
 
     public function dashboard()
@@ -1437,273 +1443,504 @@ class Admin extends Controller
 
     // ===== KELOLA UJIAN =====
 
-    public function daftarUjian()
+    public function ujian()
     {
-        $db = \Config\Database::connect();
+        // Ambil SEMUA ujian dari database
+        $data['ujian'] = $this->ujianModel
+            ->select('ujian.*, jenis_ujian.nama_jenis, kelas.nama_kelas, sekolah.nama_sekolah, g.nama_lengkap as guru_pembuat')
+            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id', 'left')
+            ->join('kelas', 'kelas.kelas_id = ujian.kelas_id', 'left')
+            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id', 'left')
+            ->join('users u', 'u.user_id = ujian.created_by', 'left')
+            ->join('guru g', 'g.user_id = u.user_id', 'left')
+            ->orderBy('ujian.created_at', 'DESC')
+            ->findAll();
 
-        // Query untuk mengambil data ujian dengan informasi lengkap termasuk sekolah dan kelas
-        $data['ujian'] = $db->table('ujian u')
-            ->select('u.id_ujian, u.nama_ujian, u.kode_ujian, u.deskripsi, u.durasi, u.created_at,
-                 j.nama_jenis,
-                 k.nama_kelas, k.tahun_ajaran,
-                 s.nama_sekolah,
-                 COUNT(DISTINCT so.soal_id) as total_soal,
-                 COUNT(DISTINCT ja.jadwal_id) as total_jadwal,
-                 g.nama_lengkap as guru_pembuat')
-            ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
-            ->join('kelas k', 'k.kelas_id = u.kelas_id', 'left')
-            ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
-            ->join('soal_ujian so', 'so.ujian_id = u.id_ujian', 'left')
-            ->join('jadwal_ujian ja', 'ja.ujian_id = u.id_ujian', 'left')
-            ->join('users us', 'us.user_id = u.created_by', 'left')
-            ->join('guru g', 'g.user_id = us.user_id', 'left')
-            ->groupBy('u.id_ujian, u.nama_ujian, u.kode_ujian, u.deskripsi, u.durasi, u.created_at, 
-                  j.nama_jenis, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, g.nama_lengkap')
-            ->orderBy('u.created_at', 'DESC')
-            ->get()
-            ->getResultArray();
+        // Ambil SEMUA mata pelajaran untuk dropdown
+        $data['jenis_ujian'] = $this->jenisUjianModel
+            ->select('jenis_ujian.*, kelas.nama_kelas, sekolah.nama_sekolah')
+            ->join('kelas', 'kelas.kelas_id = jenis_ujian.kelas_id', 'left')
+            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id', 'left')
+            ->findAll();
+
+        // Ambil SEMUA kelas untuk dropdown
+        $data['kelas_guru'] = $this->kelasModel
+            ->select('kelas.*, sekolah.nama_sekolah')
+            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id', 'left')
+            ->orderBy('sekolah.nama_sekolah', 'ASC')
+            ->orderBy('kelas.nama_kelas', 'ASC')
+            ->findAll();
+
+        // Menggunakan view yang sama dengan guru, tapi dari folder admin
+        $data['sekolah'] = $this->sekolahModel->orderBy('nama_sekolah', 'ASC')->findAll();
 
         return view('admin/ujian/daftar', $data);
     }
 
-    public function detailUjian($ujianId)
+    public function tambahUjian()
     {
-        $db = \Config\Database::connect();
+        $userId = session()->get('user_id');
+        $guru = $this->guruModel->where('user_id', $userId)->first();
 
-        // Ambil detail ujian
-        $ujian = $db->table('ujian u')
-            ->select('u.*, j.nama_jenis')
-            ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
-            ->where('u.id_ujian', $ujianId)
-            ->get()
-            ->getRowArray();
-
-        if (!$ujian) {
-            session()->setFlashdata('error', 'Ujian tidak ditemukan');
-            return redirect()->to(base_url('admin/ujian'));
-        }
-
-        // Ambil soal-soal ujian
-        $soal = $db->table('soal_ujian')
-            ->where('ujian_id', $ujianId)
-            ->orderBy('soal_id', 'ASC')
-            ->get()
-            ->getResultArray();
-
-        $data = [
-            'ujian' => $ujian,
-            'soal' => $soal
+        // Validasi input form
+        $rules = [
+            'jenis_ujian_id' => 'required|numeric',
+            'nama_ujian' => 'required|min_length[3]|max_length[255]',
+            'kode_ujian' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]', // Validasi kode_ujian
+            'deskripsi' => 'required|min_length[10]',
+            'se_awal' => 'required|decimal',
+            'se_minimum' => 'required|decimal',
+            'delta_se_minimum' => 'required|decimal',
+            'durasi' => 'required',
+            'kelas_id' => 'permit_empty|numeric'
         ];
 
-        return view('admin/ujian/detail', $data);
-    }
-
-    public function hapusUjian($ujianId)
-    {
-        try {
-            $db = \Config\Database::connect();
-            $db->transStart();
-
-            // Cek apakah ujian memiliki jadwal yang sedang berlangsung
-            $jadwalAktif = $db->table('jadwal_ujian')
-                ->where('ujian_id', $ujianId)
-                ->where('status !=', 'selesai')
-                ->countAllResults();
-
-            if ($jadwalAktif > 0) {
-                session()->setFlashdata('error', 'Tidak dapat menghapus ujian karena masih memiliki jadwal yang aktif.');
-                return redirect()->to(base_url('admin/ujian'));
-            }
-
-            // Hapus hasil ujian terlebih dahulu (jika ada)
-            $db->query("DELETE hu FROM hasil_ujian hu 
-                       INNER JOIN peserta_ujian pu ON hu.peserta_ujian_id = pu.peserta_ujian_id
-                       INNER JOIN jadwal_ujian ju ON pu.jadwal_id = ju.jadwal_id
-                       WHERE ju.ujian_id = ?", [$ujianId]);
-
-            // Hapus peserta ujian
-            $db->query("DELETE pu FROM peserta_ujian pu 
-                       INNER JOIN jadwal_ujian ju ON pu.jadwal_id = ju.jadwal_id
-                       WHERE ju.ujian_id = ?", [$ujianId]);
-
-            // Hapus jadwal ujian
-            $db->table('jadwal_ujian')->where('ujian_id', $ujianId)->delete();
-
-            // Hapus soal ujian
-            $db->table('soal_ujian')->where('ujian_id', $ujianId)->delete();
-
-            // Hapus ujian
-            $db->table('ujian')->where('id_ujian', $ujianId)->delete();
-
-            $db->transComplete();
-
-            if ($db->transStatus() === FALSE) {
-                throw new \Exception('Transaction failed');
-            }
-
-            session()->setFlashdata('success', 'Ujian beserta semua data terkait berhasil dihapus!');
-        } catch (\Exception $e) {
-            log_message('error', 'Error deleting ujian: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus ujian: ' . $e->getMessage());
+        if (!$this->validate($rules)) {
+            // Mengirimkan error ke session flashdata
+            return redirect()->back()->withInput()->with('error', $this->validator->getErrors());
         }
 
-        return redirect()->to(base_url('admin/ujian'));
+        $data = [
+            'jenis_ujian_id' => $this->request->getPost('jenis_ujian_id'),
+            'nama_ujian' => $this->request->getPost('nama_ujian'),
+            'kode_ujian' => $this->request->getPost('kode_ujian'),
+            'deskripsi' => $this->request->getPost('deskripsi'),
+            'se_awal' => $this->request->getPost('se_awal'),
+            'se_minimum' => $this->request->getPost('se_minimum'),
+            'delta_se_minimum' => $this->request->getPost('delta_se_minimum'),
+            'durasi' => $this->request->getPost('durasi'),
+            'kelas_id' => $this->request->getPost('kelas_id') ?: null,
+            'created_by' => $userId
+        ];
+
+        try {
+            $this->ujianModel->insert($data);
+            return redirect()->to('admin/ujian/')->with('success', 'Ujian berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return redirect()->to('admin/ujian/')->with('error', 'Gagal menambahkan ujian: ' . $e->getMessage());
+        }
     }
 
-    public function hapusSoal($soalId)
+    public function editUjian($id)
     {
-        try {
-            $db = \Config\Database::connect();
-            $db->transStart();
-
-            // Cek apakah soal sudah dijawab siswa
-            $sudahDijawab = $db->table('hasil_ujian')->where('soal_id', $soalId)->countAllResults();
-
-            if ($sudahDijawab > 0) {
-                session()->setFlashdata('error', 'Tidak dapat menghapus soal yang sudah dijawab siswa');
-                return redirect()->back();
-            }
-
-            // Hapus soal
-            $db->table('soal_ujian')->where('soal_id', $soalId)->delete();
-
-            $db->transComplete();
-
-            session()->setFlashdata('success', 'Soal berhasil dihapus!');
-        } catch (\Exception $e) {
-            log_message('error', 'Error deleting soal: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus soal: ' . $e->getMessage());
+        // 1. Cek apakah ujian yang akan diedit memang ada
+        $ujian = $this->ujianModel->find($id);
+        if (!$ujian) {
+            return redirect()->to('admin/ujian/')->with('error', 'Ujian tidak ditemukan.');
         }
 
-        return redirect()->back();
+        // 2. Validasi input form
+        // Aturan 'is_unique' untuk kode_ujian harus mengabaikan ID ujian saat ini
+        $rules = [
+            'jenis_ujian_id' => 'required|numeric',
+            'nama_ujian' => 'required|min_length[3]|max_length[255]',
+            'kode_ujian' => "required|alpha_numeric_punct|min_length[3]|max_length[50]|is_unique[ujian.kode_ujian,id_ujian,{$id}]",
+            'deskripsi' => 'required|min_length[10]',
+            'se_awal' => 'required|decimal',
+            'se_minimum' => 'required|decimal',
+            'delta_se_minimum' => 'required|decimal',
+            'durasi' => 'required',
+            'kelas_id' => 'permit_empty|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            // Mengirimkan error validasi ke session flashdata
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        // 3. Admin tidak memerlukan validasi akses
+        // Semua blok validasi ->hasAccess() dihilangkan
+
+        // 4. Siapkan data baru untuk diupdate
+        $data = [
+            'jenis_ujian_id' => $this->request->getPost('jenis_ujian_id'),
+            'nama_ujian' => $this->request->getPost('nama_ujian'),
+            'kode_ujian' => $this->request->getPost('kode_ujian'),
+            'deskripsi' => $this->request->getPost('deskripsi'),
+            'se_awal' => $this->request->getPost('se_awal'),
+            'se_minimum' => $this->request->getPost('se_minimum'),
+            'delta_se_minimum' => $this->request->getPost('delta_se_minimum'),
+            'durasi' => $this->request->getPost('durasi'),
+            'kelas_id' => $this->request->getPost('kelas_id') ?: null
+        ];
+
+        // 5. Lakukan update dan berikan notifikasi
+        try {
+            $this->ujianModel->update($id, $data);
+            return redirect()->to('admin/ujian/')->with('success', 'Ujian berhasil diperbarui.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal mengupdate ujian: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui data ujian.');
+        }
     }
 
-    public function detailSoal($soalId)
+    public function hapusUjian($id)
     {
-        $db = \Config\Database::connect();
+        // 1. Admin tidak memerlukan validasi hak akses untuk menghapus ujian.
+        // Blok validasi ->hasAccess() dihilangkan.
 
-        $soal = $db->table('soal_ujian s')
-            ->select('s.*, u.nama_ujian, j.nama_jenis')
-            ->join('ujian u', 'u.id_ujian = s.ujian_id', 'left')
-            ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
-            ->where('s.soal_id', $soalId)
-            ->get()
-            ->getRowArray();
+        // 2. Tetap lakukan pengecekan penting: Apakah ada soal yang terkait dengan ujian ini?
+        // Ini untuk menjaga integritas data agar tidak ada soal yang "yatim".
+        $soalTerkait = $this->soalUjianModel->where('ujian_id', $id)->countAllResults();
 
+        if ($soalTerkait > 0) {
+            return redirect()->to('admin/ujian/')
+                ->with('error', 'Gagal! Tidak dapat menghapus ujian ini karena masih ada ' . $soalTerkait . ' soal yang terkait. Harap hapus atau pindahkan soal-soal tersebut terlebih dahulu.');
+        }
+
+        // 3. Lakukan proses hapus jika tidak ada soal terkait
+        try {
+            $this->ujianModel->delete($id);
+            return redirect()->to('admin/ujian/')
+                ->with('success', 'Ujian berhasil dihapus secara permanen.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal menghapus ujian: ' . $e->getMessage());
+            return redirect()->to('admin/ujian/')
+                ->with('error', 'Terjadi kesalahan saat menghapus ujian.');
+        }
+    }
+
+    // ===== KELOLA SOAL =====
+
+    public function kelolaSoal($ujian_id)
+    {
+        // 1. Admin tidak memerlukan validasi hak akses (`hasAccess`).
+
+        // 2. Ambil data ujian berdasarkan ID
+        $data['ujian'] = $this->ujianModel->find($ujian_id);
+        if (!$data['ujian']) {
+            // Jika ujian tidak ditemukan, kembalikan ke daftar ujian admin
+            return redirect()->to('admin/ujian/')
+                ->with('error', 'Ujian tidak ditemukan.');
+        }
+
+        // 3. Ambil semua soal yang terkait dengan ujian ini
+        $data['soal'] = $this->soalUjianModel->where('ujian_id', $ujian_id)->findAll();
+
+        // 4. Arahkan ke view manajemen soal di dalam folder admin
+        // Pastikan Anda sudah menyalin view dari `guru/kelola_soal.php` ke `admin/manajemen_ujian/kelola_soal.php`
+        return view('admin/ujian/kelola_soal', $data);
+    }
+
+
+    public function tambahSoal()
+    {
+        // 1. Validasi form input (aturan sama seperti Guru)
+        $rules = [
+            'ujian_id' => 'required|numeric',
+            'pertanyaan' => 'required',
+            'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]|is_unique[soal_ujian.kode_soal]',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        // 2. Siapkan data dari form
+        $data = [
+            'ujian_id' => $this->request->getPost('ujian_id'),
+            'pertanyaan' => $this->request->getPost('pertanyaan'),
+            'kode_soal' => $this->request->getPost('kode_soal'),
+            'pilihan_a' => $this->request->getPost('pilihan_a'),
+            'pilihan_b' => $this->request->getPost('pilihan_b'),
+            'pilihan_c' => $this->request->getPost('pilihan_c'),
+            'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
+            'jawaban_benar' => $this->request->getPost('jawaban_benar'),
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan'),
+            'created_by' => session()->get('user_id') // Creator adalah Admin yg login
+        ];
+
+        // 3. Proses upload foto jika ada
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            $newName = $fotoFile->getRandomName();
+            $uploadPath = FCPATH . 'uploads/soal';
+
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
+            $fotoFile->move($uploadPath, $newName);
+            $data['foto'] = $newName;
+        }
+
+        // 4. Simpan ke database
+        try {
+            $this->soalUjianModel->insert($data);
+            // Arahkan kembali ke halaman kelola soal untuk Admin
+            return redirect()->to('admin/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal menambahkan soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal.');
+        }
+    }
+
+    public function editSoal($id)
+    {
+        // 1. Ambil data soal yang akan diedit
+        $soal = $this->soalUjianModel->find($id);
         if (!$soal) {
-            session()->setFlashdata('error', 'Soal tidak ditemukan');
-            return redirect()->to(base_url('admin/ujian'));
+            return redirect()->back()->with('error', 'Soal tidak ditemukan.');
         }
 
-        $data['soal'] = $soal;
-        return view('admin/ujian/detail_soal', $data);
+        // 2. Validasi form input
+        $rules = [
+            'kode_soal' => "required|alpha_numeric_punct|min_length[3]|max_length[50]|is_unique[soal_ujian.kode_soal,soal_id,{$id}]",
+            'pertanyaan' => 'required',
+            'pilihan_a' => 'required',
+            'pilihan_b' => 'required',
+            'pilihan_c' => 'required',
+            'pilihan_d' => 'required',
+            'jawaban_benar' => 'required|in_list[A,B,C,D,E]',
+            'tingkat_kesulitan' => 'required|decimal',
+            'foto' => 'max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]|ext_in[foto,png,jpg,jpeg]',
+            'pembahasan' => 'permit_empty'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        // 3. Siapkan data dari form
+        $data = [
+            'kode_soal' => $this->request->getPost('kode_soal'),
+            'pertanyaan' => $this->request->getPost('pertanyaan'),
+            'pilihan_a' => $this->request->getPost('pilihan_a'),
+            'pilihan_b' => $this->request->getPost('pilihan_b'),
+            'pilihan_c' => $this->request->getPost('pilihan_c'),
+            'pilihan_d' => $this->request->getPost('pilihan_d'),
+            'pilihan_e' => $this->request->getPost('pilihan_e'),
+            'jawaban_benar' => $this->request->getPost('jawaban_benar'),
+            'tingkat_kesulitan' => $this->request->getPost('tingkat_kesulitan'),
+            'pembahasan' => $this->request->getPost('pembahasan')
+        ];
+
+        // 4. Proses upload/hapus foto
+        $uploadPath = FCPATH . 'uploads/soal';
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            if (!empty($soal['foto']) && file_exists($uploadPath . '/' . $soal['foto'])) {
+                unlink($uploadPath . '/' . $soal['foto']);
+            }
+            $newName = $fotoFile->getRandomName();
+            $fotoFile->move($uploadPath, $newName);
+            $data['foto'] = $newName;
+        }
+
+        if ($this->request->getPost('hapus_foto') == '1' && !empty($soal['foto'])) {
+            if (file_exists($uploadPath . '/' . $soal['foto'])) {
+                unlink($uploadPath . '/' . $soal['foto']);
+            }
+            $data['foto'] = null;
+        }
+
+        // 5. Update ke database
+        try {
+            $this->soalUjianModel->update($id, $data);
+            $ujian_id = $soal['ujian_id']; // Ambil ujian_id dari data soal lama
+            return redirect()->to('admin/soal/' . $ujian_id)->with('success', 'Soal berhasil diperbarui.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal mengupdate soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal.');
+        }
     }
+
+    public function hapusSoal($id, $ujian_id)
+    {
+        // Pengecekan 1: Jangan hapus soal jika sudah pernah dijawab siswa
+        $isAnswered = $this->hasilUjianModel->where('soal_id', $id)->countAllResults() > 0;
+
+        if ($isAnswered) {
+            return redirect()->to('admin/soal/' . $ujian_id)
+                ->with('error', 'Gagal! Soal ini tidak dapat dihapus karena sudah menjadi bagian dari riwayat pengerjaan siswa.');
+        }
+
+        try {
+            // Ambil data soal yang akan dihapus untuk mendapatkan nama filenya
+            $soal = $this->soalUjianModel->find($id);
+
+            if ($soal) {
+                // Pengecekan 2: Logika cerdas untuk menghapus file foto
+                if (!empty($soal['foto'])) {
+                    $filename = $soal['foto'];
+
+                    // Cek apakah ada soal LAIN yang menggunakan file foto yang sama
+                    $isImageUsedElsewhere = $this->soalUjianModel
+                        ->where('foto', $filename)
+                        ->where('soal_id !=', $id) // Abaikan soal yang akan kita hapus
+                        ->countAllResults() > 0;
+
+                    // Hapus file fisik HANYA JIKA tidak digunakan oleh soal lain
+                    if (!$isImageUsedElsewhere) {
+                        $fotoPath = FCPATH . 'uploads/soal/' . $filename;
+                        if (file_exists($fotoPath)) {
+                            unlink($fotoPath);
+                        }
+                    }
+                }
+
+                // Hapus record soal dari database
+                $this->soalUjianModel->delete($id);
+                return redirect()->to('admin/soal/' . $ujian_id)->with('success', 'Soal berhasil dihapus.');
+            } else {
+                return redirect()->to('admin/soal/' . $ujian_id)->with('error', 'Soal yang akan dihapus tidak ditemukan.');
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal menghapus soal: ' . $e->getMessage());
+            return redirect()->to('admin/soal/' . $ujian_id)->with('error', 'Terjadi kesalahan saat menghapus soal.');
+        }
+    }
+
+
 
     // ===== KELOLA JADWAL UJIAN =====
 
-    public function daftarJadwal()
+    public function jadwalUjian()
     {
-        $db = \Config\Database::connect();
+        // Ambil SEMUA jadwal ujian dari database dengan join ke info terkait
+        $data['jadwal'] = $this->db->table('jadwal_ujian')
+            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.kode_ujian, kelas.nama_kelas, guru.nama_lengkap, sekolah.nama_sekolah')
+            ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
+            ->join('kelas', 'kelas.kelas_id = jadwal_ujian.kelas_id')
+            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id')
+            ->join('guru', 'guru.guru_id = jadwal_ujian.guru_id') // guru_id di sini adalah guru pengawas
+            ->orderBy('jadwal_ujian.tanggal_mulai', 'DESC')
+            ->get()->getResultArray();
 
-        // Query untuk mengambil data jadwal ujian dengan informasi lengkap
-        $data['jadwal'] = $db->table('jadwal_ujian ju')
-            ->select('ju.*, u.nama_ujian, g.nama_lengkap as nama_guru, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
-                     COUNT(DISTINCT pu.peserta_ujian_id) as total_peserta')
-            ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
-            ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
-            ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
-            ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
-            ->join('peserta_ujian pu', 'pu.jadwal_id = ju.jadwal_id', 'left')
-            ->groupBy('ju.jadwal_id, u.nama_ujian, g.nama_lengkap, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah')
-            ->orderBy('ju.tanggal_mulai', 'DESC')
-            ->get()
-            ->getResultArray();
+        // Ambil SEMUA ujian untuk dropdown di modal tambah & edit
+        $data['ujian_tambah'] = $this->ujianModel->select('id_ujian, nama_ujian, kode_ujian')->orderBy('nama_ujian', 'ASC')->findAll();
+        $data['ujian_edit'] = $data['ujian_tambah']; // Data yang sama untuk edit
 
-        return view('admin/jadwal/daftar', $data);
+        // Ambil SEMUA kelas untuk dropdown di modal
+        $data['kelas'] = $this->kelasModel
+            ->select('kelas.*, sekolah.nama_sekolah')
+            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id')
+            ->orderBy('sekolah.nama_sekolah, kelas.nama_kelas', 'ASC')
+            ->findAll();
+
+        // Ambil SEMUA guru untuk dropdown pengawas
+        $data['guru'] = $this->guruModel->select('guru_id, nama_lengkap, nip, mata_pelajaran')->orderBy('nama_lengkap', 'ASC')->findAll();
+
+        // Arahkan ke view manajemen jadwal di dalam folder admin
+        return view('admin/jadwal/jadwal_ujian', $data);
     }
 
-    public function detailJadwal($jadwalId)
+    public function tambahJadwal()
     {
-        $db = \Config\Database::connect();
-
-        // Ambil detail jadwal
-        $jadwal = $db->table('jadwal_ujian ju')
-            ->select('ju.*, u.nama_ujian, u.deskripsi, u.durasi, g.nama_lengkap as nama_guru, g.mata_pelajaran,
-                     k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, s.alamat')
-            ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
-            ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
-            ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
-            ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
-            ->where('ju.jadwal_id', $jadwalId)
-            ->get()
-            ->getRowArray();
-
-        if (!$jadwal) {
-            session()->setFlashdata('error', 'Jadwal tidak ditemukan');
-            return redirect()->to(base_url('admin/jadwal'));
-        }
-
-        // Ambil peserta ujian
-        $peserta = $db->table('peserta_ujian pu')
-            ->select('pu.*, siswa.nama_lengkap, siswa.nomor_peserta, u.username')
-            ->join('siswa', 'siswa.siswa_id = pu.siswa_id', 'left')
-            ->join('users u', 'u.user_id = siswa.user_id', 'left')
-            ->where('pu.jadwal_id', $jadwalId)
-            ->orderBy('siswa.nama_lengkap', 'ASC')
-            ->get()
-            ->getResultArray();
-
-        $data = [
-            'jadwal' => $jadwal,
-            'peserta' => $peserta
+        $rules = [
+            'ujian_id' => 'required|numeric',
+            'kelas_id' => 'required|numeric',
+            'guru_id' => 'required|numeric',
+            'tanggal_mulai' => 'required',
+            'tanggal_selesai' => 'required',
+            'kode_akses' => 'required|min_length[4]|max_length[50]'
         ];
 
-        return view('admin/jadwal/detail', $data);
-    }
-
-    public function hapusJadwal($jadwalId)
-    {
-        try {
-            $db = \Config\Database::connect();
-            $db->transStart();
-
-            // Cek status jadwal
-            $jadwal = $db->table('jadwal_ujian')->where('jadwal_id', $jadwalId)->get()->getRowArray();
-
-            if (!$jadwal) {
-                session()->setFlashdata('error', 'Jadwal tidak ditemukan');
-                return redirect()->back();
-            }
-
-            if ($jadwal['status'] === 'sedang_berlangsung') {
-                session()->setFlashdata('error', 'Tidak dapat menghapus jadwal yang sedang berlangsung');
-                return redirect()->back();
-            }
-
-            // Hapus hasil ujian
-            $db->query("DELETE hu FROM hasil_ujian hu 
-                       INNER JOIN peserta_ujian pu ON hu.peserta_ujian_id = pu.peserta_ujian_id
-                       WHERE pu.jadwal_id = ?", [$jadwalId]);
-
-            // Hapus peserta ujian
-            $db->table('peserta_ujian')->where('jadwal_id', $jadwalId)->delete();
-
-            // Hapus jadwal
-            $db->table('jadwal_ujian')->where('jadwal_id', $jadwalId)->delete();
-
-            $db->transComplete();
-
-            if ($db->transStatus() === FALSE) {
-                throw new \Exception('Transaction failed');
-            }
-
-            session()->setFlashdata('success', 'Jadwal ujian berhasil dihapus!');
-        } catch (\Exception $e) {
-            log_message('error', 'Error deleting jadwal: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus jadwal: ' . $e->getMessage());
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        return redirect()->to(base_url('admin/jadwal'));
+        $existing = $this->jadwalUjianModel
+            ->where('ujian_id', $this->request->getPost('ujian_id'))
+            ->where('kelas_id', $this->request->getPost('kelas_id'))
+            ->first();
+
+        if ($existing) {
+            return redirect()->to('admin/jadwal-ujian') // Redirect ke rute admin
+                ->with('error', 'Jadwal untuk ujian dan kelas ini sudah ada.');
+        }
+
+        $data = [
+            'ujian_id' => $this->request->getPost('ujian_id'),
+            'kelas_id' => $this->request->getPost('kelas_id'),
+            'guru_id' => $this->request->getPost('guru_id'),
+            'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
+            'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
+            'kode_akses' => $this->request->getPost('kode_akses'),
+            'status' => 'belum_mulai'
+        ];
+
+        try {
+            $this->jadwalUjianModel->insert($data);
+            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal tambah jadwal: ' . $e->getMessage());
+            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal menambahkan jadwal ujian.');
+        }
+    }
+
+    public function editJadwal($id)
+    {
+        $rules = [
+            'ujian_id' => 'required|numeric',
+            'kelas_id' => 'required|numeric',
+            'guru_id' => 'required|numeric',
+            'tanggal_mulai' => 'required',
+            'tanggal_selesai' => 'required',
+            'kode_akses' => 'required|min_length[4]|max_length[50]',
+            'status' => 'required|in_list[belum_mulai,sedang_berlangsung,selesai]'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $existing = $this->jadwalUjianModel
+            ->where('ujian_id', $this->request->getPost('ujian_id'))
+            ->where('kelas_id', $this->request->getPost('kelas_id'))
+            ->where('jadwal_id !=', $id)
+            ->first();
+
+        if ($existing) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Kombinasi ujian dan kelas ini sudah digunakan oleh jadwal lain.');
+        }
+
+        $data = [
+            'ujian_id' => $this->request->getPost('ujian_id'),
+            'kelas_id' => $this->request->getPost('kelas_id'),
+            'guru_id' => $this->request->getPost('guru_id'),
+            'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
+            'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
+            'kode_akses' => $this->request->getPost('kode_akses'),
+            'status' => $this->request->getPost('status')
+        ];
+
+        try {
+            $this->jadwalUjianModel->update($id, $data);
+            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil diperbarui.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal update jadwal: ' . $e->getMessage());
+            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal memperbarui jadwal ujian.');
+        }
+    }
+
+    public function hapusJadwal($id)
+    {
+        $pesertaTerkait = $this->pesertaUjianModel->where('jadwal_id', $id)->countAllResults();
+
+        if ($pesertaTerkait > 0) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Gagal! Jadwal ini tidak dapat dihapus karena sudah memiliki ' . $pesertaTerkait . ' peserta terdaftar.');
+        }
+
+        try {
+            $this->jadwalUjianModel->delete($id);
+            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil dihapus.');
+        } catch (\Exception $e) {
+            log_message('error', 'Admin gagal hapus jadwal: ' . $e->getMessage());
+            return redirect()->to('admin/jadwal-ujian')->with('error', 'Terjadi kesalahan saat menghapus jadwal ujian.');
+        }
     }
 
     // ===== KELOLA HASIL UJIAN =====
@@ -1734,86 +1971,48 @@ class Admin extends Controller
         return $hasilDenganDurasi;
     }
 
-    private function hitungKemampuanKognitif($detailJawaban, $totalSoal)
+    private function hitungKemampuanKognitif($theta)
     {
-        $totalBenar = 0;
-        $totalSalah = 0;
-        $totalPilihanJawaban = 0;
+        // Rumus skor akhir siswa (x) = 50 + (16.67 * tetha)
+        $skor_akhir = 50 + (16.67 * (float)$theta);
 
-        foreach ($detailJawaban as $jawaban) {
-            if ($jawaban['is_correct']) {
-                $totalBenar++;
-            } else {
-                $totalSalah++;
-            }
+        $skor_akhir = max(0, $skor_akhir);
 
-            // Hitung jumlah pilihan jawaban untuk setiap soal
-            // Ambil data soal lengkap untuk menghitung pilihan
-            $soalLengkap = $this->soalUjianModel->find($jawaban['soal_id']);
-
-            $jumlahPilihan = 4; // Default A, B, C, D
-            if (!empty($soalLengkap['pilihan_e'])) {
-                $jumlahPilihan = 5; // Ada pilihan E
-            }
-
-            $totalPilihanJawaban += $jumlahPilihan;
-        }
-
-        // Hitung rata-rata pilihan jawaban per soal
-        $rataRataPilihan = $totalSoal > 0 ? $totalPilihanJawaban / $totalSoal : 4;
-
-        // Rumus: skor = (B - (S/(P-1))) / N x 100
-        $skor = 0;
-        if ($totalSoal > 0) {
-            $koreksiTebakan = $totalSalah / ($rataRataPilihan - 1);
-            $skor = (($totalBenar - $koreksiTebakan) / $totalSoal) * 100;
-
-            // Pastikan skor tidak negatif
-            $skor = max(0, $skor);
-        }
-
-        return [
-            'skor' => round($skor, 2),
-            'total_benar' => $totalBenar,
-            'total_salah' => $totalSalah,
-            'rata_rata_pilihan' => round($rataRataPilihan, 1)
-        ];
+        // Mengembalikan skor yang sudah dibulatkan
+        return round($skor_akhir, 2);
     }
 
-    /**
-     * Dapatkan klasifikasi kemampuan kognitif berdasarkan skor
-     */
     private function getKlasifikasiKognitif($skor)
     {
-        if ($skor > 80 && $skor <= 100) {
+        if ($skor < 25) {
             return [
-                'kategori' => 'Sangat Tinggi',
-                'class' => 'text-success',
-                'bg_class' => 'bg-success'
+                'kategori' => 'Sangat Rendah',
+                'class' => 'text-danger',
+                'bg_class' => 'bg-danger'
             ];
-        } elseif ($skor > 60 && $skor <= 80) {
-            return [
-                'kategori' => 'Tinggi',
-                'class' => 'text-info',
-                'bg_class' => 'bg-info'
-            ];
-        } elseif ($skor > 40 && $skor <= 60) {
-            return [
-                'kategori' => 'Rata-rata (Sedang)',
-                'class' => 'text-warning',
-                'bg_class' => 'bg-warning'
-            ];
-        } elseif ($skor > 20 && $skor <= 40) {
+        } elseif ($skor >= 25 && $skor < 42) {
             return [
                 'kategori' => 'Rendah',
                 'class' => 'text-orange',
                 'bg_class' => 'bg-orange'
             ];
-        } else {
+        } elseif ($skor >= 42 && $skor < 58) {
             return [
-                'kategori' => 'Sangat Rendah',
-                'class' => 'text-danger',
-                'bg_class' => 'bg-danger'
+                'kategori' => 'Cukup',
+                'class' => 'text-warning',
+                'bg_class' => 'bg-warning'
+            ];
+        } elseif ($skor >= 58 && $skor < 75) {
+            return [
+                'kategori' => 'Baik',
+                'class' => 'text-info',
+                'bg_class' => 'bg-info'
+            ];
+        } else { // $skor >= 75
+            return [
+                'kategori' => 'Sangat Baik',
+                'class' => 'text-success',
+                'bg_class' => 'bg-success'
             ];
         }
     }
@@ -1843,7 +2042,6 @@ class Admin extends Controller
             ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
             ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
             ->join('peserta_ujian pu', 'pu.jadwal_id = ju.jadwal_id', 'left')
-            // HAPUS where clause untuk status - tampilkan semua ujian
             ->groupBy('ju.jadwal_id, ju.status, ju.tanggal_mulai, ju.tanggal_selesai, ju.kode_akses, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, s.nama_sekolah, g.nama_lengkap')
             ->orderBy('ju.tanggal_mulai', 'DESC')
             ->get()
@@ -1924,12 +2122,12 @@ class Admin extends Controller
     {
         $db = \Config\Database::connect();
 
-        // Ambil info ujian dengan informasi waktu
+        // Ambil info ujian
         $ujian = $db->table('jadwal_ujian ju')
-            ->select('ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
-                 s.nama_sekolah, g.nama_lengkap as nama_guru,
-                 DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
-                 DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
+            ->select('ju.*, u.nama_ujian, u.deskripsi, u.kode_ujian, j.nama_jenis, k.nama_kelas, k.tahun_ajaran, 
+                     s.nama_sekolah, g.nama_lengkap as nama_guru,
+                     DATE_FORMAT(ju.tanggal_mulai, "%d/%m/%Y %H:%i") as tanggal_mulai_format,
+                     DATE_FORMAT(ju.tanggal_selesai, "%d/%m/%Y %H:%i") as tanggal_selesai_format')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
@@ -1944,15 +2142,14 @@ class Admin extends Controller
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // Ambil hasil siswa dengan perhitungan nilai dan informasi waktu
+        // Ambil data semua peserta untuk jadwal ini
         $hasilSiswa = $db->table('peserta_ujian pu')
             ->select('pu.peserta_ujian_id, pu.status, pu.waktu_mulai, pu.waktu_selesai,
-                 siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta,
-                 u.username,
-                 TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_pengerjaan,
-                 TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
-                 DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-                 DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+                     siswa.siswa_id, siswa.nama_lengkap, siswa.nomor_peserta, siswa.jenis_kelamin,
+                     u.username,
+                     TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_detik,
+                     DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                     DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('siswa', 'siswa.siswa_id = pu.siswa_id', 'left')
             ->join('users u', 'u.user_id = siswa.user_id', 'left')
             ->where('pu.jadwal_id', $jadwalId)
@@ -1960,10 +2157,10 @@ class Admin extends Controller
             ->get()
             ->getResultArray();
 
-        // Hitung nilai untuk setiap siswa
+        // Proses setiap siswa untuk melengkapi data yang dibutuhkan view
         foreach ($hasilSiswa as &$siswa) {
             if ($siswa['status'] === 'selesai') {
-                // SIMPLE FIX: Gunakan waktu_menjawab sebagai pengganti hasil_id untuk ordering
+                // 1. Ambil hasil akhir (theta & se)
                 $lastResult = $db->table('hasil_ujian')
                     ->select('theta_saat_ini, se_saat_ini')
                     ->where('peserta_ujian_id', $siswa['peserta_ujian_id'])
@@ -1972,64 +2169,42 @@ class Admin extends Controller
                     ->get()
                     ->getRowArray();
 
-                if ($lastResult) {
-                    $theta = $lastResult['theta_saat_ini'];
-                    $finalScore = 50 + (16.6 * $theta);
-                    $finalGrade = min(100, max(0, round(($finalScore / 100) * 100)));
+                // 2. Hitung skor akhir berdasarkan theta
+                $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
+                $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
+                $siswa['theta_akhir'] = $theta_akhir;
+                $siswa['skor'] = $skor_akhir;
+                $siswa['nilai'] = min(100, max(0, round($skor_akhir)));
+                $siswa['se_akhir'] = $lastResult ? $lastResult['se_saat_ini'] : null;
 
-                    $siswa['theta_akhir'] = $theta;
-                    $siswa['skor'] = $finalScore;
-                    $siswa['nilai'] = $finalGrade;
-                    $siswa['se_akhir'] = $lastResult['se_saat_ini'];
-                } else {
-                    $siswa['theta_akhir'] = null;
-                    $siswa['skor'] = 0;
-                    $siswa['nilai'] = 0;
-                    $siswa['se_akhir'] = null;
-                }
-
-                // Hitung jumlah jawaban benar
-                $jawabanBenar = $db->table('hasil_ujian')
-                    ->where('peserta_ujian_id', $siswa['peserta_ujian_id'])
-                    ->where('is_correct', 1)
-                    ->countAllResults();
-
-                $totalSoal = $db->table('hasil_ujian')
-                    ->where('peserta_ujian_id', $siswa['peserta_ujian_id'])
-                    ->countAllResults();
-
+                // 3. Hitung jawaban benar & total soal
+                $jawabanBenar = $db->table('hasil_ujian')->where(['peserta_ujian_id' => $siswa['peserta_ujian_id'], 'is_correct' => 1])->countAllResults();
+                $totalSoal = $db->table('hasil_ujian')->where('peserta_ujian_id', $siswa['peserta_ujian_id'])->countAllResults();
                 $siswa['jawaban_benar'] = $jawabanBenar;
                 $siswa['total_soal'] = $totalSoal;
 
-                // Format durasi
-                if ($siswa['durasi_detik']) {
+                // 4. Dapatkan klasifikasi kognitif
+                $siswa['klasifikasi_kognitif'] = $this->getKlasifikasiKognitif($skor_akhir);
+
+                // 5. Format durasi pengerjaan
+                if (!empty($siswa['durasi_detik'])) {
                     $jam = floor($siswa['durasi_detik'] / 3600);
                     $menit = floor(($siswa['durasi_detik'] % 3600) / 60);
                     $detik = $siswa['durasi_detik'] % 60;
                     $siswa['durasi_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
-
-                    // Hitung rata-rata per soal
-                    if ($totalSoal > 0) {
-                        $rataRataDetik = $siswa['durasi_detik'] / $totalSoal;
-                        $rataRataMenit = floor($rataRataDetik / 60);
-                        $rataRataDetikSisa = $rataRataDetik % 60;
-                        $siswa['rata_rata_per_soal'] = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetikSisa);
-                    } else {
-                        $siswa['rata_rata_per_soal'] = '-';
-                    }
                 } else {
                     $siswa['durasi_format'] = '-';
-                    $siswa['rata_rata_per_soal'] = '-';
                 }
             } else {
+                // Set nilai default untuk semua key agar tidak error di view
                 $siswa['theta_akhir'] = null;
                 $siswa['skor'] = null;
                 $siswa['nilai'] = null;
                 $siswa['se_akhir'] = null;
                 $siswa['jawaban_benar'] = 0;
                 $siswa['total_soal'] = 0;
+                $siswa['klasifikasi_kognitif'] = $this->getKlasifikasiKognitif(0); // Default klasifikasi
                 $siswa['durasi_format'] = '-';
-                $siswa['rata_rata_per_soal'] = '-';
             }
         }
 
@@ -2040,21 +2215,19 @@ class Admin extends Controller
 
         return view('admin/hasil/siswa', $data);
     }
-
     public function detailHasilSiswa($pesertaUjianId)
     {
         $db = \Config\Database::connect();
 
-        // Ambil detail peserta dan ujian dengan informasi waktu
         $hasil = $db->table('peserta_ujian pu')
             ->select('pu.*, ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, 
-             siswa.nama_lengkap, siswa.nomor_peserta,
-             k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
-             g.nama_lengkap as nama_guru,
-             TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
-             TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
-             DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-             DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+                  siswa.nama_lengkap, siswa.nomor_peserta,
+                  k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
+                  g.nama_lengkap as nama_guru,
+                  TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
+                  TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
+                  DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                  DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian ju', 'ju.jadwal_id = pu.jadwal_id', 'left')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
@@ -2071,73 +2244,63 @@ class Admin extends Controller
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // FIX: Ambil detail jawaban dengan waktu - hapus alias dan gunakan waktu_menjawab untuk ordering
         $detailJawaban = $db->table('hasil_ujian')
             ->select('hasil_ujian.*, s.pertanyaan, s.pilihan_a, s.pilihan_b, s.pilihan_c, s.pilihan_d, 
-             s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan,
-             DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+                  s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan,
+                  DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian s', 's.soal_id = hasil_ujian.soal_id', 'left')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
             ->get()
             ->getResultArray();
 
-        // Hitung durasi per soal
         $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
-
-        // Hitung statistik
         $totalSoal = count($detailJawabanDenganDurasi);
-        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
-            return $carry + ($item['is_correct'] ? 1 : 0);
-        }, 0);
+        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, fn($c, $i) => $c + ($i['is_correct'] ? 1 : 0), 0);
 
-        // **TAMBAHAN BARU: Hitung kemampuan kognitif**
-        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
-        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+        // Perhitungan Skor Kognitif
+        $lastResult = end($detailJawabanDenganDurasi);
+        $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
+        $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($skor_akhir);
 
-        // Format durasi total
-        if ($hasil['durasi_total_detik']) {
+        $kemampuanKognitif = [
+            'skor' => $skor_akhir,
+            'total_benar' => $jawabanBenar,
+            'total_salah' => $totalSoal - $jawabanBenar,
+            'rata_rata_pilihan' => 0
+        ];
+
+        // ====================================================================
+        // KODE YANG DITAMBAHKAN KEMBALI UNTUK MEMPERBAIKI ERROR
+        // ====================================================================
+        if (!empty($hasil['durasi_total_detik'])) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
             $detik = $hasil['durasi_total_detik'] % 60;
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+        } else {
+            $hasil['durasi_total_format'] = '-';
         }
 
-        // Hitung rata-rata waktu per soal
-        if ($totalSoal > 0) {
+        if ($totalSoal > 0 && !empty($hasil['durasi_total_detik'])) {
             $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
             $rataRataMenit = floor($rataRataWaktu / 60);
-            $rataRataDetik = $rataRataWaktu % 60;
+            $rataRataDetik = (int) $rataRataWaktu % 60;
             $rataRataWaktuFormat = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik);
         } else {
             $rataRataWaktuFormat = '-';
         }
-
-        // Hitung statistik waktu pengerjaan per soal
-        $statistikWaktu = [
-            'waktu_tercepat' => 0,
-            'waktu_terlama' => 0,
-            'rata_rata' => 0
-        ];
-
-        if ($totalSoal > 0) {
-            $durasiArray = array_column($detailJawabanDenganDurasi, 'durasi_pengerjaan_detik');
-            $statistikWaktu = [
-                'waktu_tercepat' => min($durasiArray),
-                'waktu_terlama' => max($durasiArray),
-                'rata_rata' => $rataRataWaktu
-            ];
-        }
+        // ====================================================================
 
         $data = [
             'hasil' => $hasil,
             'detailJawaban' => $detailJawabanDenganDurasi,
             'totalSoal' => $totalSoal,
             'jawabanBenar' => $jawabanBenar,
-            'kemampuanKognitif' => $kemampuanKognitif, // **BARU: Data kemampuan kognitif**
-            'klasifikasiKognitif' => $klasifikasiKognitif, // **BARU: Klasifikasi kognitif**
-            'rataRataWaktuFormat' => $rataRataWaktuFormat,
-            'statistikWaktu' => $statistikWaktu
+            'kemampuanKognitif' => $kemampuanKognitif,
+            'klasifikasiKognitif' => $klasifikasiKognitif,
+            'rataRataWaktuFormat' => $rataRataWaktuFormat, // Pastikan variabel ini dikirim ke view
         ];
 
         return view('admin/hasil/detail', $data);
@@ -2147,17 +2310,15 @@ class Admin extends Controller
     public function downloadExcelHTML($pesertaUjianId)
     {
         $db = \Config\Database::connect();
-
-        // Ambil detail peserta dan ujian dengan informasi waktu
         $hasil = $db->table('peserta_ujian pu')
             ->select('pu.*, ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, 
-             siswa.nama_lengkap, siswa.nomor_peserta,
-             k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
-             g.nama_lengkap as nama_guru,
-             TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
-             TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
-             DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-             DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+                  siswa.nama_lengkap, siswa.nomor_peserta,
+                  k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
+                  g.nama_lengkap as nama_guru,
+                  TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
+                  TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
+                  DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                  DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian ju', 'ju.jadwal_id = pu.jadwal_id', 'left')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
@@ -2165,97 +2326,52 @@ class Admin extends Controller
             ->join('kelas k', 'k.kelas_id = ju.kelas_id', 'left')
             ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
             ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
-            ->where('pu.peserta_ujian_id', $pesertaUjianId)
-            ->get()
-            ->getRowArray();
+            ->where('pu.peserta_ujian_id', $pesertaUjianId)->get()->getRowArray();
 
         if (!$hasil) {
-            session()->setFlashdata('error', 'Data hasil ujian tidak ditemukan');
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // Ambil detail jawaban dengan waktu
         $detailJawaban = $db->table('hasil_ujian')
-            ->select('hasil_ujian.*, s.pertanyaan, s.kode_soal, s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan,
-             DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+            ->select('hasil_ujian.*, s.pertanyaan, s.kode_soal, s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan, DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian s', 's.soal_id = hasil_ujian.soal_id', 'left')
-            ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
-            ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
-            ->get()
-            ->getResultArray();
+            ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)->orderBy('hasil_ujian.waktu_menjawab', 'ASC')->get()->getResultArray();
 
-        // Hitung durasi per soal
         $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
-
-        // Hitung nilai akhir
-        $lastTheta = end($detailJawabanDenganDurasi)['theta_saat_ini'];
-        $finalScore = 50 + (16.6 * $lastTheta);
-
-        // Hitung jumlah jawaban benar
-        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
-            return $carry + ($item['is_correct'] ? 1 : 0);
-        }, 0);
-
-        // **BARU: Hitung kemampuan kognitif**
         $totalSoal = count($detailJawabanDenganDurasi);
-        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
-        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, fn($c, $i) => $c + ($i['is_correct'] ? 1 : 0), 0);
 
-        // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
-        if ($hasil['durasi_total_detik']) {
+        $lastResult = end($detailJawabanDenganDurasi);
+        $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
+        $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($skor_akhir);
+        $kemampuanKognitif = ['skor' => $skor_akhir, 'total_benar' => $jawabanBenar, 'total_salah' => $totalSoal - $jawabanBenar, 'rata_rata_pilihan' => 0];
+
+        // Tambahkan blok format durasi
+        if (!empty($hasil['durasi_total_detik'])) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
             $detik = $hasil['durasi_total_detik'] % 60;
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+        } else {
+            $hasil['durasi_total_format'] = '-';
         }
 
-        // Hitung rata-rata waktu per soal
-        $rataRataWaktu = $hasil['durasi_total_detik'] / count($detailJawabanDenganDurasi);
-        $rataRataMenit = floor($rataRataWaktu / 60);
-        $rataRataDetik = $rataRataWaktu % 60;
+        if ($totalSoal > 0 && !empty($hasil['durasi_total_detik'])) {
+            $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+            $rataRataMenit = floor($rataRataWaktu / 60);
+            $rataRataDetik = (int) $rataRataWaktu % 60;
+            $rataRataWaktuFormat = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik);
+        } else {
+            $rataRataWaktuFormat = '-';
+        }
 
-        // Data untuk grafik
-        $thetaData = json_encode(array_map(function ($item) {
-            return $item['theta_saat_ini'];
-        }, $detailJawabanDenganDurasi));
+        $data = ['hasil' => $hasil, 'detailJawaban' => $detailJawabanDenganDurasi, 'finalScore' => $skor_akhir, 'lastTheta' => $theta_akhir, 'jawabanBenar' => $jawabanBenar, 'kemampuanKognitif' => $kemampuanKognitif, 'klasifikasiKognitif' => $klasifikasiKognitif, 'rataRataWaktuFormat' => $rataRataWaktuFormat];
 
-        $seData = json_encode(array_map(function ($item) {
-            return $item['se_saat_ini'];
-        }, $detailJawabanDenganDurasi));
-
-        $labels = json_encode(array_map(function ($i) {
-            return 'Soal ' . ($i + 1);
-        }, range(0, count($detailJawabanDenganDurasi) - 1)));
-
-        // Data untuk view
-        $data = [
-            'hasil' => $hasil,
-            'detailJawaban' => $detailJawabanDenganDurasi,
-            'lastTheta' => $lastTheta,
-            'finalScore' => $finalScore,
-            'jawabanBenar' => $jawabanBenar,
-            'kemampuanKognitif' => $kemampuanKognitif, // **BARU: Data kemampuan kognitif**
-            'klasifikasiKognitif' => $klasifikasiKognitif, // **BARU: Klasifikasi kognitif**
-            'thetaData' => $thetaData,
-            'seData' => $seData,
-            'labels' => $labels,
-            'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
-            'isExcel' => true
-        ];
-
-        // Buat nama file yang mencakup nama siswa, kelas, dan tanggal
-        $namaSiswa = preg_replace('/[^A-Za-z0-9_\-]/', '_', $hasil['nama_lengkap']);
-        $namaKelas = preg_replace('/[^A-Za-z0-9_\-]/', '_', $hasil['nama_kelas']);
-        $tanggal = date('dmY');
-        $filename = "hasil_ujian_{$namaSiswa}_{$namaKelas}_{$tanggal}.xls";
-
-        // Set header untuk Excel
+        $filename = 'hasil_ujian_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $hasil['nama_lengkap']) . '_' . date('dmY') . '.xls';
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-
-        // Load view dan keluarkan sebagai Excel
-        echo view('admin/hasil/download_excel', $data);
+        echo view('admin/hasil/download_excel', $data); // Sesuaikan path jika perlu
         exit;
     }
 
@@ -2263,16 +2379,16 @@ class Admin extends Controller
     {
         $db = \Config\Database::connect();
 
-        // Ambil detail peserta dan ujian dengan informasi waktu
+        // Ambil data hasil lengkap
         $hasil = $db->table('peserta_ujian pu')
-            ->select('pu.*, ju.*, u.nama_ujian, u.deskripsi, j.nama_jenis, 
-             siswa.nama_lengkap, siswa.nomor_peserta,
-             k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
-             g.nama_lengkap as nama_guru,
-             TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
-             TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
-             DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
-             DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
+            ->select('pu.*, ju.*, u.nama_ujian, u.deskripsi, u.kode_ujian, j.nama_jenis, 
+                  siswa.nama_lengkap, siswa.nomor_peserta,
+                  k.nama_kelas, k.tahun_ajaran, s.nama_sekolah,
+                  g.nama_lengkap as nama_guru,
+                  TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai) as durasi_total,
+                  TIME_TO_SEC(TIMEDIFF(pu.waktu_selesai, pu.waktu_mulai)) as durasi_total_detik,
+                  DATE_FORMAT(pu.waktu_mulai, "%d/%m/%Y %H:%i:%s") as waktu_mulai_format,
+                  DATE_FORMAT(pu.waktu_selesai, "%d/%m/%Y %H:%i:%s") as waktu_selesai_format')
             ->join('jadwal_ujian ju', 'ju.jadwal_id = pu.jadwal_id', 'left')
             ->join('ujian u', 'u.id_ujian = ju.ujian_id', 'left')
             ->join('jenis_ujian j', 'j.jenis_ujian_id = u.jenis_ujian_id', 'left')
@@ -2281,97 +2397,74 @@ class Admin extends Controller
             ->join('sekolah s', 's.sekolah_id = k.sekolah_id', 'left')
             ->join('guru g', 'g.guru_id = ju.guru_id', 'left')
             ->where('pu.peserta_ujian_id', $pesertaUjianId)
-            ->get()
-            ->getRowArray();
+            ->get()->getRowArray();
 
         if (!$hasil) {
-            session()->setFlashdata('error', 'Data hasil ujian tidak ditemukan');
+            session()->setFlashdata('error', 'Data hasil ujian tidak ditemukan.');
             return redirect()->to(base_url('admin/hasil-ujian'));
         }
 
-        // Ambil detail jawaban dengan waktu
+        // Ambil detail jawaban
         $detailJawaban = $db->table('hasil_ujian')
-            ->select('hasil_ujian.*, s.pertanyaan, s.kode_soal, s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan,
-             DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
+            ->select('hasil_ujian.*, s.pertanyaan, s.kode_soal, s.jawaban_benar, s.tingkat_kesulitan, s.foto, s.pembahasan, DATE_FORMAT(hasil_ujian.waktu_menjawab, "%H:%i:%s") as waktu_menjawab_format')
             ->join('soal_ujian s', 's.soal_id = hasil_ujian.soal_id', 'left')
             ->where('hasil_ujian.peserta_ujian_id', $pesertaUjianId)
             ->orderBy('hasil_ujian.waktu_menjawab', 'ASC')
-            ->get()
-            ->getResultArray();
+            ->get()->getResultArray();
 
-        // Hitung durasi per soal
         $detailJawabanDenganDurasi = $this->hitungDurasiPerSoal($detailJawaban, $hasil['waktu_mulai']);
-
-        // Hitung nilai akhir
-        $lastTheta = end($detailJawabanDenganDurasi)['theta_saat_ini'];
-        $finalScore = 50 + (16.6 * $lastTheta);
-
-        // Hitung jumlah jawaban benar
-        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, function ($carry, $item) {
-            return $carry + ($item['is_correct'] ? 1 : 0);
-        }, 0);
-
-        // **BARU: Hitung kemampuan kognitif**
         $totalSoal = count($detailJawabanDenganDurasi);
-        $kemampuanKognitif = $this->hitungKemampuanKognitif($detailJawabanDenganDurasi, $totalSoal);
-        $klasifikasiKognitif = $this->getKlasifikasiKognitif($kemampuanKognitif['skor']);
+        $jawabanBenar = array_reduce($detailJawabanDenganDurasi, fn($c, $i) => $c + ($i['is_correct'] ? 1 : 0), 0);
 
-        // Format durasi total - PERBAIKAN: gunakan durasi_total_detik
-        if ($hasil['durasi_total_detik']) {
+        // Perhitungan Skor Baru
+        $lastResult = end($detailJawabanDenganDurasi);
+        $theta_akhir = $lastResult ? (float)$lastResult['theta_saat_ini'] : 0;
+        $skor_akhir = $this->hitungKemampuanKognitif($theta_akhir);
+        $klasifikasiKognitif = $this->getKlasifikasiKognitif($skor_akhir);
+        $kemampuanKognitif = [
+            'skor' => $skor_akhir,
+            'total_benar' => $jawabanBenar,
+            'total_salah' => $totalSoal - $jawabanBenar,
+            'rata_rata_pilihan' => 0 // Tidak relevan lagi
+        ];
+
+        // Pemformatan Durasi
+        if (!empty($hasil['durasi_total_detik'])) {
             $jam = floor($hasil['durasi_total_detik'] / 3600);
             $menit = floor(($hasil['durasi_total_detik'] % 3600) / 60);
             $detik = $hasil['durasi_total_detik'] % 60;
             $hasil['durasi_total_format'] = sprintf('%02d:%02d:%02d', $jam, $menit, $detik);
+        } else {
+            $hasil['durasi_total_format'] = '-';
         }
 
-        // Hitung rata-rata waktu per soal
-        $rataRataWaktu = $hasil['durasi_total_detik'] / count($detailJawabanDenganDurasi);
-        $rataRataMenit = floor($rataRataWaktu / 60);
-        $rataRataDetik = $rataRataWaktu % 60;
+        if ($totalSoal > 0 && !empty($hasil['durasi_total_detik'])) {
+            $rataRataWaktu = $hasil['durasi_total_detik'] / $totalSoal;
+            $rataRataMenit = floor($rataRataWaktu / 60);
+            $rataRataDetik = (int) $rataRataWaktu % 60;
+            $rataRataWaktuFormat = sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik);
+        } else {
+            $rataRataWaktuFormat = '-';
+        }
 
-        // Data untuk grafik
-        $thetaData = json_encode(array_map(function ($item) {
-            return $item['theta_saat_ini'];
-        }, $detailJawabanDenganDurasi));
-
-        $seData = json_encode(array_map(function ($item) {
-            return $item['se_saat_ini'];
-        }, $detailJawabanDenganDurasi));
-
-        $labels = json_encode(array_map(function ($i) {
-            return 'Soal ' . ($i + 1);
-        }, range(0, count($detailJawabanDenganDurasi) - 1)));
-
-        // Data untuk view
+        // Persiapan data untuk view PDF
         $data = [
             'hasil' => $hasil,
             'detailJawaban' => $detailJawabanDenganDurasi,
-            'lastTheta' => $lastTheta,
-            'finalScore' => $finalScore,
             'jawabanBenar' => $jawabanBenar,
-            'kemampuanKognitif' => $kemampuanKognitif, // **BARU: Data kemampuan kognitif**
-            'klasifikasiKognitif' => $klasifikasiKognitif, // **BARU: Klasifikasi kognitif**
-            'thetaData' => $thetaData,
-            'seData' => $seData,
-            'labels' => $labels,
-            'rataRataWaktuFormat' => sprintf('%d menit %d detik', $rataRataMenit, $rataRataDetik),
-            'isPDF' => true
+            'totalSoal' => $totalSoal,
+            'kemampuanKognitif' => $kemampuanKognitif,
+            'klasifikasiKognitif' => $klasifikasiKognitif,
+            'rataRataWaktuFormat' => $rataRataWaktuFormat,
+            'thetaData' => json_encode(array_column($detailJawabanDenganDurasi, 'theta_saat_ini')),
+            'seData' => json_encode(array_column($detailJawabanDenganDurasi, 'se_saat_ini')),
+            'labels' => json_encode(array_column($detailJawabanDenganDurasi, 'nomor_soal')),
         ];
 
-        // Buat nama file yang mencakup nama siswa, kelas, dan tanggal
-        $namaSiswa = preg_replace('/[^A-Za-z0-9_\-]/', '_', $hasil['nama_lengkap']);
-        $namaKelas = preg_replace('/[^A-Za-z0-9_\-]/', '_', $hasil['nama_kelas']);
-        $tanggal = date('dmY');
-        $filename = "hasil_ujian_{$namaSiswa}_{$namaKelas}_{$tanggal}.html";
-
-        // Load view ke variabel HTML
         $html = view('admin/hasil/download_pdf', $data);
 
-        // Print mode (untuk bisa disimpan sebagai PDF dari browser)
         header('Content-Type: text/html');
-        header('Content-Disposition: inline; filename="' . $filename . '"');
-
-        // Output HTML
+        header('Content-Disposition: inline; filename="laporan_hasil_ujian.html"');
         echo $html;
         exit;
     }
@@ -3016,115 +3109,180 @@ class Admin extends Controller
     // API Methods untuk AJAX (bisa digunakan untuk modal atau select dinamis)
     public function getKategoriTersedia()
     {
-        $db = \Config\Database::connect();
+        try {
+            // Mengambil daftar kategori unik LANGSUNG dari tabel bank_ujian
+            $kategoriData = $this->db->table('bank_ujian')
+                ->select('kategori')
+                ->distinct()
+                ->orderBy('kategori', 'ASC')
+                ->get()
+                ->getResultArray();
 
-        // Admin bisa akses semua kategori
-        $kategori = $db->table('bank_ujian')
-            ->select('DISTINCT kategori')
-            ->orderBy('kategori', 'ASC')
-            ->get()
-            ->getResultArray();
+            // Mengubah array of array menjadi array of string
+            // Contoh: dari [['kategori' => 'UMUM'], ['kategori' => 'OLIMPIADE']] menjadi ['UMUM', 'OLIMPIADE']
+            $kategoriList = array_column($kategoriData, 'kategori');
 
-        $kategoriList = array_column($kategori, 'kategori');
-
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data' => $kategoriList
-        ]);
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => $kategoriList
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', '[Admin::getKategoriTersedia] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['error' => 'Gagal memuat kategori.']);
+        }
     }
 
     public function getJenisUjianByKategori()
     {
         $kategori = $this->request->getGet('kategori');
-        $db = \Config\Database::connect();
-
         if (!$kategori) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Kategori harus dipilih'
-            ]);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Kategori harus dipilih']);
         }
 
-        // Admin bisa akses semua Mata Pelajaran di kategori manapun
-        $jenisUjian = $db->table('bank_ujian')
-            ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_bank')
-            ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
-            ->where('bank_ujian.kategori', $kategori)
-            ->groupBy('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
-            ->orderBy('jenis_ujian.nama_jenis', 'ASC')
-            ->get()
-            ->getResultArray();
+        try {
+            $query = $this->db->table('bank_ujian')
+                ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_bank')
+                ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = bank_ujian.jenis_ujian_id')
+                ->where('bank_ujian.kategori', $kategori)
+                ->groupBy('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis')
+                ->orderBy('jenis_ujian.nama_jenis', 'ASC');
 
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data' => $jenisUjian
-        ]);
+            $jenisUjian = $query->get()->getResultArray();
+
+            return $this->response->setJSON(['status' => 'success', 'data' => $jenisUjian]);
+        } catch (\Exception $e) {
+            log_message('error', '[Admin::getJenisUjianByKategori] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['error' => 'Gagal memuat mata pelajaran.']);
+        }
     }
 
     public function getBankUjianByKategoriJenis()
     {
         $kategori = $this->request->getGet('kategori');
         $jenisUjianId = $this->request->getGet('jenis_ujian_id');
-        $db = \Config\Database::connect();
 
         if (!$kategori || !$jenisUjianId) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Kategori dan Mata Pelajaran harus dipilih'
-            ]);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Kategori dan Mata Pelajaran harus dipilih']);
         }
 
-        // Admin bisa akses semua bank ujian
-        $bankUjian = $db->table('bank_ujian')
-            ->select('bank_ujian.*, users.username as creator_name,
-                 (SELECT COUNT(*) FROM soal_ujian WHERE soal_ujian.bank_ujian_id = bank_ujian.bank_ujian_id AND soal_ujian.is_bank_soal = 1) as jumlah_soal')
-            ->join('users', 'users.user_id = bank_ujian.created_by')
-            ->where('bank_ujian.kategori', $kategori)
-            ->where('bank_ujian.jenis_ujian_id', $jenisUjianId)
-            ->orderBy('bank_ujian.created_at', 'DESC')
-            ->get()
-            ->getResultArray();
+        try {
+            $bankUjian = $this->db->table('bank_ujian')
+                ->select('bank_ujian.*, users.username as creator_name, (SELECT COUNT(*) FROM soal_ujian WHERE soal_ujian.bank_ujian_id = bank_ujian.bank_ujian_id AND soal_ujian.is_bank_soal = 1) as jumlah_soal')
+                ->join('users', 'users.user_id = bank_ujian.created_by')
+                ->where('bank_ujian.kategori', $kategori)
+                ->where('bank_ujian.jenis_ujian_id', $jenisUjianId)
+                ->orderBy('bank_ujian.created_at', 'DESC')
+                ->get()->getResultArray();
 
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data' => $bankUjian
-        ]);
+            return $this->response->setJSON(['status' => 'success', 'data' => $bankUjian]);
+        } catch (\Exception $e) {
+            log_message('error', '[Admin::getBankUjianByKategoriJenis] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['error' => 'Gagal memuat bank ujian.']);
+        }
     }
+
 
     public function getSoalBankUjian()
     {
         $bankUjianId = $this->request->getGet('bank_ujian_id');
-        $db = \Config\Database::connect();
 
         if (!$bankUjianId) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Bank ujian harus dipilih'
-            ]);
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Bank ujian harus dipilih']);
         }
 
-        // Validasi bank ujian exists
-        $bankUjian = $db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->get()->getRowArray();
-        if (!$bankUjian) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Bank ujian tidak ditemukan'
-            ]);
+        try {
+            $bankUjian = $this->db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->get()->getRowArray();
+            if (!$bankUjian) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Bank ujian tidak ditemukan']);
+            }
+
+            $soalList = $this->soalUjianModel
+                ->select('soal_ujian.*')
+                ->where('bank_ujian_id', $bankUjianId)
+                ->where('is_bank_soal', true)
+                ->orderBy('created_at', 'DESC')
+                ->findAll();
+
+            return $this->response->setJSON(['status' => 'success', 'data' => $soalList, 'bank_ujian' => $bankUjian]);
+        } catch (\Exception $e) {
+            log_message('error', '[Admin::getSoalBankUjian] ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON(['error' => 'Gagal memuat soal.']);
+        }
+    }
+
+    public function importSoalDariBank()
+    {
+        // 1. Ambil data dari form POST
+        $ujianId = $this->request->getPost('ujian_id');
+        $soalIds = $this->request->getPost('soal_ids'); // Ini adalah array ID soal yang dicentang
+
+        // 2. Validasi dasar
+        if (!$ujianId || empty($soalIds) || !is_array($soalIds)) {
+            return redirect()->back()->with('error', 'Data tidak lengkap. Pilih minimal satu soal untuk diimpor.');
         }
 
-        // Admin bisa akses semua soal bank ujian
-        $soalList = $this->soalUjianModel
-            ->select('soal_ujian.*, soal_ujian.kode_soal')
-            ->where('bank_ujian_id', $bankUjianId)
-            ->where('is_bank_soal', true)
-            ->orderBy('created_at', 'DESC')
-            ->findAll();
+        // 3. Siapkan variabel
+        $userId = session()->get('user_id'); // ID Admin yang sedang login
+        $berhasilImport = 0;
+        $gagalImport = 0;
+        $errorMessages = [];
 
-        return $this->response->setJSON([
-            'status' => 'success',
-            'data' => $soalList,
-            'bank_ujian' => $bankUjian
-        ]);
+        // 4. Looping untuk setiap soal yang dipilih
+        foreach ($soalIds as $soalId) {
+            // Ambil data asli soal dari bank
+            $soalBank = $this->soalUjianModel->find($soalId);
+
+            // Pastikan soal ada dan merupakan soal dari bank soal
+            if ($soalBank && $soalBank['is_bank_soal']) {
+
+                // ADMIN TIDAK PERLU VALIDASI HAK AKSES, LANGSUNG PROSES
+
+                // Siapkan data soal baru dengan menyalin data dari bank soal
+                $dataSoalBaru = $soalBank;
+
+                // Hapus primary key lama agar bisa di-insert sebagai record baru
+                unset($dataSoalBaru['soal_id']);
+
+                // Atur ulang beberapa field penting
+                $dataSoalBaru['ujian_id'] = $ujianId;          // Set ID ujian tujuan
+                $dataSoalBaru['bank_ujian_id'] = null;       // Hapus referensi ke bank ujian
+                $dataSoalBaru['is_bank_soal'] = false;       // Tandai sebagai soal ujian biasa
+                $dataSoalBaru['created_by'] = $userId;       // Creator adalah admin yang mengimpor
+                $dataSoalBaru['created_at'] = date('Y-m-d H:i:s');
+                $dataSoalBaru['updated_at'] = date('Y-m-d H:i:s');
+
+                try {
+                    $this->soalUjianModel->insert($dataSoalBaru);
+                    $berhasilImport++;
+                } catch (\Exception $e) {
+                    // Tangani jika ada error saat insert (misal, kode soal duplikat)
+                    log_message('error', 'Admin gagal import soal: ' . $e->getMessage());
+                    $gagalImport++;
+                    // Simpan pesan error jika ada, untuk ditampilkan
+                    if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+                        $errorMessages[] = "Soal dengan kode '{$dataSoalBaru['kode_soal']}' sudah ada di ujian ini.";
+                    }
+                }
+            } else {
+                // Jika soal tidak ditemukan atau bukan soal dari bank, hitung sebagai gagal
+                $gagalImport++;
+            }
+        }
+
+        // 5. Siapkan notifikasi dan redirect
+        $message = "Proses import selesai: {$berhasilImport} soal berhasil diimpor.";
+        if ($gagalImport > 0) {
+            $message .= " {$gagalImport} soal gagal diimpor.";
+            if (!empty($errorMessages)) {
+                $message .= " Alasan: " . implode(', ', $errorMessages);
+            }
+            session()->setFlashdata('warning', $message);
+        } else {
+            session()->setFlashdata('success', $message);
+        }
+
+        // Arahkan kembali ke halaman kelola soal untuk Admin
+        return redirect()->to('admin/soal/' . $ujianId);
     }
 
     // ===== KELOLA Mata Pelajaran =====

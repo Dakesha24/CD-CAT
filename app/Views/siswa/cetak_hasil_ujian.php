@@ -250,31 +250,23 @@
                 <div class="col-md-8">
                     <div class="info-label">Skor Kemampuan Kognitif:</div>
                     <div class="info-value">
-                        <span class="
-                            <?php
-                            if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
-                            elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
-                            elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
-                            elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
-                            else echo 'kognitif-sangat-rendah';
-                            ?>
-                        ">
-                            <?= $kemampuanKognitif['skor'] ?>% - <?= $klasifikasiKognitif['kategori'] ?>
+                        <span class="<?= esc($klasifikasiKognitif['class'], 'attr') ?>">
+                            <?= $kemampuanKognitif['skor'] ?> - <?= $klasifikasiKognitif['kategori'] ?>
                         </span>
                     </div>
 
                     <div class="info-label mt-3">Interpretasi:</div>
                     <div class="info-value">
-                        <?php if ($kemampuanKognitif['skor'] > 80): ?>
-                            Kemampuan kognitif sangat tinggi. Siswa menunjukkan pemahaman yang excellent terhadap materi.
-                        <?php elseif ($kemampuanKognitif['skor'] > 60): ?>
-                            Kemampuan kognitif tinggi. Siswa memiliki pemahaman yang baik terhadap materi.
-                        <?php elseif ($kemampuanKognitif['skor'] > 40): ?>
-                            Kemampuan kognitif rata-rata. Masih ada ruang untuk peningkatan pemahaman.
-                        <?php elseif ($kemampuanKognitif['skor'] > 20): ?>
-                            Kemampuan kognitif rendah. Disarankan untuk review ulang materi pembelajaran.
+                        <?php if ($kemampuanKognitif['skor'] >= 75): ?>
+                            Kemampuan kognitif sangat baik. Siswa menunjukkan pemahaman yang excellent dan mendalam terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] >= 58): ?>
+                            Kemampuan kognitif baik. Siswa memiliki pemahaman yang solid terhadap materi.
+                        <?php elseif ($kemampuanKognitif['skor'] >= 42): ?>
+                            Kemampuan kognitif cukup. Masih ada beberapa bagian materi yang perlu diperkuat pemahamannya.
+                        <?php elseif ($kemampuanKognitif['skor'] >= 25): ?>
+                            Kemampuan kognitif rendah. Disarankan untuk melakukan review ulang pada sebagian besar materi.
                         <?php else: ?>
-                            Kemampuan kognitif sangat rendah. Sangat disarankan untuk mempelajari kembali materi secara menyeluruh.
+                            Kemampuan kognitif sangat rendah. Sangat disarankan untuk mempelajari kembali seluruh materi secara menyeluruh.
                         <?php endif; ?>
                     </div>
                 </div>
@@ -312,15 +304,9 @@
                             <td class="correct"><?= $jawabanBenar ?></td>
                             <td class="incorrect"><?= $totalSoal - $jawabanBenar ?></td>
                             <td class="score"><?= $skor ?></td>
-                            <td class="
-                                <?php
-                                if ($kemampuanKognitif['skor'] > 80) echo 'kognitif-sangat-tinggi';
-                                elseif ($kemampuanKognitif['skor'] > 60) echo 'kognitif-tinggi';
-                                elseif ($kemampuanKognitif['skor'] > 40) echo 'kognitif-sedang';
-                                elseif ($kemampuanKognitif['skor'] > 20) echo 'kognitif-rendah';
-                                else echo 'kognitif-sangat-rendah';
-                                ?>
-                            "><?= $kemampuanKognitif['skor'] ?>%</td>
+                            <td class="<?= esc($klasifikasiKognitif['class'], 'attr') ?>">
+                                <?= $kemampuanKognitif['skor'] ?>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
