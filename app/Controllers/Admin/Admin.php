@@ -1641,7 +1641,12 @@ class Admin extends Controller
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+            // CLEANUP: Hapus gambar yang diupload sementara jika validasi gagal
+            $this->cleanupTempImages();
+
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
         }
 
         // 2. Siapkan data dari form
@@ -1676,12 +1681,35 @@ class Admin extends Controller
 
         // 4. Simpan ke database
         try {
-            $this->soalUjianModel->insert($data);
-            // Arahkan kembali ke halaman kelola soal untuk Admin
-            return redirect()->to('admin/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan.');
+            // Simpan data soal ke database
+            $soalId = $this->soalUjianModel->insert($data);
+
+            if ($soalId) {
+                // TRACKING: Extract gambar yang digunakan dari semua field HTML
+                $allHtmlContent = $data['pertanyaan'] . ' ' . $data['pilihan_a'] . ' ' .
+                    $data['pilihan_b'] . ' ' . $data['pilihan_c'] . ' ' .
+                    $data['pilihan_d'] . ' ' . ($data['pilihan_e'] ?? '') . ' ' .
+                    ($data['pembahasan'] ?? '');
+
+                $usedImages = $this->extractImageFilenames($allHtmlContent);
+
+                // CLEANUP: Hapus gambar yang tidak digunakan
+                $tempImages = session()->get('temp_uploaded_images') ?? [];
+                $this->cleanupUnusedImages($usedImages, $tempImages);
+
+                // Clear temp session
+                session()->remove('temp_uploaded_images');
+
+                return redirect()->to('admin/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
+            } else {
+                throw new \Exception('Gagal menyimpan soal');
+            }
         } catch (\Exception $e) {
-            log_message('error', 'Admin gagal menambahkan soal: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal.');
+            // CLEANUP: Hapus semua temp images jika ada error
+            $this->cleanupTempImages();
+
+            log_message('error', 'Error saat menambahkan soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal: ' . $e->getMessage());
         }
     }
 
@@ -1692,6 +1720,13 @@ class Admin extends Controller
         if (!$soal) {
             return redirect()->back()->with('error', 'Soal tidak ditemukan.');
         }
+
+        // Backup: Extract gambar yang sedang digunakan sebelum edit
+        $oldHtmlContent = $soal['pertanyaan'] . ' ' . $soal['pilihan_a'] . ' ' .
+            $soal['pilihan_b'] . ' ' . $soal['pilihan_c'] . ' ' .
+            $soal['pilihan_d'] . ' ' . ($soal['pilihan_e'] ?? '') . ' ' .
+            ($soal['pembahasan'] ?? '');
+        $oldUsedImages = $this->extractImageFilenames($oldHtmlContent);
 
         // 2. Validasi form input
         $rules = [
@@ -1708,7 +1743,10 @@ class Admin extends Controller
         ];
 
         if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+            $this->cleanupTempImages();
+            $errors = $this->validator->getErrors();
+            $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
+            return redirect()->back()->withInput()->with('error', $errorMessage);
         }
 
         // 3. Siapkan data dari form
@@ -1729,35 +1767,76 @@ class Admin extends Controller
         $uploadPath = FCPATH . 'uploads/soal';
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
-            if (!empty($soal['foto']) && file_exists($uploadPath . '/' . $soal['foto'])) {
-                unlink($uploadPath . '/' . $soal['foto']);
+            if (!empty($soal['foto'])) {
+                $fotoPath = $uploadPath . '/' . $soal['foto'];
+                if (file_exists($fotoPath)) {
+                    unlink($fotoPath);
+                }
             }
+
             $newName = $fotoFile->getRandomName();
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
+            }
+
             $fotoFile->move($uploadPath, $newName);
             $data['foto'] = $newName;
         }
 
+        // Checkbox untuk menghapus foto
         if ($this->request->getPost('hapus_foto') == '1' && !empty($soal['foto'])) {
-            if (file_exists($uploadPath . '/' . $soal['foto'])) {
-                unlink($uploadPath . '/' . $soal['foto']);
+            $fotoPath = $uploadPath . '/' . $soal['foto'];
+            if (file_exists($fotoPath)) {
+                unlink($fotoPath);
             }
             $data['foto'] = null;
         }
 
         // 5. Update ke database
         try {
+            // Update data soal di database
             $this->soalUjianModel->update($id, $data);
-            $ujian_id = $soal['ujian_id']; // Ambil ujian_id dari data soal lama
-            return redirect()->to('admin/soal/' . $ujian_id)->with('success', 'Soal berhasil diperbarui.');
+
+            // TRACKING: Extract gambar yang digunakan dari konten baru
+            $newHtmlContent = $data['pertanyaan'] . ' ' . $data['pilihan_a'] . ' ' .
+                $data['pilihan_b'] . ' ' . $data['pilihan_c'] . ' ' .
+                $data['pilihan_d'] . ' ' . ($data['pilihan_e'] ?? '') . ' ' .
+                ($data['pembahasan'] ?? '');
+            $newUsedImages = $this->extractImageFilenames($newHtmlContent);
+
+            // CLEANUP: Hapus gambar lama yang tidak digunakan lagi
+            $tempImages = session()->get('temp_uploaded_images') ?? [];
+            $imagesToCleanup = array_diff($oldUsedImages, $newUsedImages);
+
+            foreach ($imagesToCleanup as $filename) {
+                $imagePath = FCPATH . 'uploads/editor-images/' . $filename;
+                if (file_exists($imagePath)) {
+                    // Cek apakah gambar digunakan oleh soal lain
+                    $otherUsage = $this->checkImageUsageInOtherQuestions($filename, $id);
+                    if (!$otherUsage) {
+                        unlink($imagePath);
+                    }
+                }
+            }
+
+            // CLEANUP: Hapus temp images yang tidak digunakan
+            $this->cleanupUnusedImages($newUsedImages, $tempImages);
+
+            // Clear temp session
+            session()->remove('temp_uploaded_images');
+
+            $ujian_id = $this->request->getPost('ujian_id');
+            return redirect()->to('admin/soal/' . $ujian_id)->with('success', 'Soal berhasil diupdate');
         } catch (\Exception $e) {
-            log_message('error', 'Admin gagal mengupdate soal: ' . $e->getMessage());
-            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal.');
+            $this->cleanupTempImages();
+            log_message('error', 'Error saat mengupdate soal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal: ' . $e->getMessage());
         }
     }
 
     public function hapusSoal($id, $ujian_id)
     {
-        // Pengecekan 1: Jangan hapus soal jika sudah pernah dijawab siswa
+        // Cek apakah soal sudah dijawab siswa
         $isAnswered = $this->hasilUjianModel->where('soal_id', $id)->countAllResults() > 0;
 
         if ($isAnswered) {
@@ -1766,25 +1845,42 @@ class Admin extends Controller
         }
 
         try {
-            // Ambil data soal yang akan dihapus untuk mendapatkan nama filenya
+            // Ambil data soal yang akan dihapus
             $soal = $this->soalUjianModel->find($id);
 
             if ($soal) {
-                // Pengecekan 2: Logika cerdas untuk menghapus file foto
+                // CLEANUP 1: Handle foto field terpisah (seperti sebelumnya)
                 if (!empty($soal['foto'])) {
                     $filename = $soal['foto'];
-
-                    // Cek apakah ada soal LAIN yang menggunakan file foto yang sama
                     $isImageUsedElsewhere = $this->soalUjianModel
                         ->where('foto', $filename)
-                        ->where('soal_id !=', $id) // Abaikan soal yang akan kita hapus
+                        ->where('soal_id !=', $id)
                         ->countAllResults() > 0;
 
-                    // Hapus file fisik HANYA JIKA tidak digunakan oleh soal lain
                     if (!$isImageUsedElsewhere) {
                         $fotoPath = FCPATH . 'uploads/soal/' . $filename;
                         if (file_exists($fotoPath)) {
                             unlink($fotoPath);
+                        }
+                    }
+                }
+
+                // CLEANUP 2: Handle editor images dalam HTML content
+                $allHtmlContent = $soal['pertanyaan'] . ' ' . $soal['pilihan_a'] . ' ' .
+                    $soal['pilihan_b'] . ' ' . $soal['pilihan_c'] . ' ' .
+                    $soal['pilihan_d'] . ' ' . ($soal['pilihan_e'] ?? '') . ' ' .
+                    ($soal['pembahasan'] ?? '');
+
+                $usedImages = $this->extractImageFilenames($allHtmlContent);
+
+                foreach ($usedImages as $filename) {
+                    // Cek apakah gambar digunakan oleh soal lain
+                    $isUsedElsewhere = $this->checkImageUsageInOtherQuestions($filename, $id);
+
+                    if (!$isUsedElsewhere) {
+                        $imagePath = FCPATH . 'uploads/editor-images/' . $filename;
+                        if (file_exists($imagePath)) {
+                            unlink($imagePath);
                         }
                     }
                 }
@@ -1796,7 +1892,7 @@ class Admin extends Controller
                 return redirect()->to('admin/soal/' . $ujian_id)->with('error', 'Soal yang akan dihapus tidak ditemukan.');
             }
         } catch (\Exception $e) {
-            log_message('error', 'Admin gagal menghapus soal: ' . $e->getMessage());
+            log_message('error', 'Guru gagal menghapus soal: ' . $e->getMessage());
             return redirect()->to('admin/soal/' . $ujian_id)->with('error', 'Terjadi kesalahan saat menghapus soal.');
         }
     }
@@ -3492,5 +3588,197 @@ class Admin extends Controller
             'status' => 'success',
             'data' => $kelas
         ]);
+    }
+
+    /**
+     * Upload image untuk Summernote
+     */
+    public function uploadSummernoteImage()
+    {
+        // Cek login
+        $userRole = session()->get('role');
+        if (!session()->get('user_id') || !in_array($userRole, ['admin', 'guru'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'error' => 'Unauthorized'
+            ]);
+        }
+
+        try {
+            $uploadedFile = $this->request->getFile('upload');
+
+            // Validasi
+            if (!$uploadedFile || !$uploadedFile->isValid()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'No file uploaded'
+                ]);
+            }
+
+            $ext = strtolower($uploadedFile->getClientExtension());
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Invalid file type'
+                ]);
+            }
+
+            if ($uploadedFile->getSize() > 2097152) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'File too large'
+                ]);
+            }
+
+            // Generate nama file dengan timestamp untuk uniqueness
+            $fileName = 'editor_' . time() . '_' . uniqid() . '.' . $ext;
+            $uploadPath = FCPATH . 'uploads/editor-images';
+
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            if ($uploadedFile->move($uploadPath, $fileName)) {
+                $imageUrl = base_url('uploads/editor-images/' . $fileName);
+
+                // TRACKING: Simpan info upload sementara di session untuk cleanup later
+                $tempImages = session()->get('temp_uploaded_images') ?? [];
+                $tempImages[] = [
+                    'filename' => $fileName,
+                    'path' => $uploadPath . '/' . $fileName,
+                    'uploaded_at' => time()
+                ];
+                session()->set('temp_uploaded_images', $tempImages);
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'url' => $imageUrl,
+                    'filename' => $fileName,
+                    'message' => 'Upload successful'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Failed to save file'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    private function extractImageFilenames($htmlContent)
+    {
+        $imageFiles = [];
+
+        // Pattern untuk match URL gambar editor
+        $pattern = '/uploads\/editor-images\/([^"\'>\s]+)/';
+
+        if (preg_match_all($pattern, $htmlContent, $matches)) {
+            $imageFiles = array_unique($matches[1]); // Ambil filename saja
+        }
+
+        return $imageFiles;
+    }
+
+    /**
+     * Helper function untuk hapus gambar yang tidak digunakan
+     */
+    private function cleanupUnusedImages($usedImages, $allUploadedImages)
+    {
+        $deletedCount = 0;
+
+        foreach ($allUploadedImages as $imageInfo) {
+            $filename = $imageInfo['filename'];
+
+            // Jika gambar tidak digunakan, hapus
+            if (!in_array($filename, $usedImages)) {
+                if (file_exists($imageInfo['path'])) {
+                    unlink($imageInfo['path']);
+                    $deletedCount++;
+                }
+            }
+        }
+
+        return $deletedCount;
+    }
+
+    /**
+     * Helper function untuk cek penggunaan gambar di soal lain
+     */
+    private function checkImageUsageInOtherQuestions($filename, $excludeSoalId)
+    {
+        // Cari di semua field HTML di tabel soal_ujian
+        $builder = $this->db->table('soal_ujian');
+        $builder->where('soal_id !=', $excludeSoalId);
+        $builder->groupStart();
+        $builder->like('pertanyaan', $filename);
+        $builder->orLike('pilihan_a', $filename);
+        $builder->orLike('pilihan_b', $filename);
+        $builder->orLike('pilihan_c', $filename);
+        $builder->orLike('pilihan_d', $filename);
+        $builder->orLike('pilihan_e', $filename);
+        $builder->orLike('pembahasan', $filename);
+        $builder->groupEnd();
+
+        return $builder->countAllResults() > 0;
+    }
+
+    /**
+     * Helper function untuk cleanup temp images
+     */
+    private function cleanupTempImages()
+    {
+        $tempImages = session()->get('temp_uploaded_images') ?? [];
+
+        foreach ($tempImages as $imageInfo) {
+            if (file_exists($imageInfo['path'])) {
+                unlink($imageInfo['path']);
+            }
+        }
+
+        session()->remove('temp_uploaded_images');
+    }
+
+    /**
+     * Method untuk cleanup gambar orphaned (bisa dijadwalkan via cron job)
+     */
+    public function cleanupOrphanedImages()
+    {
+        // Hanya admin yang bisa menjalankan
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Unauthorized');
+        }
+
+        $uploadPath = FCPATH . 'uploads/editor-images/';
+        $deletedCount = 0;
+
+        if (is_dir($uploadPath)) {
+            $files = scandir($uploadPath);
+
+            foreach ($files as $file) {
+                if ($file == '.' || $file == '..') continue;
+
+                $filePath = $uploadPath . $file;
+                if (is_file($filePath)) {
+                    // Cek apakah file digunakan di database
+                    $isUsed = $this->checkImageUsageInOtherQuestions($file, 0);
+
+                    if (!$isUsed) {
+                        // Cek umur file (hapus jika lebih dari 24 jam dan tidak digunakan)
+                        $fileAge = time() - filemtime($filePath);
+                        if ($fileAge > 86400) { // 24 jam
+                            unlink($filePath);
+                            $deletedCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', "Cleanup selesai. {$deletedCount} file orphaned dihapus.");
     }
 }

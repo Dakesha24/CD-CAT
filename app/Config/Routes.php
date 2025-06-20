@@ -134,6 +134,11 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   // debugging (bisa dihps)
   $routes->get('debug-hasil', 'Admin::debugHasilUjian');
   $routes->get('update-status', 'Admin::updateStatusJadwal');
+
+  //summernot untuk soal
+  $routes->post('upload-ckeditor5-image', 'Admin::uploadCKEditor5Image');
+  $routes->post('upload-summernote-image', 'Admin::uploadSummernoteImage');
+  $routes->post('cleanup-temp-images', 'Admin::cleanupTempImages');
 });
 
 // Guru routes
@@ -197,8 +202,8 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
   $routes->get('bank-soal/api/soal', 'Guru::getSoalBankUjian');
   $routes->post('soal/import-bank', 'Guru::importSoalDariBank');
 
+  //summernot untuk soal
   $routes->post('upload-ckeditor5-image', 'Guru::uploadCKEditor5Image');
-
   $routes->post('upload-summernote-image', 'Guru::uploadSummernoteImage');
   $routes->post('cleanup-temp-images', 'Guru::cleanupTempImages');
 });
