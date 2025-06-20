@@ -199,10 +199,8 @@ $routes->group('guru', ['namespace' => 'App\Controllers\Guru'], function ($route
 
   $routes->post('upload-ckeditor5-image', 'Guru::uploadCKEditor5Image');
 
-  $routes->post('upload-ckeditor5-image', 'Guru::uploadCKEditor5Image');
-
-  // Jika ingin tetap support CKEditor 4 (untuk backward compatibility)
-  $routes->post('upload-ckeditor-image', 'Guru::uploadCKEditor5Image');
+  $routes->post('upload-summernote-image', 'Guru::uploadSummernoteImage');
+  $routes->post('cleanup-temp-images', 'Guru::cleanupTempImages');
 });
 
 $routes->get('guru/hasil-ujian/download-excel-html/(:num)', 'Guru\Guru::downloadExcelHTML/$1');

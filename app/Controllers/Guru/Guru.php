@@ -265,7 +265,7 @@ class Guru extends Controller
 
     public function tambahSoal()
     {
-        // Validasi form input
+        // Validasi form input (sama seperti sebelumnya)
         $rules = [
             'ujian_id' => 'required|numeric',
             'pertanyaan' => 'required',
@@ -281,6 +281,9 @@ class Guru extends Controller
         ];
 
         if (!$this->validate($rules)) {
+            // CLEANUP: Hapus gambar yang diupload sementara jika validasi gagal
+            $this->cleanupTempImages();
+
             $errors = $this->validator->getErrors();
             $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
             return redirect()->back()->withInput()->with('error', $errorMessage);
@@ -302,7 +305,7 @@ class Guru extends Controller
             'created_by' => session()->get('user_id')
         ];
 
-        // Upload foto jika ada
+        // Upload foto field terpisah (jika ada)
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
             $newName = $fotoFile->getRandomName();
@@ -316,11 +319,34 @@ class Guru extends Controller
             $data['foto'] = $newName;
         }
 
-        // Simpan data soal ke database
         try {
-            $this->soalUjianModel->insert($data);
-            return redirect()->to('guru/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
+            // Simpan data soal ke database
+            $soalId = $this->soalUjianModel->insert($data);
+
+            if ($soalId) {
+                // TRACKING: Extract gambar yang digunakan dari semua field HTML
+                $allHtmlContent = $data['pertanyaan'] . ' ' . $data['pilihan_a'] . ' ' .
+                    $data['pilihan_b'] . ' ' . $data['pilihan_c'] . ' ' .
+                    $data['pilihan_d'] . ' ' . ($data['pilihan_e'] ?? '') . ' ' .
+                    ($data['pembahasan'] ?? '');
+
+                $usedImages = $this->extractImageFilenames($allHtmlContent);
+
+                // CLEANUP: Hapus gambar yang tidak digunakan
+                $tempImages = session()->get('temp_uploaded_images') ?? [];
+                $this->cleanupUnusedImages($usedImages, $tempImages);
+
+                // Clear temp session
+                session()->remove('temp_uploaded_images');
+
+                return redirect()->to('guru/soal/' . $data['ujian_id'])->with('success', 'Soal berhasil ditambahkan');
+            } else {
+                throw new \Exception('Gagal menyimpan soal');
+            }
         } catch (\Exception $e) {
+            // CLEANUP: Hapus semua temp images jika ada error
+            $this->cleanupTempImages();
+
             log_message('error', 'Error saat menambahkan soal: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan soal: ' . $e->getMessage());
         }
@@ -332,10 +358,18 @@ class Guru extends Controller
         // Ambil data soal yang akan diedit
         $soal = $this->soalUjianModel->find($id);
         if (!$soal) {
+            $this->cleanupTempImages();
             return redirect()->back()->with('error', 'Soal tidak ditemukan');
         }
 
-        // Validasi form input
+        // Backup: Extract gambar yang sedang digunakan sebelum edit
+        $oldHtmlContent = $soal['pertanyaan'] . ' ' . $soal['pilihan_a'] . ' ' .
+            $soal['pilihan_b'] . ' ' . $soal['pilihan_c'] . ' ' .
+            $soal['pilihan_d'] . ' ' . ($soal['pilihan_e'] ?? '') . ' ' .
+            ($soal['pembahasan'] ?? '');
+        $oldUsedImages = $this->extractImageFilenames($oldHtmlContent);
+
+        // Validasi form input (sama seperti sebelumnya)
         $rules = [
             'kode_soal' => 'required|alpha_numeric_punct|min_length[3]|max_length[50]',
             'pertanyaan' => 'required',
@@ -350,6 +384,7 @@ class Guru extends Controller
         ];
 
         if (!$this->validate($rules)) {
+            $this->cleanupTempImages();
             $errors = $this->validator->getErrors();
             $errorMessage = 'Validasi gagal: ' . implode(', ', $errors);
             return redirect()->back()->withInput()->with('error', $errorMessage);
@@ -371,10 +406,9 @@ class Guru extends Controller
 
         $uploadPath = FCPATH . 'uploads/soal';
 
-        // Upload foto jika ada
+        // Handle upload foto field terpisah (seperti sebelumnya)
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
-            // Hapus foto lama jika ada
             if (!empty($soal['foto'])) {
                 $fotoPath = $uploadPath . '/' . $soal['foto'];
                 if (file_exists($fotoPath)) {
@@ -400,12 +434,42 @@ class Guru extends Controller
             $data['foto'] = null;
         }
 
-        // Update data soal di database
         try {
+            // Update data soal di database
             $this->soalUjianModel->update($id, $data);
+
+            // TRACKING: Extract gambar yang digunakan dari konten baru
+            $newHtmlContent = $data['pertanyaan'] . ' ' . $data['pilihan_a'] . ' ' .
+                $data['pilihan_b'] . ' ' . $data['pilihan_c'] . ' ' .
+                $data['pilihan_d'] . ' ' . ($data['pilihan_e'] ?? '') . ' ' .
+                ($data['pembahasan'] ?? '');
+            $newUsedImages = $this->extractImageFilenames($newHtmlContent);
+
+            // CLEANUP: Hapus gambar lama yang tidak digunakan lagi
+            $tempImages = session()->get('temp_uploaded_images') ?? [];
+            $imagesToCleanup = array_diff($oldUsedImages, $newUsedImages);
+
+            foreach ($imagesToCleanup as $filename) {
+                $imagePath = FCPATH . 'uploads/editor-images/' . $filename;
+                if (file_exists($imagePath)) {
+                    // Cek apakah gambar digunakan oleh soal lain
+                    $otherUsage = $this->checkImageUsageInOtherQuestions($filename, $id);
+                    if (!$otherUsage) {
+                        unlink($imagePath);
+                    }
+                }
+            }
+
+            // CLEANUP: Hapus temp images yang tidak digunakan
+            $this->cleanupUnusedImages($newUsedImages, $tempImages);
+
+            // Clear temp session
+            session()->remove('temp_uploaded_images');
+
             $ujian_id = $this->request->getPost('ujian_id');
             return redirect()->to('guru/soal/' . $ujian_id)->with('success', 'Soal berhasil diupdate');
         } catch (\Exception $e) {
+            $this->cleanupTempImages();
             log_message('error', 'Error saat mengupdate soal: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan saat memperbarui soal: ' . $e->getMessage());
         }
@@ -413,9 +477,7 @@ class Guru extends Controller
 
     public function hapusSoal($id, $ujian_id)
     {
-        // Anda bisa menambahkan validasi akses guru ke ujian_id di sini jika perlu
-
-        // Pengecekan 1: Jangan hapus soal jika sudah pernah dijawab siswa
+        // Cek apakah soal sudah dijawab siswa
         $isAnswered = $this->hasilUjianModel->where('soal_id', $id)->countAllResults() > 0;
 
         if ($isAnswered) {
@@ -428,21 +490,38 @@ class Guru extends Controller
             $soal = $this->soalUjianModel->find($id);
 
             if ($soal) {
-                // Pengecekan 2: Logika cerdas untuk menghapus file foto
+                // CLEANUP 1: Handle foto field terpisah (seperti sebelumnya)
                 if (!empty($soal['foto'])) {
                     $filename = $soal['foto'];
-
-                    // Cek apakah ada soal LAIN yang menggunakan file foto yang sama
                     $isImageUsedElsewhere = $this->soalUjianModel
                         ->where('foto', $filename)
                         ->where('soal_id !=', $id)
                         ->countAllResults() > 0;
 
-                    // Hapus file fisik HANYA JIKA tidak digunakan oleh soal lain
                     if (!$isImageUsedElsewhere) {
                         $fotoPath = FCPATH . 'uploads/soal/' . $filename;
                         if (file_exists($fotoPath)) {
                             unlink($fotoPath);
+                        }
+                    }
+                }
+
+                // CLEANUP 2: Handle editor images dalam HTML content
+                $allHtmlContent = $soal['pertanyaan'] . ' ' . $soal['pilihan_a'] . ' ' .
+                    $soal['pilihan_b'] . ' ' . $soal['pilihan_c'] . ' ' .
+                    $soal['pilihan_d'] . ' ' . ($soal['pilihan_e'] ?? '') . ' ' .
+                    ($soal['pembahasan'] ?? '');
+
+                $usedImages = $this->extractImageFilenames($allHtmlContent);
+
+                foreach ($usedImages as $filename) {
+                    // Cek apakah gambar digunakan oleh soal lain
+                    $isUsedElsewhere = $this->checkImageUsageInOtherQuestions($filename, $id);
+
+                    if (!$isUsedElsewhere) {
+                        $imagePath = FCPATH . 'uploads/editor-images/' . $filename;
+                        if (file_exists($imagePath)) {
+                            unlink($imagePath);
                         }
                     }
                 }
@@ -458,6 +537,7 @@ class Guru extends Controller
             return redirect()->to('guru/soal/' . $ujian_id)->with('error', 'Terjadi kesalahan saat menghapus soal.');
         }
     }
+
 
 
     // ===== KELOLA JADWAL UJIAN =====
@@ -2121,81 +2201,194 @@ class Guru extends Controller
         }
     }
 
-    public function uploadCKEditor5Image()
+    /**
+     * Upload image untuk Summernote
+     */
+    public function uploadSummernoteImage()
     {
-        // Set response header untuk JSON
-        $this->response->setContentType('application/json');
+        // Cek login
+        if (!session()->get('user_id') || session()->get('role') !== 'guru') {
+            return $this->response->setJSON([
+                'success' => false,
+                'error' => 'Unauthorized'
+            ]);
+        }
 
         try {
-            $uploadFile = $this->request->getFile('upload'); // CKEditor 5 menggunakan 'upload' sebagai name
+            $uploadedFile = $this->request->getFile('upload');
 
-            if (!$uploadFile || !$uploadFile->isValid()) {
+            // Validasi
+            if (!$uploadedFile || !$uploadedFile->isValid()) {
                 return $this->response->setJSON([
-                    'error' => [
-                        'message' => 'File upload tidak valid'
-                    ]
+                    'success' => false,
+                    'error' => 'No file uploaded'
                 ]);
             }
 
-            // Validasi file
-            if (!$uploadFile->hasMoved()) {
-                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-                $maxSize = 5 * 1024 * 1024; // 5MB dalam bytes
+            $ext = strtolower($uploadedFile->getClientExtension());
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'Invalid file type'
+                ]);
+            }
 
-                if (!in_array($uploadFile->getMimeType(), $allowedTypes)) {
-                    return $this->response->setJSON([
-                        'error' => [
-                            'message' => 'Tipe file tidak diizinkan. Gunakan JPG, PNG, GIF, atau WebP.'
-                        ]
-                    ]);
-                }
+            if ($uploadedFile->getSize() > 2097152) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'error' => 'File too large'
+                ]);
+            }
 
-                if ($uploadFile->getSize() > $maxSize) {
-                    return $this->response->setJSON([
-                        'error' => [
-                            'message' => 'Ukuran file terlalu besar. Maksimal 5MB.'
-                        ]
-                    ]);
-                }
+            // Generate nama file dengan timestamp untuk uniqueness
+            $fileName = 'editor_' . time() . '_' . uniqid() . '.' . $ext;
+            $uploadPath = FCPATH . 'uploads/editor-images';
 
-                // Generate nama file yang aman
-                $newName = $uploadFile->getRandomName();
-                $uploadPath = FCPATH . 'uploads/soal';
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
 
-                // Buat direktori jika belum ada
-                if (!is_dir($uploadPath)) {
-                    mkdir($uploadPath, 0777, true);
-                }
+            if ($uploadedFile->move($uploadPath, $fileName)) {
+                $imageUrl = base_url('uploads/editor-images/' . $fileName);
 
-                // Pindahkan file
-                if ($uploadFile->move($uploadPath, $newName)) {
-                    $imageUrl = base_url('uploads/soal/' . $newName);
+                // TRACKING: Simpan info upload sementara di session untuk cleanup later
+                $tempImages = session()->get('temp_uploaded_images') ?? [];
+                $tempImages[] = [
+                    'filename' => $fileName,
+                    'path' => $uploadPath . '/' . $fileName,
+                    'uploaded_at' => time()
+                ];
+                session()->set('temp_uploaded_images', $tempImages);
 
-                    // CKEditor 5 response format
-                    return $this->response->setJSON([
-                        'url' => $imageUrl
-                    ]);
-                } else {
-                    return $this->response->setJSON([
-                        'error' => [
-                            'message' => 'Gagal mengupload file'
-                        ]
-                    ]);
-                }
+                return $this->response->setJSON([
+                    'success' => true,
+                    'url' => $imageUrl,
+                    'filename' => $fileName,
+                    'message' => 'Upload successful'
+                ]);
             } else {
                 return $this->response->setJSON([
-                    'error' => [
-                        'message' => 'File sudah dipindahkan'
-                    ]
+                    'success' => false,
+                    'error' => 'Failed to save file'
                 ]);
             }
         } catch (\Exception $e) {
-            log_message('error', 'CKEditor upload error: ' . $e->getMessage());
             return $this->response->setJSON([
-                'error' => [
-                    'message' => 'Terjadi kesalahan saat mengupload gambar: ' . $e->getMessage()
-                ]
+                'success' => false,
+                'error' => $e->getMessage()
             ]);
         }
+    }
+
+    private function extractImageFilenames($htmlContent)
+    {
+        $imageFiles = [];
+
+        // Pattern untuk match URL gambar editor
+        $pattern = '/uploads\/editor-images\/([^"\'>\s]+)/';
+
+        if (preg_match_all($pattern, $htmlContent, $matches)) {
+            $imageFiles = array_unique($matches[1]); // Ambil filename saja
+        }
+
+        return $imageFiles;
+    }
+
+    /**
+     * Helper function untuk hapus gambar yang tidak digunakan
+     */
+    private function cleanupUnusedImages($usedImages, $allUploadedImages)
+    {
+        $deletedCount = 0;
+
+        foreach ($allUploadedImages as $imageInfo) {
+            $filename = $imageInfo['filename'];
+
+            // Jika gambar tidak digunakan, hapus
+            if (!in_array($filename, $usedImages)) {
+                if (file_exists($imageInfo['path'])) {
+                    unlink($imageInfo['path']);
+                    $deletedCount++;
+                }
+            }
+        }
+
+        return $deletedCount;
+    }
+
+    /**
+     * Helper function untuk cek penggunaan gambar di soal lain
+     */
+    private function checkImageUsageInOtherQuestions($filename, $excludeSoalId)
+    {
+        // Cari di semua field HTML di tabel soal_ujian
+        $builder = $this->db->table('soal_ujian');
+        $builder->where('soal_id !=', $excludeSoalId);
+        $builder->groupStart();
+        $builder->like('pertanyaan', $filename);
+        $builder->orLike('pilihan_a', $filename);
+        $builder->orLike('pilihan_b', $filename);
+        $builder->orLike('pilihan_c', $filename);
+        $builder->orLike('pilihan_d', $filename);
+        $builder->orLike('pilihan_e', $filename);
+        $builder->orLike('pembahasan', $filename);
+        $builder->groupEnd();
+
+        return $builder->countAllResults() > 0;
+    }
+
+    /**
+     * Helper function untuk cleanup temp images
+     */
+    private function cleanupTempImages()
+    {
+        $tempImages = session()->get('temp_uploaded_images') ?? [];
+
+        foreach ($tempImages as $imageInfo) {
+            if (file_exists($imageInfo['path'])) {
+                unlink($imageInfo['path']);
+            }
+        }
+
+        session()->remove('temp_uploaded_images');
+    }
+
+    /**
+     * Method untuk cleanup gambar orphaned (bisa dijadwalkan via cron job)
+     */
+    public function cleanupOrphanedImages()
+    {
+        // Hanya admin yang bisa menjalankan
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/')->with('error', 'Unauthorized');
+        }
+
+        $uploadPath = FCPATH . 'uploads/editor-images/';
+        $deletedCount = 0;
+
+        if (is_dir($uploadPath)) {
+            $files = scandir($uploadPath);
+
+            foreach ($files as $file) {
+                if ($file == '.' || $file == '..') continue;
+
+                $filePath = $uploadPath . $file;
+                if (is_file($filePath)) {
+                    // Cek apakah file digunakan di database
+                    $isUsed = $this->checkImageUsageInOtherQuestions($file, 0);
+
+                    if (!$isUsed) {
+                        // Cek umur file (hapus jika lebih dari 24 jam dan tidak digunakan)
+                        $fileAge = time() - filemtime($filePath);
+                        if ($fileAge > 86400) { // 24 jam
+                            unlink($filePath);
+                            $deletedCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', "Cleanup selesai. {$deletedCount} file orphaned dihapus.");
     }
 }

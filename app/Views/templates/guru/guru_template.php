@@ -15,6 +15,11 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 
+    <!-- tiny MCE -->
+    <script src="https://cdn.tiny.cloud/1/8qmtg0msjjyjo95gyqyzxsvhpf40ztljiqeyxuxxc8hgts8y/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs5.min.js"></script>
     <style>
         :root {
             --sidebar-width: 280px;
@@ -263,3 +268,4 @@
 </body>
 
 </html>
+
