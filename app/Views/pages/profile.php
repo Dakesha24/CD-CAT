@@ -10,11 +10,11 @@
             <div class="col-md-4">
                 <div class="team-card">
                     <div class="card-image">
-                        <img src="<?= base_url('assets/images/profil/albert.webp') ?>" alt="Foto Pengembang">
+                        <img src="<?= base_url('assets/images/profil/JauzaAmalia.png') ?>" alt="Foto Pengembang">
                     </div>
                     <div class="card-content">
                         <h3>Jauza Amalia</h3>
-                        <p class="role">Web Developer & Researcher</p>
+                        <p class="role">Peneliti & Pengembang</p>
                         <p class="institution">Universitas Pendidikan Indonesia</p>
                         <button class="view-btn" data-bs-toggle="modal" data-bs-target="#developerModal">
                             <i class="bi bi-person-lines-fill"></i> Lihat Profil
@@ -27,12 +27,12 @@
             <div class="col-md-4">
                 <div class="team-card">
                     <div class="card-image">
-                        <img src="<?= base_url('assets/images/profil/albert.webp') ?>" alt="Foto Pembimbing 1">
+                        <img src="<?= base_url('assets/images/profil/DrMuslim,MPd.png') ?>" alt="Foto Pembimbing 1">
                     </div>
                     <div class="card-content">
-                        <h3>Prof. Dr. Pembimbing Satu</h3>
-                        <p class="role">Dosen Pembimbing 1</p>
-                        <p class="institution">Universitas Negeri Yogyakarta</p>
+                        <h3>Dr. Muslim, M.Pd.</h3>
+                        <p class="role">Pembimbing Penelitian</p>
+                        <p class="institution">Universitas Pendidikan Indonesia</p>
                         <button class="view-btn" data-bs-toggle="modal" data-bs-target="#supervisor1Modal">
                             <i class="bi bi-person-lines-fill"></i> Lihat Profil
                         </button>
@@ -44,12 +44,12 @@
             <div class="col-md-4">
                 <div class="team-card">
                     <div class="card-image">
-                        <img src="<?= base_url('assets/images/profil/albert.webp') ?>" alt="Foto Pembimbing 2">
+                        <img src="<?= base_url('assets/images/profil/RizkiZakwandi,MPd.png') ?>" alt="Foto Pembimbing 2">
                     </div>
                     <div class="card-content">
-                        <h3>Dr. Pembimbing Dua</h3>
-                        <p class="role">Dosen Pembimbing 2</p>
-                        <p class="institution">Universitas Negeri Yogyakarta</p>
+                        <h3>Rizki Zakwandi, M.Pd.</h3>
+                        <p class="role">Pembimbing Penelitian</p>
+                        <p class="institution">Universitas Pendidikan Indonesia</p>
                         <button class="view-btn" data-bs-toggle="modal" data-bs-target="#supervisor2Modal">
                             <i class="bi bi-person-lines-fill"></i> Lihat Profil
                         </button>
@@ -65,38 +65,40 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content custom-modal">
             <div class="modal-header">
-                <h5 class="modal-title">Profil Pengembang</h5>
+                <h5 class="modal-title">Profil Peneliti & Pengembang</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-4">
                     <div class="col-md-4">
                         <div class="profile-image-container">
-                            <img src="<?= base_url('assets/images/profil/albert.webp') ?>" class="img-fluid rounded" alt="Foto Pengembang">
+                            <img src="<?= base_url('assets/images/profil/JauzaAmalia.png') ?>" class="img-fluid rounded" alt="Foto Pengembang">
                         </div>
                     </div>
                     <div class="col-md-8">
                         <h4>Jauza Amalia</h4>
-                        <p class="role-title">Web Developer & Researcher</p>
+                        <p class="role-title">Mahasiswi Pendidikan Fisika FPMIPA UPI</p>
 
                         <div class="info-section">
                             <h5><i class="bi bi-person-vcard"></i> Tentang</h5>
                             <p class="description">
-                                Seorang peneliti yang fokus pada pengembangan asesmen diagnostik yang adaptif untuk pembelajaran Fisika. Memiliki passion untuk mengintegrasikan teknologi dengan pendidikan agar dapat menciptakan pengalaman pembelajaran yang lebih terpersonalisasi.
+                                Peneliti yang fokus pada pengembangan asesmen yang adaptif khususnya untuk pembelajaran Fisika.
                             </p>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-mortarboard"></i> Pendidikan</h5>
                             <ul class="custom-list">
-                                <li>S1 Pendidikan Fisika - Universitas Pendidikan Indonesia</li>
+                                <li>S1 Pendidikan Fisika FPMIPA UPI</li>
+                                <li>SMAN 5 Bandung</li>
                             </ul>
                         </div>
 
                         <div class="info-section">
-                            <h5><i class="bi bi-award"></i> Prestasi</h5>
+                            <h5><i class="bi bi-award"></i> Prestasi dan Pengalaman</h5>
                             <ul class="custom-list">
-                                <li>Juara 3 Video Animasi PHYFEST 8.0</li>
+                                <li>Juara 3 Video Animasi Phyfest 8.0</li>
+                                <li>Asisten Lab Fisika Dasar 2022-2024</li>
                             </ul>
                         </div>
 
@@ -126,53 +128,53 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content custom-modal">
             <div class="modal-header">
-                <h5 class="modal-title">Profil Pembimbing 1</h5>
+                <h5 class="modal-title">Profil Pembimbing Penelitian</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-4">
                     <div class="col-md-4">
                         <div class="profile-image-container">
-                            <img src="<?= base_url('assets/images/profil/albert.webp') ?>" class="img-fluid rounded" alt="Foto Pembimbing 1">
+                            <img src="<?= base_url('assets/images/profil/DrMuslim,MPd.png') ?>" class="img-fluid rounded" alt="Foto Pembimbing 1">
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <h4>Prof. Dr. Pembimbing Satu</h4>
-                        <p class="role-title">Professor di Jurusan Pendidikan Fisika</p>
+                        <h4>Dr. Muslim, M.Pd.</h4>
+                        <p class="role-title">Dosen Jurusan Pendidikan Fisika FPMIPA UPI</p>
 
                         <div class="info-section">
                             <h5><i class="bi bi-person-vcard"></i> Tentang</h5>
                             <p class="description">
-                                Profesor senior dengan pengalaman lebih dari 25 tahun dalam pendidikan fisika. Fokus penelitian pada pengembangan metode asesmen inovatif dan media pembelajaran berbasis teknologi. Telah membimbing lebih dari 50 mahasiswa S2 dan S3.
+                                Memiliki kontribusi dalam pengembangan asesmen serta model pembelajaran, khususnya yang menekankan pada kemampuan argumentasi dan pendekatan berbasis simulasi serta eksperimen virtual. Fokus penelitiannya mencerminkan komitmen terhadap peningkatan kualitas pembelajaran fisika melalui integrasi teknologi dan pendekatan pedagogis.
                             </p>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-book"></i> Bidang Keahlian</h5>
                             <ul class="custom-list">
-                                <li>Pengembangan Media Pembelajaran Fisika</li>
-                                <li>Asesmen dan Evaluasi Pendidikan</li>
-                                <li>Teknologi Pendidikan Fisika</li>
+                                <li>Argumentasi</li>
+                                <li>Asesmen</li>
+                                <li>Model Pembelajaran</li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-journal-text"></i> Publikasi Terpilih</h5>
                             <ul class="custom-list">
-                                <li>Assessment Methods in Physics Education (2023)</li>
-                                <li>Technology Integration in Science Education (2022)</li>
-                                <li>Adaptive Testing Development (2021)</li>
+                                <li><i>Evaluating Students' Argumentation Skills Using an Argument-Generating Learning Model Supported Toulmin's Argumentation Pattern in Physics Concepts (2024)</i></li>
+                                <li>Pemanfaatan Buku Ajar Elektronik Interaktif untuk Pembagunan Berkelanjutan sebagai Solusi dalam Meningkatkan Kesadaran Berkelanjutan Siswa SMP (2024)</li>
+                                <li><i>The Implementation of STEM-PBL Learning to Enhance Students' Critical Thinking Skills (2024)</i></li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-envelope"></i> Kontak</h5>
                             <div class="contact-links">
-                                <a href="mailto:pembimbing1@uny.ac.id" class="contact-item">
-                                    <i class="bi bi-envelope-fill"></i> pembimbing1@uny.ac.id
+                                <a href="muslim@upi.edu" class="contact-item">
+                                    <i class="bi bi-envelope-fill"></i> muslim@upi.edu
                                 </a>
-                                <a href="#" class="contact-item">
-                                    <i class="bi bi-google"></i> Google Scholar
+                                <a href="https://sinta.kemdikbud.go.id/authors/profile/6028471 " class="contact-item">
+                                    <i class="bi bi-google"></i> Publikasi
                                 </a>
                             </div>
                         </div>
@@ -188,53 +190,53 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content custom-modal">
             <div class="modal-header">
-                <h5 class="modal-title">Profil Pembimbing 2</h5>
+                <h5 class="modal-title">Profil Pembimbing Penelitian</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-4">
                     <div class="col-md-4">
                         <div class="profile-image-container">
-                            <img src="<?= base_url('assets/images/profil/albert.jpg') ?>" class="img-fluid rounded" alt="Foto Pembimbing 2">
+                            <img src="<?= base_url('assets/images/profil/RizkiZakwandi,MPd.png') ?>" class="img-fluid rounded" alt="Foto Pembimbing 2">
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <h4>Dr. Pembimbing Dua</h4>
-                        <p class="role-title">Dosen Jurusan Pendidikan Fisika</p>
+                        <h4>Rizki Zakwandi, M.Pd.</h4>
+                        <p class="role-title">Dosen Jurusan Pendidikan Fisika FPMIPA UPI</p>
 
                         <div class="info-section">
                             <h5><i class="bi bi-person-vcard"></i> Tentang</h5>
                             <p class="description">
-                                Peneliti aktif dalam bidang teknologi pendidikan dan computer adaptive testing. Berpengalaman dalam pengembangan sistem asesmen berbasis komputer dan implementasi pembelajaran digital. Aktif dalam berbagai proyek penelitian internasional.
+                                Memiliki kontribusi dalam pengembangan metode asesmen yang inovatif dan media pembelajaran berbasis teknologi. Fokus penelitiannya mencerminkan komitmennya terhadap peningkatan kualitas pembelajaran fisika melalui pendekatan teknologi yang adaptif.
                             </p>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-book"></i> Bidang Keahlian</h5>
                             <ul class="custom-list">
-                                <li>Computer Adaptive Testing</li>
-                                <li>Educational Data Mining</li>
-                                <li>E-Learning Systems Development</li>
+                                <li><i>Digital Learning</i></li>
+                                <li><i>Educational Technology</i></li>
+                                <li><i>Assessment Model</i></li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-graph-up"></i> Riset Terkini</h5>
                             <ul class="custom-list">
-                                <li>Pengembangan Algoritma CAT untuk Pembelajaran Sains</li>
-                                <li>Implementasi AI dalam Asesmen Pendidikan</li>
-                                <li>Learning Analytics untuk Personalisasi Pembelajaran</li>
+                                <li><i>A Two-Tier Computerized Adaptive Test to Measure Student Computational Thinking Skills (2024)</i></li>
+                                <li><i>The Impact of Problem Solving Laboratory in Physics Learning to Improve Students’ Science Literacy Ability (2024)</i></li>
+                                <li><i>A Framework for Assessing Computational Thinking Skills in the Physics Classroom: Study on Cognitive Test Development (2023)</i></li>
                             </ul>
                         </div>
 
                         <div class="info-section">
                             <h5><i class="bi bi-envelope"></i> Kontak</h5>
                             <div class="contact-links">
-                                <a href="mailto:pembimbing2@uny.ac.id" class="contact-item">
-                                    <i class="bi bi-envelope-fill"></i> pembimbing2@uny.ac.id
+                                <a href="r.zakwandi@upi.edu" class="contact-item">
+                                    <i class="bi bi-envelope-fill"></i> r.zakwandi@upi.edu
                                 </a>
-                                <a href="#" class="contact-item">
-                                    <i class="bi bi-diagram-3"></i> ResearchGate
+                                <a href="https://sinta.kemdikbud.go.id/authors/profile/6854652 " class="contact-item">
+                                    <i class="bi bi-diagram-3"></i> Publikasi
                                 </a>
                             </div>
                         </div>
@@ -477,7 +479,7 @@
         content: "•";
         position: absolute;
         left: 0;
-        color: #481F64;
+        color: #333 !important;
     }
 
     .contact-links {
