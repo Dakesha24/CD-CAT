@@ -138,7 +138,7 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label fw-semibold">Nama Mata Pelajaran</label>
-            <input type="text" class="form-control" name="nama_jenis" placeholder="Contoh: UTS, UAS, Quiz" required>
+            <input type="text" class="form-control" name="nama_jenis" placeholder="Contoh: Fisika, Matematika, Kimia" required>
           </div>
           <div class="mb-3">
             <label class="form-label fw-semibold">Kelas <span class="text-danger">*</span></label>

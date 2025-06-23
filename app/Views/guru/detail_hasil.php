@@ -148,7 +148,7 @@
           </h5>
         </div>
         <div class="card-body text-center">
-          <h2 class="<?= $klasifikasiKognitif['class'] ?> mb-2"><?= $kemampuanKognitif['skor'] ?>%</h2>
+          <h2 class="<?= $klasifikasiKognitif['class'] ?> mb-2"><?= $kemampuanKognitif['skor'] ?></h2>
           <span class="badge <?= $klasifikasiKognitif['bg_class'] ?> text-white mb-3">
             <?= $klasifikasiKognitif['kategori'] ?>
           </span>

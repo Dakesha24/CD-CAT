@@ -34,7 +34,7 @@
                             <i class="bi bi-graph-up-arrow"></i>
                         </div>
                         <h3>Kognitif</h3>
-                        <p>Memberikan gambaran utuh mengenai kemampuan penalaran dan pemahaman konseptual siswa.</p>
+                        <p>Memberikan hasil analisis mengenai profil kemampuan kognitif siswa.</p>
                     </div>
                 </div>
                 <div class="col-md-4">

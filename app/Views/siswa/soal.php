@@ -66,18 +66,28 @@
                 'D' => $soal['pilihan_d'],
                 'E' => $soal['pilihan_e']
               ];
-              foreach ($pilihan as $key => $value): 
-                // Skip pilihan yang kosong (untuk pilihan E yang opsional)
-                if (empty($value)) continue;
+              foreach ($pilihan as $key => $value):
+                // Pengecekan khusus untuk pilihan E
+                if ($key === 'E') {
+                  // Hapus tag <p> yang hanya berisi whitespace dan <br>
+                  $cleanValue = preg_replace('/<p(\s[^>]*)?>(\s|&nbsp;|<br\s*\/?>)*<\/p>/i', '', $value);
+                  $cleanValue = trim($cleanValue);
+
+                  // Skip jika setelah dibersihkan, tidak ada konten
+                  if (empty($cleanValue)) continue;
+                } else {
+                  // Untuk pilihan A-D, cek kosong biasa
+                  if (empty($value)) continue;
+                }
               ?>
-                <label class="list-group-item list-group-item-action">
-                  <input class="form-check-input me-2"
+                <label class="list-group-item list-group-item-action d-flex">
+                  <input class="form-check-input me-2 flex-shrink-0"
                     type="radio"
                     name="jawaban"
                     value="<?= $key ?>"
                     required>
-                  <!-- PERBAIKAN: Hilangkan esc() untuk pilihan agar HTML ditampilkan -->
-                  <?= $key ?>. <?= $value ?>
+                  <span class="choice-label flex-shrink-0 me-2"><?= $key ?>.</span>
+                  <div class="choice-content flex-grow-1"><?= $value ?></div>
                 </label>
               <?php endforeach; ?>
             </div>
@@ -127,75 +137,101 @@
 
 <!-- CSS tambahan untuk styling konten CKEditor -->
 <style>
-/* Styling untuk konten yang dibuat dengan CKEditor */
-.lead {
-  line-height: 1.6;
-}
+  /* Styling untuk konten yang dibuat dengan CKEditor */
+  .lead {
+    line-height: 1.6;
+  }
 
-.lead p {
-  margin-bottom: 1rem;
-}
+  .lead p {
+    margin-bottom: 1rem;
+  }
 
-.lead strong, .lead b {
-  font-weight: 600;
-}
+  .lead strong,
+  .lead b {
+    font-weight: 600;
+  }
 
-.lead em, .lead i {
-  font-style: italic;
-}
+  .lead em,
+  .lead i {
+    font-style: italic;
+  }
 
-.lead sub {
-  font-size: 0.8em;
-  vertical-align: sub;
-}
+  .lead sub {
+    font-size: 0.8em;
+    vertical-align: sub;
+  }
 
-.lead sup {
-  font-size: 0.8em;
-  vertical-align: super;
-}
+  .lead sup {
+    font-size: 0.8em;
+    vertical-align: super;
+  }
 
-.lead table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 1rem 0;
-}
+  .lead table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+  }
 
-.lead table, .lead th, .lead td {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
+  .lead table,
+  .lead th,
+  .lead td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
 
-.lead th {
-  background-color: #f2f2f2;
-}
+  .lead th {
+    background-color: #f2f2f2;
+  }
 
-.lead ul, .lead ol {
-  margin: 1rem 0;
-  padding-left: 2rem;
-}
+  .lead ul,
+  .lead ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+  }
 
-/* Styling untuk pilihan jawaban */
-.list-group-item {
-  line-height: 1.5;
-}
+  /* Styling untuk pilihan jawaban */
+  .list-group-item {
+    line-height: 1.5;
+  }
 
-.list-group-item strong, .list-group-item b {
-  font-weight: 600;
-}
+  .list-group-item strong,
+  .list-group-item b {
+    font-weight: 600;
+  }
 
-.list-group-item em, .list-group-item i {
-  font-style: italic;
-}
+  .list-group-item em,
+  .list-group-item i {
+    font-style: italic;
+  }
 
-.list-group-item sub {
-  font-size: 0.9em;
-  vertical-align: sub;
-}
+  .list-group-item sub {
+    font-size: 0.9em;
+    vertical-align: sub;
+  }
 
-.list-group-item sup {
-  font-size: 0.9em;
-  vertical-align: super;
-}
+  .list-group-item sup {
+    font-size: 0.9em;
+    vertical-align: super;
+  }
+
+  .choice-label {
+    font-weight: 600;
+    min-width: 20px;
+    align-self: flex-start;
+    /* Agar label tetap di atas meski konten panjang */
+  }
+
+  .choice-content {
+    line-height: 1.5;
+  }
+
+  .choice-content p:first-child {
+    margin-top: 0;
+  }
+
+  .choice-content p:last-child {
+    margin-bottom: 0;
+  }
 </style>
 
 <?= $this->endSection() ?>

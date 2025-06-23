@@ -1917,7 +1917,7 @@ class Admin extends Controller
         $data['ujian_tambah'] = $this->ujianModel->select('id_ujian, nama_ujian, kode_ujian')->orderBy('nama_ujian', 'ASC')->findAll();
         $data['ujian_edit'] = $data['ujian_tambah']; // Data yang sama untuk edit
 
-        // Ambil SEMUA kelas untuk dropdown di modal
+        // Ambil SEMUA kelas untuk dropdown di modal dengan info sekolah
         $data['kelas'] = $this->kelasModel
             ->select('kelas.*, sekolah.nama_sekolah')
             ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id')
@@ -2853,6 +2853,9 @@ class Admin extends Controller
 
     public function tambahBankSoal()
     {
+        // Debug: Log semua input
+        log_message('debug', 'Input data: ' . json_encode($this->request->getPost()));
+
         $rules = [
             'kategori' => 'required',
             'jenis_ujian_id' => 'required|numeric',
@@ -2861,6 +2864,7 @@ class Admin extends Controller
         ];
 
         if (!$this->validate($rules)) {
+            log_message('debug', 'Validation errors: ' . json_encode($this->validator->getErrors()));
             return redirect()->back()
                 ->withInput()
                 ->with('errors', $this->validator->getErrors());
@@ -2875,26 +2879,45 @@ class Admin extends Controller
             ->get()->getRowArray();
 
         if ($existing) {
+            log_message('debug', 'Bank soal already exists');
             session()->setFlashdata('error', 'Bank soal dengan kategori, Mata Pelajaran, dan nama ujian yang sama sudah ada.');
             return redirect()->back()->withInput();
         }
 
         try {
+            $userId = session()->get('user_id');
+            log_message('debug', 'Current user ID: ' . $userId);
+
+            if (!$userId) {
+                session()->setFlashdata('error', 'Session expired. Please login again.');
+                return redirect()->to(base_url('admin/login'));
+            }
+
             $bankUjianData = [
                 'kategori' => $this->request->getPost('kategori'),
                 'jenis_ujian_id' => $this->request->getPost('jenis_ujian_id'),
                 'nama_ujian' => $this->request->getPost('nama_ujian'),
                 'deskripsi' => $this->request->getPost('deskripsi'),
-                'created_by' => session()->get('user_id'),
+                'created_by' => $userId,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $db->table('bank_ujian')->insert($bankUjianData);
-            session()->setFlashdata('success', 'Bank soal berhasil ditambahkan!');
+            log_message('debug', 'Data to insert: ' . json_encode($bankUjianData));
+
+            $result = $db->table('bank_ujian')->insert($bankUjianData);
+
+            if ($result) {
+                log_message('debug', 'Bank soal inserted successfully');
+                session()->setFlashdata('success', 'Bank soal berhasil ditambahkan!');
+            } else {
+                log_message('error', 'Failed to insert bank soal');
+                session()->setFlashdata('error', 'Gagal menyimpan bank soal.');
+            }
+
             return redirect()->to(base_url('admin/bank-soal'));
         } catch (\Exception $e) {
             log_message('error', 'Error adding bank soal: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah bank soal.');
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah bank soal: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
@@ -2979,7 +3002,8 @@ class Admin extends Controller
         $data = [
             'kategori' => $kategori,
             'bankUjian' => $bankUjian,
-            'soalList' => $soalList
+            'soalList' => $soalList,
+            'canEdit' => true  // Admin selalu bisa edit semua bank soal
         ];
 
         return view('admin/bank_soal/ujian', $data);

@@ -2,6 +2,35 @@
 
 <?= $this->section('content') ?>
 <br><br>
+
+<!-- Alert Messages -->
+<?php if (session()->getFlashdata('success')): ?>
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i><?= session()->getFlashdata('success') ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('error')): ?>
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i><?= session()->getFlashdata('error') ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<?php endif; ?>
+
+<!-- Tambahkan ini untuk debug validation errors -->
+<?php if (session()->getFlashdata('errors')): ?>
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    <strong>Validation Errors:</strong>
+    <ul class="mb-0 mt-2">
+      <?php foreach (session()->getFlashdata('errors') as $error): ?>
+        <li><?= $error ?></li>
+      <?php endforeach; ?>
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<?php endif; ?>
 <div class="container-fluid py-4">
   <div class="row mb-4 align-items-center">
     <div class="col">
@@ -148,5 +177,28 @@
     transition: all 0.3s ease;
   }
 </style>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#modalTambahBankSoal form');
+
+    form.addEventListener('submit', function(e) {
+      const deskripsi = document.getElementById('deskripsi').value;
+
+      if (deskripsi.length < 10) {
+        e.preventDefault(); // Mencegah form submit
+
+        // Tampilkan alert
+        alert(`Deskripsi minimal 10 karakter. Saat ini: ${deskripsi.length} karakter`);
+
+        // Fokus ke input deskripsi
+        document.getElementById('deskripsi').focus();
+
+        return false;
+      }
+    });
+  });
+</script>
 
 <?= $this->endSection() ?>

@@ -108,7 +108,7 @@
           <p class="text-muted mb-3">
             Kemampuan kognitif Anda dalam mata pelajaran ini tergolong
             <strong class="<?= $klasifikasiKognitif['class'] ?>"><?= $klasifikasiKognitif['kategori'] ?></strong>
-            dengan skor <strong><?= $kemampuanKognitif['skor'] ?>%</strong>.
+            dengan skor <strong><?= $kemampuanKognitif['skor'] ?></strong>.
           </p>
 
           <?php if ($kemampuanKognitif['skor'] > 80): ?>

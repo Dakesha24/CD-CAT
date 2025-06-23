@@ -90,7 +90,8 @@
                                     <i class="bi bi-code-square me-1"></i>Kode: <?= esc($j['kode_ujian']) ?>
                                 </p>
                                 <p class="card-text text-muted small mb-3">
-                                    <i class="bi bi-people me-1"></i>Kelas <?= esc($j['nama_kelas']) ?>
+                                    <i class="bi bi-building me-1"></i><?= esc($j['nama_sekolah']) ?>
+                                    <br><i class="bi bi-people me-1"></i>Kelas <?= esc($j['nama_kelas']) ?>
                                     <br><i class="bi bi-person-check me-1"></i>Pengawas: <?= esc($j['nama_lengkap']) ?>
                                 </p>
 
@@ -169,7 +170,6 @@
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
-                            <div class="form-text">Hanya menampilkan ujian untuk kelas yang Anda ajar</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Kelas</label>
@@ -177,11 +177,12 @@
                                 <option value="">Pilih Kelas</option>
                                 <?php if (!empty($kelas)): ?>
                                     <?php foreach ($kelas as $k): ?>
-                                        <option value="<?= $k['kelas_id'] ?>"><?= esc($k['nama_kelas']) ?></option>
+                                        <option value="<?= $k['kelas_id'] ?>">
+                                            <?= esc($k['nama_sekolah']) ?> - <?= esc($k['nama_kelas']) ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </select>
-                            <div class="form-text">Hanya kelas yang Anda ajar</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold">Guru Pengawas</label>
@@ -253,7 +254,7 @@
                                         <?php if (!empty($kelas)): ?>
                                             <?php foreach ($kelas as $k): ?>
                                                 <option value="<?= $k['kelas_id'] ?>" <?= ($k['kelas_id'] == $j['kelas_id']) ? 'selected' : '' ?>>
-                                                    <?= esc($k['nama_kelas']) ?>
+                                                    <?= esc($k['nama_sekolah']) ?> - <?= esc($k['nama_kelas']) ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
