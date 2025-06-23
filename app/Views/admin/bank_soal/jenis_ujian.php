@@ -63,15 +63,24 @@
                   <h5 class="card-title fw-bold mb-2"><?= esc($ujian['nama_ujian']) ?></h5>
                   <p class="card-text text-muted small mb-2"><?= esc($ujian['deskripsi']) ?></p>
                 </div>
-                <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-ellipsis-v"></i>
+                <div class="dropdown text-end">
+                  <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
                   </button>
-                  <ul class="dropdown-menu">
+                  <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <a class="dropdown-item" href="<?= base_url('admin/bank-soal/kategori/' . urlencode($kategori) . '/jenis-ujian/' . $jenisUjian['jenis_ujian_id'] . '/ujian/' . $ujian['bank_ujian_id']) ?>">
-                        <i class="fas fa-eye me-2"></i>Lihat Soal
-                      </a>
+                      <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#lihatJenisUjianModal">
+                        <a class="dropdown-item" href="<?= base_url('admin/bank-soal/kategori/' . urlencode($kategori) . '/jenis-ujian/' . $jenisUjian['jenis_ujian_id'] . '/ujian/' . $ujian['bank_ujian_id']) ?>">
+                          <i class="bi bi-eye me-2"></i>Lihat
+                        </a>
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editJenisUjianModal">
+                        <a class="dropdown-item" href="">
+                          <i class="bi bi-pencil me-2"></i>Edit
+                        </a>
+                      </button>
                     </li>
                     <li>
                       <hr class="dropdown-divider">

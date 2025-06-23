@@ -2834,7 +2834,8 @@ class Admin extends Controller
 
         // Admin bisa akses semua kategori
         $kategoriList = $db->table('bank_ujian')
-            ->select('kategori, COUNT(*) as jumlah_bank')
+            ->select('kategori, COUNT(*) as jumlah_bank, 
+                      GROUP_CONCAT(DISTINCT jenis_ujian_id) as jenis_ujian_ids') // Tambahan untuk cek isi
             ->groupBy('kategori')
             ->orderBy('kategori', 'ASC')
             ->get()
@@ -2850,6 +2851,7 @@ class Admin extends Controller
 
         return view('admin/bank_soal/index', $data);
     }
+
 
     public function tambahBankSoal()
     {
@@ -2925,7 +2927,6 @@ class Admin extends Controller
     public function bankSoalKategori($kategori)
     {
         $db = \Config\Database::connect();
-
         // Admin bisa akses semua kategori tanpa validasi
         $jenisUjianList = $db->table('bank_ujian')
             ->select('bank_ujian.jenis_ujian_id, jenis_ujian.nama_jenis, COUNT(*) as jumlah_ujian')
@@ -2935,13 +2936,131 @@ class Admin extends Controller
             ->orderBy('jenis_ujian.nama_jenis', 'ASC')
             ->get()
             ->getResultArray();
-
         $data = [
             'kategori' => $kategori,
             'jenisUjianList' => $jenisUjianList
         ];
-
         return view('admin/bank_soal/kategori', $data);
+    }
+
+    //edit kategori bank soal
+    public function editKategori()
+    {
+        $old_kategori = $this->request->getPost('old_kategori_name');
+        $new_kategori = trim($this->request->getPost('new_kategori_name'));
+
+        // Validasi input
+        if (empty($old_kategori) || empty($new_kategori)) {
+            session()->setFlashdata('error', 'Nama kategori lama dan baru tidak boleh kosong.');
+            return redirect()->to(base_url('admin/bank-soal'));
+        }
+
+        if ($old_kategori === $new_kategori) {
+            session()->setFlashdata('success', 'Tidak ada perubahan pada nama kategori.');
+            return redirect()->to(base_url('admin/bank-soal'));
+        }
+
+        // Cek apakah nama kategori baru sudah ada
+        $db = \Config\Database::connect();
+        $exists = $db->table('bank_ujian')->where('kategori', $new_kategori)->countAllResults() > 0;
+        if ($exists) {
+            session()->setFlashdata('error', "Kategori '{$new_kategori}' sudah ada. Silakan gunakan nama lain.");
+            return redirect()->to(base_url('admin/bank-soal'));
+        }
+
+        try {
+            // Update semua entri bank_ujian dengan kategori lama ke kategori baru
+            $db->table('bank_ujian')
+                ->where('kategori', $old_kategori)
+                ->set(['kategori' => $new_kategori])
+                ->update();
+
+            session()->setFlashdata('success', "Kategori '{$old_kategori}' berhasil diubah menjadi '{$new_kategori}'.");
+        } catch (\Exception $e) {
+            log_message('error', 'Error editing kategori bank soal: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat mengubah kategori.');
+        }
+
+        return redirect()->to(base_url('admin/bank-soal'));
+    }
+
+    //hapus kategori bank soal
+    public function hapusKategori($kategori)
+    {
+        $kategori = urldecode($kategori);
+        $db = \Config\Database::connect();
+
+        try {
+            // PENTING: Cek apakah ada SOAL di dalam bank-bank ujian pada kategori ini.
+            // Ini adalah validasi yang lebih kuat daripada hanya mengecek bank ujian.
+            $soalCount = $db->table('soal_ujian su')
+                ->join('bank_ujian bu', 'su.bank_ujian_id = bu.bank_ujian_id')
+                ->where('bu.kategori', $kategori)
+                ->where('su.is_bank_soal', true)
+                ->countAllResults();
+
+            if ($soalCount > 0) {
+                session()->setFlashdata('error', "Tidak dapat menghapus kategori '{$kategori}' karena masih berisi {$soalCount} soal. Hapus soal-soal di dalamnya terlebih dahulu.");
+                return redirect()->to(base_url('admin/bank-soal'));
+            }
+
+            // Jika tidak ada soal, maka aman untuk menghapus semua bank ujian dalam kategori ini.
+            $db->table('bank_ujian')->where('kategori', $kategori)->delete();
+
+            session()->setFlashdata('success', "Kategori '{$kategori}' dan semua bank ujian di dalamnya yang tidak memiliki soal berhasil dihapus.");
+        } catch (\Exception $e) {
+            log_message('error', 'Error deleting kategori bank soal: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus kategori.');
+        }
+
+        return redirect()->to(base_url('admin/bank-soal'));
+    }
+
+    public function editJenisUjian($jenisUjianId)
+    {
+        // Cek dari mana request berasal untuk redirect yang benar
+        $redirectUrl = $this->request->getPost('_redirect_url') ?: base_url('admin/jenis-ujian');
+
+        $rules = [
+            'nama_jenis' => 'required|min_length[3]|max_length[100]',
+            'deskripsi' => 'required|min_length[10]',
+            'kelas_id' => 'required|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->to($redirectUrl)
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
+        if (!$jenisUjian) {
+            session()->setFlashdata('error', 'Mata Pelajaran tidak ditemukan.');
+            return redirect()->to($redirectUrl);
+        }
+
+        $kelasId = $this->request->getPost('kelas_id');
+        $kelas = $this->kelasModel->find($kelasId);
+        if (!$kelas) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan.');
+            return redirect()->to($redirectUrl)->withInput();
+        }
+
+        try {
+            $data = [
+                'nama_jenis' => $this->request->getPost('nama_jenis'),
+                'deskripsi' => $this->request->getPost('deskripsi'),
+                'kelas_id' => $kelasId
+            ];
+
+            $this->jenisUjianModel->update($jenisUjianId, $data);
+            session()->setFlashdata('success', 'Mata Pelajaran berhasil diperbarui!');
+            return redirect()->to($redirectUrl);
+        } catch (\Exception $e) {
+            log_message('error', 'Error updating Mata Pelajaran: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui Mata Pelajaran: ' . $e->getMessage());
+            return redirect()->to($redirectUrl)->withInput();
+        }
     }
 
     public function bankSoalJenisUjian($kategori, $jenisUjianId)
@@ -3194,6 +3313,13 @@ class Admin extends Controller
     {
         $db = \Config\Database::connect();
 
+        // Ambil informasi bank ujian untuk redirect kembali
+        $bankUjian = $db->table('bank_ujian')->where('bank_ujian_id', $bankUjianId)->get()->getRowArray();
+        if (!$bankUjian) {
+            session()->setFlashdata('error', 'Bank ujian tidak ditemukan.');
+            return redirect()->to(base_url('admin/bank-soal'));
+        }
+
         try {
             $db->transStart();
 
@@ -3223,7 +3349,8 @@ class Admin extends Controller
             session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus bank ujian.');
         }
 
-        return redirect()->to(base_url('admin/bank-soal'));
+        // Redirect ke halaman jenis ujian dalam kategori yang sama
+        return redirect()->to(base_url('admin/bank-soal/kategori/' . urlencode($bankUjian['kategori']) . '/jenis-ujian/' . $bankUjian['jenis_ujian_id']));
     }
 
     // API Methods untuk AJAX (bisa digunakan untuk modal atau select dinamis)
@@ -3509,57 +3636,6 @@ class Admin extends Controller
         } catch (\Exception $e) {
             log_message('error', 'Error adding Mata Pelajaran: ' . $e->getMessage());
             session()->setFlashdata('error', 'Terjadi kesalahan saat menambah Mata Pelajaran: ' . $e->getMessage());
-            return redirect()->back()->withInput();
-        }
-    }
-
-
-    public function editJenisUjian($jenisUjianId)
-    {
-        $userId = session()->get('user_id');
-
-        // Validasi input
-        $rules = [
-            'nama_jenis' => 'required|min_length[3]|max_length[100]',
-            'deskripsi' => 'required|min_length[10]',
-            'kelas_id' => 'required|numeric'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
-        }
-
-        // Cek Mata Pelajaran exists
-        $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
-        if (!$jenisUjian) {
-            session()->setFlashdata('error', 'Mata Pelajaran tidak ditemukan.');
-            return redirect()->to(base_url('admin/jenis-ujian'));
-        }
-
-        $kelasId = $this->request->getPost('kelas_id');
-
-        // Validasi kelas exists
-        $kelas = $this->kelasModel->find($kelasId);
-        if (!$kelas) {
-            session()->setFlashdata('error', 'Kelas tidak ditemukan.');
-            return redirect()->back()->withInput();
-        }
-
-        try {
-            $data = [
-                'nama_jenis' => $this->request->getPost('nama_jenis'),
-                'deskripsi' => $this->request->getPost('deskripsi'),
-                'kelas_id' => $kelasId
-            ];
-
-            $this->jenisUjianModel->update($jenisUjianId, $data);
-            session()->setFlashdata('success', 'Mata Pelajaran berhasil diperbarui!');
-            return redirect()->to(base_url('admin/jenis-ujian'));
-        } catch (\Exception $e) {
-            log_message('error', 'Error updating Mata Pelajaran: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui Mata Pelajaran: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }

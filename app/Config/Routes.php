@@ -71,10 +71,15 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->get('bank-soal/kategori/(:segment)', 'Admin::bankSoalKategori/$1');
   $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)', 'Admin::bankSoalJenisUjian/$1/$2');
   $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/(:num)/ujian/(:num)', 'Admin::bankSoalUjian/$1/$2/$3');
+  $routes->post('bank-soal/edit-kategori', 'Admin::editKategori');
+  $routes->get('bank-soal/hapus-kategori/(:segment)', 'Admin::hapusKategori/$1');
+
   $routes->post('bank-soal/tambah-soal', 'Admin::tambahSoalBankUjian');
   $routes->post('bank-soal/edit-soal/(:num)', 'Admin::editSoalBankUjian/$1');
   $routes->get('bank-soal/hapus-soal/(:num)', 'Admin::hapusSoalBankUjian/$1');
   $routes->get('bank-soal/hapus/(:num)', 'Admin::hapusBankUjian/$1');
+
+  $routes->get('bank-soal/kategori/(:segment)/jenis-ujian/hapus/(:num)', 'Admin::hapusJenisUjianInKategori/$1/$2', ['as' => 'admin.bank-soal.kategori.jenis-ujian.hapus']);
 
   // Kelola Mata Pelajaran
   $routes->get('jenis-ujian', 'Admin::jenisUjian');

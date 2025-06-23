@@ -53,6 +53,32 @@
         <div class="col-lg-4 col-md-6">
           <div class="card h-100 shadow-sm hover-shadow">
             <div class="card-body p-4">
+              <div class="dropdown text-end">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#lihatKategoriUjianModal">
+                      <i class="bi bi-eye me-2"></i>Lihat
+                    </button>
+                  </li>
+                  <li>
+                    <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editKategoriUjiannModal">
+                      <i class="bi bi-pencil me-2"></i>Edit
+                    </button>
+                  </li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li>
+                    <a class="dropdown-item text-danger" href=""
+                      onclick="return confirm('Apakah Anda yakin ingin menghapus kategori ujian ini?')">
+                      <i class="bi bi-trash me-2"></i>Hapus
+                    </a>
+                  </li>
+                </ul>
+              </div>
               <div class="d-flex align-items-start mb-3">
                 <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
                   <i class="fas fa-file-alt fa-lg text-info"></i>

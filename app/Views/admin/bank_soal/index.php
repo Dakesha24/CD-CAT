@@ -45,7 +45,7 @@
   </div>
 
   <!-- Alert Messages -->
-  <?php if (session()->getFlashdata('success')): ?>
+  <!-- <?php if (session()->getFlashdata('success')): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
       <i class="fas fa-check-circle me-2"></i><?= session()->getFlashdata('success') ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -57,7 +57,7 @@
       <i class="fas fa-exclamation-circle me-2"></i><?= session()->getFlashdata('error') ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-  <?php endif; ?>
+  <?php endif; ?> -->
 
   <!-- Kategori Bank Soal -->
   <div class="row g-4">
@@ -66,6 +66,35 @@
         <div class="col-lg-4 col-md-6">
           <div class="card h-100 shadow-sm hover-shadow">
             <div class="card-body text-center p-4">
+              <div class="dropdown text-end">
+                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a class="dropdown-item" href="<?= base_url('admin/bank-soal/kategori/' . urlencode($kategori['kategori'])) ?>">
+                      <i class="bi bi-eye me-2"></i>Lihat Detail
+                    </a>
+                  </li>
+                  <li>
+                    <button class="dropdown-item btn-edit-kategori"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editKategoriModal"
+                      data-kategori-name="<?= esc($kategori['kategori']) ?>">
+                      <i class="bi bi-pencil me-2"></i>Edit Kategori
+                    </button>
+                  </li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li>
+                    <a class="dropdown-item text-danger" href="<?= base_url('admin/bank-soal/hapus-kategori/' . urlencode($kategori['kategori'])) ?>"
+                      onclick="return confirm('PERHATIAN! Anda akan menghapus kategori \'<?= esc($kategori['kategori']) ?>\' dan SEMUA bank ujian di dalamnya. Aksi ini tidak dapat dibatalkan. Lanjutkan?')">
+                      <i class="bi bi-trash me-2"></i>Hapus Kategori
+                    </a>
+                  </li>
+                </ul>
+              </div>
               <div class="mb-3">
                 <?php if ($kategori['kategori'] === 'umum'): ?>
                   <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
@@ -85,7 +114,7 @@
               </p>
               <a href="<?= base_url('admin/bank-soal/kategori/' . urlencode($kategori['kategori'])) ?>"
                 class="btn <?= $kategori['kategori'] === 'umum' ? 'btn-outline-primary' : 'btn-outline-success' ?>">
-                <i class="fas fa-arrow-right me-2"></i>Lihat Bank Soal
+                <i class="fas fa-arrow-right me-2"></i>Kelola Kategori
               </a>
             </div>
           </div>
@@ -165,6 +194,37 @@
   </div>
 </div>
 
+<!-- Modal edit -->
+<div class="modal fade" id="editKategoriModal" tabindex="-1" aria-labelledby="editKategoriModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="editKategoriModalLabel">
+          <i class="fas fa-edit text-primary me-2"></i>Edit Nama Kategori
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="<?= base_url('admin/bank-soal/edit-kategori') ?>" method="post">
+        <?= csrf_field() ?>
+        <input type="hidden" name="old_kategori_name" id="old_kategori_name">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="new_kategori_name" class="form-label">Nama Kategori Baru</label>
+            <input type="text" class="form-control" id="new_kategori_name" name="new_kategori_name" required>
+            <div class="form-text">Mengubah nama ini akan memperbarui semua bank ujian dalam kategori ini.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <style>
   .hover-shadow:hover {
     transform: translateY(-2px);
@@ -181,24 +241,35 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('#modalTambahBankSoal form');
+    // Event listener untuk tombol edit
+    const editButtons = document.querySelectorAll('.btn-edit-kategori');
+    const editModal = new bootstrap.Modal(document.getElementById('editKategoriModal'));
+    const oldKategoriInput = document.getElementById('old_kategori_name');
+    const newKategoriInput = document.getElementById('new_kategori_name');
 
-    form.addEventListener('submit', function(e) {
-      const deskripsi = document.getElementById('deskripsi').value;
-
-      if (deskripsi.length < 10) {
-        e.preventDefault(); // Mencegah form submit
-
-        // Tampilkan alert
-        alert(`Deskripsi minimal 10 karakter. Saat ini: ${deskripsi.length} karakter`);
-
-        // Fokus ke input deskripsi
-        document.getElementById('deskripsi').focus();
-
-        return false;
-      }
+    editButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const kategoriName = this.getAttribute('data-kategori-name');
+        oldKategoriInput.value = kategoriName;
+        newKategoriInput.value = kategoriName; // Isi dengan nama lama sebagai default
+      });
     });
+
+    // Script untuk validasi form tambah bank soal (tetap sama)
+    const form = document.querySelector('#modalTambahBankSoal form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const deskripsi = document.getElementById('deskripsi').value;
+        if (deskripsi.length < 10) {
+          e.preventDefault();
+          alert(`Deskripsi minimal 10 karakter. Saat ini: ${deskripsi.length} karakter`);
+          document.getElementById('deskripsi').focus();
+          return false;
+        }
+      });
+    }
   });
 </script>
+
 
 <?= $this->endSection() ?>
