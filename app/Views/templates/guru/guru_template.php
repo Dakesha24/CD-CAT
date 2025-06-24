@@ -178,14 +178,25 @@
                         <i class="bi bi-person-circle fs-5"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="<?= base_url('guru/profil') ?>">
+                        <!-- <li><a class="dropdown-item" href="<?= base_url('guru/profil') ?>">
                                 <i class="bi bi-person me-2"></i> Profil
                             </a></li>
-                        <li>
-                            <hr class="dropdown-divider">
+                        <li> -->
+                        <!-- <hr class="dropdown-divider"> -->
                         </li>
                         <li><a class="dropdown-item text-danger" href="<?= base_url('logout') ?>">
                                 <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            </a></li>
+                    </ul>
+                </div>
+                <!-- Dropdown Panduan -->
+                <div class="dropdown panduan-dropdown me-3">
+                    <button class="btn text-white dropdown-toggle" type="button" id="panduanDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-question-circle fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="panduanDropdown">
+                        <li><a class="dropdown-item" href="https://drive.google.com/file/d/1cyQkbgKGATul62BnBow2QZdm1lXjcLCw/view?usp=drive_link" target="_blank">
+                                <i class="bi bi-file-earmark-text me-2"></i> Panduan Guru
                             </a></li>
                     </ul>
                 </div>
@@ -268,4 +279,3 @@
 </body>
 
 </html>
-

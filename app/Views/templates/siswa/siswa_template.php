@@ -229,8 +229,8 @@
                         <i class="bi bi-question-circle fs-5"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="panduanDropdown">
-                        <li><a class="dropdown-item" href="<?= base_url('assets/docs/panduan-ujian.pdf') ?>" target="_blank">
-                                <i class="bi bi-file-earmark-text me-2"></i> Panduan Ujian
+                        <li><a class="dropdown-item" href="https://drive.google.com/file/d/1Pj-vy9hzt7orZdobMjwPLuy6FFC06TNx/view?usp=drive_link" target="_blank">
+                                <i class="bi bi-file-earmark-text me-2"></i> Panduan Siswa
                             </a></li>
                     </ul>
                 </div>

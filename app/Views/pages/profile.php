@@ -174,7 +174,7 @@
                                     <i class="bi bi-envelope-fill"></i> muslim@upi.edu
                                 </a>
                                 <a href="https://sinta.kemdikbud.go.id/authors/profile/6028471 " class="contact-item">
-                                    <i class="bi bi-google"></i> Publikasi
+                                    <i class="bi bi-diagram-3"></i> Publikasi
                                 </a>
                             </div>
                         </div>

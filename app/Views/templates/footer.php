@@ -22,8 +22,14 @@
       <div class="col-lg-4 col-md-6 mb-4">
         <h5 class="footer-subtitle">Alamat</h5>
         <ul class="footer-contact">
-          <li>Universitas Pendidikan Indonesia.
-            Jl. Dr. Setiabudi No.229, Isola, Kec. Sukasari, Kota Bandung, Jawa Barat 40154
+          <li>
+            <a href="https://www.google.com/maps/search/?api=1&query=Universitas+Pendidikan+Indonesia,+Jl.+Dr.+Setiabudi+No.229,+Isola,+Kec.+Sukasari,+Kota+Bandung,+Jawa+Barat+40154" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit;">
+              <!-- <i class="bi bi-geo-alt-fill"></i>  -->
+              <span>
+                Universitas Pendidikan Indonesia.<br>
+                Jl. Dr. Setiabudi No.229, Isola, Kec. Sukasari, Kota Bandung, Jawa Barat 40154
+              </span>
+            </a>
           </li>
           <li>
             <a href="mailto:jauzaamalia@upi.edu" style="text-decoration: none; color: inherit;">
