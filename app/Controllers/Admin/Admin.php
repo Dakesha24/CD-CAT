@@ -2608,195 +2608,41 @@ class Admin extends Controller
 
     // ===== KELOLA PENGUMUMAN =====
 
-    public function daftarPengumuman()
+    public function pengumuman()
     {
-        $db = \Config\Database::connect();
-
-        // Ambil semua pengumuman dengan info pembuat
-        $data['pengumuman'] = $db->table('pengumuman p')
-            ->select('p.*, u.username as pembuat')
-            ->join('users u', 'u.user_id = p.created_by', 'left')
-            ->orderBy('p.tanggal_publish', 'DESC')
-            ->get()
-            ->getResultArray();
-
-        return view('admin/pengumuman/daftar', $data);
-    }
-
-    public function formTambahPengumuman()
-    {
-        return view('admin/pengumuman/tambah');
+        $data['pengumuman'] = $this->pengumumanModel->getPengumumanWithUser();
+        return view('admin/pengumuman', $data);
     }
 
     public function tambahPengumuman()
     {
-        $rules = [
-            'judul' => 'required|min_length[5]|max_length[200]',
-            'isi_pengumuman' => 'required|min_length[10]',
-            // HAPUS validasi tanggal_berakhir dari rules
-            // 'tanggal_berakhir' => 'permit_empty|valid_date[Y-m-d H:i]'
+        $data = [
+            'judul' => $this->request->getPost('judul'),
+            'isi_pengumuman' => $this->request->getPost('isi_pengumuman'),
+            'tanggal_publish' => $this->request->getPost('tanggal_publish'),
+            'tanggal_berakhir' => $this->request->getPost('tanggal_berakhir'),
+            'created_by' => session()->get('user_id')
         ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
-        }
-
-        try {
-            $pengumumanModel = new \App\Models\PengumumanModel();
-
-            // Handle tanggal_berakhir secara manual
-            $tanggalBerakhir = $this->request->getPost('tanggal_berakhir');
-
-            // Validasi manual untuk tanggal berakhir jika diisi
-            if (!empty($tanggalBerakhir)) {
-                // Konversi dari format datetime-local ke format database
-                $tanggalBerakhir = date('Y-m-d H:i:s', strtotime($tanggalBerakhir));
-
-                // Validasi apakah tanggal valid
-                if ($tanggalBerakhir === false || $tanggalBerakhir === '1970-01-01 00:00:00') {
-                    session()->setFlashdata('error', 'Format tanggal berakhir tidak valid.');
-                    return redirect()->back()->withInput();
-                }
-
-                // Validasi apakah tanggal berakhir tidak lebih awal dari sekarang
-                if (strtotime($tanggalBerakhir) <= time()) {
-                    session()->setFlashdata('error', 'Tanggal berakhir harus lebih dari waktu sekarang.');
-                    return redirect()->back()->withInput();
-                }
-            } else {
-                $tanggalBerakhir = null;
-            }
-
-            $data = [
-                'judul' => $this->request->getPost('judul'),
-                'isi_pengumuman' => $this->request->getPost('isi_pengumuman'),
-                'tanggal_publish' => date('Y-m-d H:i:s'),
-                'tanggal_berakhir' => $tanggalBerakhir,
-                'created_by' => session()->get('user_id')
-            ];
-
-            $pengumumanModel->insert($data);
-            session()->setFlashdata('success', 'Pengumuman berhasil ditambahkan!');
-            return redirect()->to(base_url('admin/pengumuman'));
-        } catch (\Exception $e) {
-            log_message('error', 'Error adding pengumuman: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menambah pengumuman: ' . $e->getMessage());
-            return redirect()->back()->withInput();
-        }
+        $this->pengumumanModel->insert($data);
+        return redirect()->to('admin/pengumuman')->with('success', 'Pengumuman berhasil ditambahkan');
     }
 
-    public function formEditPengumuman($pengumumanId)
+    public function editPengumuman($id)
     {
-        $pengumumanModel = new \App\Models\PengumumanModel();
-        $pengumuman = $pengumumanModel->find($pengumumanId);
-
-        if (!$pengumuman) {
-            session()->setFlashdata('error', 'Pengumuman tidak ditemukan');
-            return redirect()->to(base_url('admin/pengumuman'));
-        }
-
-        $data['pengumuman'] = $pengumuman;
-        return view('admin/pengumuman/edit', $data);
-    }
-
-    public function editPengumuman($pengumumanId)
-    {
-        $pengumumanModel = new \App\Models\PengumumanModel();
-        $pengumuman = $pengumumanModel->find($pengumumanId);
-
-        if (!$pengumuman) {
-            session()->setFlashdata('error', 'Pengumuman tidak ditemukan');
-            return redirect()->to(base_url('admin/pengumuman'));
-        }
-
-        $rules = [
-            'judul' => 'required|min_length[5]|max_length[200]',
-            'isi_pengumuman' => 'required|min_length[10]',
-            // HAPUS validasi tanggal_berakhir dari rules
-            // 'tanggal_berakhir' => 'permit_empty|valid_date[Y-m-d H:i]'
+        $data = [
+            'judul' => $this->request->getPost('judul'),
+            'isi_pengumuman' => $this->request->getPost('isi_pengumuman'),
+            'tanggal_publish' => $this->request->getPost('tanggal_publish'),
+            'tanggal_berakhir' => $this->request->getPost('tanggal_berakhir')
         ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
-        }
-
-        try {
-            // Handle tanggal_berakhir secara manual
-            $tanggalBerakhir = $this->request->getPost('tanggal_berakhir');
-
-            // Validasi manual untuk tanggal berakhir jika diisi
-            if (!empty($tanggalBerakhir)) {
-                // Konversi dari format datetime-local ke format database
-                $tanggalBerakhir = date('Y-m-d H:i:s', strtotime($tanggalBerakhir));
-
-                // Validasi apakah tanggal valid
-                if ($tanggalBerakhir === false || $tanggalBerakhir === '1970-01-01 00:00:00') {
-                    session()->setFlashdata('error', 'Format tanggal berakhir tidak valid.');
-                    return redirect()->back()->withInput();
-                }
-            } else {
-                $tanggalBerakhir = null;
-            }
-
-            $data = [
-                'judul' => $this->request->getPost('judul'),
-                'isi_pengumuman' => $this->request->getPost('isi_pengumuman'),
-                'tanggal_berakhir' => $tanggalBerakhir
-            ];
-
-            $pengumumanModel->update($pengumumanId, $data);
-            session()->setFlashdata('success', 'Pengumuman berhasil diperbarui!');
-            return redirect()->to(base_url('admin/pengumuman'));
-        } catch (\Exception $e) {
-            log_message('error', 'Error updating pengumuman: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui pengumuman: ' . $e->getMessage());
-            return redirect()->back()->withInput();
-        }
+        $this->pengumumanModel->update($id, $data);
+        return redirect()->to('admin/pengumuman')->with('success', 'Pengumuman berhasil diupdate');
     }
 
-    public function hapusPengumuman($pengumumanId)
+    public function hapusPengumuman($id)
     {
-        try {
-            $pengumumanModel = new \App\Models\PengumumanModel();
-            $pengumuman = $pengumumanModel->find($pengumumanId);
-
-            if (!$pengumuman) {
-                session()->setFlashdata('error', 'Pengumuman tidak ditemukan');
-                return redirect()->to(base_url('admin/pengumuman'));
-            }
-
-            $pengumumanModel->delete($pengumumanId);
-            session()->setFlashdata('success', 'Pengumuman berhasil dihapus!');
-        } catch (\Exception $e) {
-            log_message('error', 'Error deleting pengumuman: ' . $e->getMessage());
-            session()->setFlashdata('error', 'Terjadi kesalahan saat menghapus pengumuman.');
-        }
-
-        return redirect()->to(base_url('admin/pengumuman'));
-    }
-
-    public function detailPengumuman($pengumumanId)
-    {
-        $db = \Config\Database::connect();
-
-        $pengumuman = $db->table('pengumuman p')
-            ->select('p.*, u.username as pembuat')
-            ->join('users u', 'u.user_id = p.created_by', 'left')
-            ->where('p.pengumuman_id', $pengumumanId)
-            ->get()
-            ->getRowArray();
-
-        if (!$pengumuman) {
-            session()->setFlashdata('error', 'Pengumuman tidak ditemukan');
-            return redirect()->to(base_url('admin/pengumuman'));
-        }
-
-        $data['pengumuman'] = $pengumuman;
-        return view('admin/pengumuman/detail', $data);
+        $this->pengumumanModel->delete($id);
+        return redirect()->to('admin/pengumuman')->with('success', 'Pengumuman berhasil dihapus');
     }
 
     // Method untuk toggle status aktif/nonaktif pengumuman (opsional)

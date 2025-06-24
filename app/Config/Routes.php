@@ -127,14 +127,10 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
   $routes->get('hasil-ujian/download-pdf/(:num)', 'Admin::downloadPDFHTML/$1');
 
   // Kelola Pengumuman
-  $routes->get('pengumuman', 'Admin::daftarPengumuman');
-  $routes->get('pengumuman/tambah', 'Admin::formTambahPengumuman');
+  $routes->get('pengumuman', 'Admin::pengumuman');
   $routes->post('pengumuman/tambah', 'Admin::tambahPengumuman');
-  $routes->get('pengumuman/edit/(:num)', 'Admin::formEditPengumuman/$1');
   $routes->post('pengumuman/edit/(:num)', 'Admin::editPengumuman/$1');
-  $routes->get('pengumuman/detail/(:num)', 'Admin::detailPengumuman/$1');
   $routes->get('pengumuman/hapus/(:num)', 'Admin::hapusPengumuman/$1');
-  $routes->get('pengumuman/toggle/(:num)', 'Admin::toggleStatusPengumuman/$1');
 
   // debugging (bisa dihps)
   $routes->get('debug-hasil', 'Admin::debugHasilUjian');
