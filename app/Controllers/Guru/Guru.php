@@ -542,6 +542,8 @@ class Guru extends Controller
 
     // ===== KELOLA JADWAL UJIAN =====
 
+    // ===== KELOLA JADWAL UJIAN =====
+
     public function jadwalUjian()
     {
         $userId = session()->get('user_id');
@@ -570,14 +572,22 @@ class Guru extends Controller
             ->where('kelas_guru.guru_id', $guru['guru_id'])
             ->get()->getResultArray();
 
-        // Daftar guru (untuk pengawas) - hanya guru yang mengajar di kelas yang sama
-        $data['guru'] = $this->db->table('guru')
+        // Daftar guru untuk pengawas
+        // 1. Ambil guru yang sedang login terlebih dahulu
+        $currentGuru = [$guru];
+
+        // 2. Ambil guru lain yang mengajar di kelas yang sama (exclude guru yang login)
+        $otherGuru = $this->db->table('guru')
             ->select('guru.*')
             ->join('kelas_guru kg1', 'kg1.guru_id = guru.guru_id')
             ->join('kelas_guru kg2', 'kg2.kelas_id = kg1.kelas_id')
             ->where('kg2.guru_id', $guru['guru_id'])
+            ->where('guru.guru_id !=', $guru['guru_id']) // Exclude guru yang login
             ->groupBy('guru.guru_id')
             ->get()->getResultArray();
+
+        // 3. Gabungkan dengan guru yang login di posisi pertama
+        $data['guru'] = array_merge($currentGuru, $otherGuru);
 
         return view('guru/jadwal_ujian', $data);
     }
@@ -1336,6 +1346,53 @@ class Guru extends Controller
             return redirect()->to('guru/jenis-ujian')->with('success', 'Mata Pelajaran berhasil ditambahkan');
         } catch (\Exception $e) {
             return redirect()->to('guru/jenis-ujian')->with('error', 'Gagal menambahkan Mata Pelajaran: ' . $e->getMessage());
+        }
+    }
+
+    public function editJenisUjian($jenisUjianId)
+    {
+        // Cek dari mana request berasal untuk redirect yang benar
+        $redirectUrl = $this->request->getPost('_redirect_url') ?: base_url('guru/jenis-ujian');
+
+        $rules = [
+            'nama_jenis' => 'required|min_length[3]|max_length[100]',
+            'deskripsi' => 'required|min_length[10]',
+            'kelas_id' => 'required|numeric'
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->to($redirectUrl)
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $jenisUjian = $this->jenisUjianModel->find($jenisUjianId);
+        if (!$jenisUjian) {
+            session()->setFlashdata('error', 'Mata Pelajaran tidak ditemukan.');
+            return redirect()->to($redirectUrl);
+        }
+
+        $kelasId = $this->request->getPost('kelas_id');
+        $kelas = $this->kelasModel->find($kelasId);
+        if (!$kelas) {
+            session()->setFlashdata('error', 'Kelas tidak ditemukan.');
+            return redirect()->to($redirectUrl)->withInput();
+        }
+
+        try {
+            $data = [
+                'nama_jenis' => $this->request->getPost('nama_jenis'),
+                'deskripsi' => $this->request->getPost('deskripsi'),
+                'kelas_id' => $kelasId
+            ];
+
+            $this->jenisUjianModel->update($jenisUjianId, $data);
+            session()->setFlashdata('success', 'Mata Pelajaran berhasil diperbarui!');
+            return redirect()->to($redirectUrl);
+        } catch (\Exception $e) {
+            log_message('error', 'Error updating Mata Pelajaran: ' . $e->getMessage());
+            session()->setFlashdata('error', 'Terjadi kesalahan saat memperbarui Mata Pelajaran: ' . $e->getMessage());
+            return redirect()->to($redirectUrl)->withInput();
         }
     }
 

@@ -1600,6 +1600,34 @@ class Admin extends Controller
         }
     }
 
+    public function getJenisUjianByKelas($kelasId)
+    {
+        try {
+            // Ambil jenis ujian yang spesifik untuk kelas tersebut ATAU yang bersifat umum (kelas_id = NULL)
+            $jenisUjian = $this->jenisUjianModel
+                ->select('jenis_ujian.*, kelas.nama_kelas, sekolah.nama_sekolah')
+                ->join('kelas', 'kelas.kelas_id = jenis_ujian.kelas_id', 'left')
+                ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id', 'left')
+                ->groupStart()
+                ->where('jenis_ujian.kelas_id', $kelasId)
+                ->orWhere('jenis_ujian.kelas_id', null) // Mata pelajaran umum
+                ->groupEnd()
+                ->orderBy('jenis_ujian.nama_jenis', 'ASC')
+                ->findAll();
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => $jenisUjian
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error fetching jenis ujian by kelas: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal mengambil data mata pelajaran'
+            ]);
+        }
+    }
+
     // ===== KELOLA SOAL =====
 
     public function kelolaSoal($ujian_id)
@@ -1903,121 +1931,170 @@ class Admin extends Controller
 
     public function jadwalUjian()
     {
-        // Ambil SEMUA jadwal ujian dari database dengan join ke info terkait
+        // Ambil SEMUA jadwal ujian dengan informasi lengkap
         $data['jadwal'] = $this->db->table('jadwal_ujian')
-            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.kode_ujian, kelas.nama_kelas, guru.nama_lengkap, sekolah.nama_sekolah')
+            ->select('jadwal_ujian.*, ujian.nama_ujian, ujian.kode_ujian, kelas.nama_kelas, sekolah.nama_sekolah, sekolah.sekolah_id, guru.nama_lengkap')
             ->join('ujian', 'ujian.id_ujian = jadwal_ujian.ujian_id')
             ->join('kelas', 'kelas.kelas_id = jadwal_ujian.kelas_id')
             ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id')
-            ->join('guru', 'guru.guru_id = jadwal_ujian.guru_id') // guru_id di sini adalah guru pengawas
+            ->join('guru', 'guru.guru_id = jadwal_ujian.guru_id')
             ->orderBy('jadwal_ujian.tanggal_mulai', 'DESC')
             ->get()->getResultArray();
 
-        // Ambil SEMUA ujian untuk dropdown di modal tambah & edit
-        $data['ujian_tambah'] = $this->ujianModel->select('id_ujian, nama_ujian, kode_ujian')->orderBy('nama_ujian', 'ASC')->findAll();
-        $data['ujian_edit'] = $data['ujian_tambah']; // Data yang sama untuk edit
+        // Data untuk dropdown form tambah/edit
+        // Semua sekolah
+        $data['sekolah'] = $this->sekolahModel->orderBy('nama_sekolah', 'ASC')->findAll();
 
-        // Ambil SEMUA kelas untuk dropdown di modal dengan info sekolah
-        $data['kelas'] = $this->kelasModel
-            ->select('kelas.*, sekolah.nama_sekolah')
-            ->join('sekolah', 'sekolah.sekolah_id = kelas.sekolah_id')
-            ->orderBy('sekolah.nama_sekolah, kelas.nama_kelas', 'ASC')
-            ->findAll();
+        // Semua guru dengan informasi sekolah
+        $data['guru'] = $this->db->table('guru')
+            ->select('guru.*, sekolah.nama_sekolah')
+            ->join('sekolah', 'sekolah.sekolah_id = guru.sekolah_id')
+            ->orderBy('sekolah.nama_sekolah', 'ASC')
+            ->orderBy('guru.nama_lengkap', 'ASC')
+            ->get()->getResultArray();
 
-        // Ambil SEMUA guru untuk dropdown pengawas
-        $data['guru'] = $this->guruModel->select('guru_id, nama_lengkap, nip, mata_pelajaran')->orderBy('nama_lengkap', 'ASC')->findAll();
+        // Kelas dan ujian akan dimuat via AJAX berdasarkan sekolah/kelas yang dipilih
 
-        // Arahkan ke view manajemen jadwal di dalam folder admin
         return view('admin/jadwal/jadwal_ujian', $data);
     }
 
     public function tambahJadwal()
     {
-        $rules = [
-            'ujian_id' => 'required|numeric',
-            'kelas_id' => 'required|numeric',
-            'guru_id' => 'required|numeric',
-            'tanggal_mulai' => 'required',
-            'tanggal_selesai' => 'required',
-            'kode_akses' => 'required|min_length[4]|max_length[50]'
-        ];
+        $sekolah_id = $this->request->getPost('sekolah_id');
+        $ujian_id = $this->request->getPost('ujian_id');
+        $kelas_id = $this->request->getPost('kelas_id');
+        $guru_pengawas_id = $this->request->getPost('guru_id');
 
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        // Validasi: Pastikan kelas benar-benar ada di sekolah yang dipilih
+        $kelas = $this->kelasModel->find($kelas_id);
+        if (!$kelas || $kelas['sekolah_id'] != $sekolah_id) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Data kelas tidak valid atau tidak sesuai dengan sekolah yang dipilih.');
         }
 
+        // Validasi: Pastikan ujian tersedia (umum atau khusus untuk kelas)
+        $ujian = $this->ujianModel->find($ujian_id);
+        if (!$ujian) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Ujian tidak ditemukan.');
+        }
+
+        // Ujian harus umum (kelas_id = null) atau khusus untuk kelas yang dipilih
+        if ($ujian['kelas_id'] !== null && $ujian['kelas_id'] != $kelas_id) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Ujian ini tidak tersedia untuk kelas yang dipilih.');
+        }
+
+        // Cek apakah kombinasi ujian_id dan kelas_id sudah ada
         $existing = $this->jadwalUjianModel
-            ->where('ujian_id', $this->request->getPost('ujian_id'))
-            ->where('kelas_id', $this->request->getPost('kelas_id'))
+            ->where('ujian_id', $ujian_id)
+            ->where('kelas_id', $kelas_id)
             ->first();
 
         if ($existing) {
-            return redirect()->to('admin/jadwal-ujian') // Redirect ke rute admin
-                ->with('error', 'Jadwal untuk ujian dan kelas ini sudah ada.');
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Jadwal ujian untuk kelas ini sudah ada. Pilih kelas lain atau ujian lain.');
+        }
+
+        // Validasi waktu
+        $tanggalMulai = $this->request->getPost('tanggal_mulai');
+        $tanggalSelesai = $this->request->getPost('tanggal_selesai');
+
+        if (strtotime($tanggalSelesai) <= strtotime($tanggalMulai)) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Waktu selesai harus lebih besar dari waktu mulai.');
         }
 
         $data = [
-            'ujian_id' => $this->request->getPost('ujian_id'),
-            'kelas_id' => $this->request->getPost('kelas_id'),
-            'guru_id' => $this->request->getPost('guru_id'),
-            'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
-            'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
+            'ujian_id' => $ujian_id,
+            'kelas_id' => $kelas_id,
+            'guru_id' => $guru_pengawas_id,
+            'tanggal_mulai' => $tanggalMulai,
+            'tanggal_selesai' => $tanggalSelesai,
             'kode_akses' => $this->request->getPost('kode_akses'),
             'status' => 'belum_mulai'
         ];
 
         try {
             $this->jadwalUjianModel->insert($data);
-            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil ditambahkan.');
+            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil ditambahkan');
         } catch (\Exception $e) {
-            log_message('error', 'Admin gagal tambah jadwal: ' . $e->getMessage());
-            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal menambahkan jadwal ujian.');
+            log_message('error', 'Admin gagal menambahkan jadwal: ' . $e->getMessage());
+            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal menambahkan jadwal ujian: ' . $e->getMessage());
         }
     }
 
     public function editJadwal($id)
     {
-        $rules = [
-            'ujian_id' => 'required|numeric',
-            'kelas_id' => 'required|numeric',
-            'guru_id' => 'required|numeric',
-            'tanggal_mulai' => 'required',
-            'tanggal_selesai' => 'required',
-            'kode_akses' => 'required|min_length[4]|max_length[50]',
-            'status' => 'required|in_list[belum_mulai,sedang_berlangsung,selesai]'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        // Cek apakah jadwal ujian exists
+        $jadwal = $this->jadwalUjianModel->find($id);
+        if (!$jadwal) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Jadwal ujian tidak ditemukan.');
         }
 
+        $sekolah_id = $this->request->getPost('sekolah_id');
+        $ujian_id = $this->request->getPost('ujian_id');
+        $kelas_id = $this->request->getPost('kelas_id');
+        $guru_pengawas_id = $this->request->getPost('guru_id');
+
+        // Validasi: Pastikan kelas benar-benar ada di sekolah yang dipilih
+        $kelas = $this->kelasModel->find($kelas_id);
+        if (!$kelas || $kelas['sekolah_id'] != $sekolah_id) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Data kelas tidak valid atau tidak sesuai dengan sekolah yang dipilih.');
+        }
+
+        // Validasi: Pastikan ujian tersedia (umum atau khusus untuk kelas)
+        $ujian = $this->ujianModel->find($ujian_id);
+        if (!$ujian) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Ujian tidak ditemukan.');
+        }
+
+        // Ujian harus umum (kelas_id = null) atau khusus untuk kelas yang dipilih
+        if ($ujian['kelas_id'] !== null && $ujian['kelas_id'] != $kelas_id) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Ujian ini tidak tersedia untuk kelas yang dipilih.');
+        }
+
+        // Cek apakah kombinasi ujian_id dan kelas_id sudah ada, kecuali untuk jadwal yang sedang diedit
         $existing = $this->jadwalUjianModel
-            ->where('ujian_id', $this->request->getPost('ujian_id'))
-            ->where('kelas_id', $this->request->getPost('kelas_id'))
+            ->where('ujian_id', $ujian_id)
+            ->where('kelas_id', $kelas_id)
             ->where('jadwal_id !=', $id)
             ->first();
 
         if ($existing) {
             return redirect()->to('admin/jadwal-ujian')
-                ->with('error', 'Kombinasi ujian dan kelas ini sudah digunakan oleh jadwal lain.');
+                ->with('error', 'Jadwal ujian untuk kelas ini sudah ada. Pilih kelas lain atau ujian lain.');
+        }
+
+        // Validasi waktu
+        $tanggalMulai = $this->request->getPost('tanggal_mulai');
+        $tanggalSelesai = $this->request->getPost('tanggal_selesai');
+
+        if (strtotime($tanggalSelesai) <= strtotime($tanggalMulai)) {
+            return redirect()->to('admin/jadwal-ujian')
+                ->with('error', 'Waktu selesai harus lebih besar dari waktu mulai.');
         }
 
         $data = [
-            'ujian_id' => $this->request->getPost('ujian_id'),
-            'kelas_id' => $this->request->getPost('kelas_id'),
-            'guru_id' => $this->request->getPost('guru_id'),
-            'tanggal_mulai' => $this->request->getPost('tanggal_mulai'),
-            'tanggal_selesai' => $this->request->getPost('tanggal_selesai'),
+            'ujian_id' => $ujian_id,
+            'kelas_id' => $kelas_id,
+            'guru_id' => $guru_pengawas_id,
+            'tanggal_mulai' => $tanggalMulai,
+            'tanggal_selesai' => $tanggalSelesai,
             'kode_akses' => $this->request->getPost('kode_akses'),
             'status' => $this->request->getPost('status')
         ];
 
         try {
             $this->jadwalUjianModel->update($id, $data);
-            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil diperbarui.');
+            return redirect()->to('admin/jadwal-ujian')->with('success', 'Jadwal ujian berhasil diupdate');
         } catch (\Exception $e) {
-            log_message('error', 'Admin gagal update jadwal: ' . $e->getMessage());
-            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal memperbarui jadwal ujian.');
+            log_message('error', 'Admin gagal mengupdate jadwal: ' . $e->getMessage());
+            return redirect()->to('admin/jadwal-ujian')->with('error', 'Gagal mengupdate jadwal ujian: ' . $e->getMessage());
         }
     }
 
@@ -2036,6 +2113,33 @@ class Admin extends Controller
         } catch (\Exception $e) {
             log_message('error', 'Admin gagal hapus jadwal: ' . $e->getMessage());
             return redirect()->to('admin/jadwal-ujian')->with('error', 'Terjadi kesalahan saat menghapus jadwal ujian.');
+        }
+    }
+
+    public function getUjianByKelas($kelasId)
+    {
+        try {
+            // Ambil ujian yang spesifik untuk kelas tersebut ATAU yang bersifat umum (kelas_id = NULL)
+            $ujian = $this->ujianModel
+                ->select('ujian.*, jenis_ujian.nama_jenis')
+                ->join('jenis_ujian', 'jenis_ujian.jenis_ujian_id = ujian.jenis_ujian_id', 'left')
+                ->groupStart()
+                ->where('ujian.kelas_id', $kelasId)
+                ->orWhere('ujian.kelas_id', null) // Ujian umum
+                ->groupEnd()
+                ->orderBy('ujian.nama_ujian', 'ASC')
+                ->findAll();
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => $ujian
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error fetching ujian by kelas: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal mengambil data ujian'
+            ]);
         }
     }
 
@@ -3029,7 +3133,9 @@ class Admin extends Controller
         $fotoFile = $this->request->getFile('foto');
         if ($fotoFile->isValid() && !$fotoFile->hasMoved()) {
             $newName = $fotoFile->getRandomName();
-            $uploadPath = FCPATH . 'uploads/soal';
+            // $uploadPath = FCPATH . 'uploads/soal';
+            $uploadPath = 'https://cd-cat.lab-fisika.id/uploads/soal';
+
 
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0777, true);

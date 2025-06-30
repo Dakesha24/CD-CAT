@@ -89,6 +89,9 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
 
   // API routes untuk AJAX
   $routes->get('api/kelas-by-sekolah/(:num)', 'Admin::getKelasBySekolah/$1');
+  $routes->get('api/jenis-ujian-by-kelas/(:num)', 'Admin::getJenisUjianByKelas/$1');
+  $routes->get('api/ujian-by-kelas/(:num)', 'Admin::getUjianByKelas/$1'); 
+
 
   // API routes untuk AJAX
   $routes->get('bank-soal/api/kategori', 'Admin::getKategoriTersedia');

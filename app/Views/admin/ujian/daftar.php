@@ -99,13 +99,13 @@
 
                             <div class="flex-grow-1">
                                 <h5 class="card-title fw-bold mb-2"><?= esc($u['nama_ujian']) ?></h5>
-                                
+
                                 <?php if (!empty($u['kode_ujian'])): ?>
                                     <p class="card-subtitle text-muted small mb-2">
                                         <i class="bi bi-key me-1"></i>Kode: <strong><?= esc($u['kode_ujian']) ?></strong>
                                     </p>
                                 <?php endif; ?>
-                                
+
                                 <p class="card-text text-muted small mb-3"><?= esc($u['deskripsi']) ?></p>
 
                                 <div class="row g-2 text-center mb-3">
@@ -294,7 +294,7 @@
                                         <option value="">Pilih Sekolah</option>
                                         <?php if (!empty($sekolah)): ?>
                                             <?php foreach ($sekolah as $s): ?>
-                                                <option value="<?= $s['sekolah_id'] ?>" 
+                                                <option value="<?= $s['sekolah_id'] ?>"
                                                     <?= (isset($u['sekolah_id']) && $u['sekolah_id'] == $s['sekolah_id']) ? 'selected' : '' ?>>
                                                     <?= esc($s['nama_sekolah']) ?>
                                                 </option>
@@ -327,7 +327,7 @@
                                     <select name="jenis_ujian_id" class="form-select" required>
                                         <?php if (!empty($jenis_ujian)): ?>
                                             <?php foreach ($jenis_ujian as $ju): ?>
-                                                <option value="<?= $ju['jenis_ujian_id'] ?>" 
+                                                <option value="<?= $ju['jenis_ujian_id'] ?>"
                                                     <?= $ju['jenis_ujian_id'] == $u['jenis_ujian_id'] ? 'selected' : '' ?>>
                                                     <?= esc($ju['nama_jenis']) ?>
                                                     <?php if (!empty($ju['nama_kelas'])): ?>
@@ -461,200 +461,314 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handler untuk Modal Tambah Ujian
-    const sekolahSelectTambah = document.getElementById('sekolah-select-tambah');
-    const kelasSelectTambah = document.getElementById('kelas-select-tambah');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handler untuk Modal Tambah Ujian
+        const sekolahSelectTambah = document.getElementById('sekolah-select-tambah');
+        const kelasSelectTambah = document.getElementById('kelas-select-tambah');
+        const jenisUjianSelectTambah = document.querySelector('#tambahUjianModal select[name="jenis_ujian_id"]');
 
-    if (sekolahSelectTambah && kelasSelectTambah) {
-        sekolahSelectTambah.addEventListener('change', function() {
-            handleSekolahChange(this, kelasSelectTambah);
-        });
-    }
-
-    // Handler untuk Modal Edit Ujian
-    const sekolahSelectsEdit = document.querySelectorAll('.sekolah-select-edit');
-    sekolahSelectsEdit.forEach(function(sekolahSelect) {
-        const ujianId = sekolahSelect.dataset.ujianId;
-        const kelasSelect = document.querySelector(`.kelas-select-edit[data-ujian-id="${ujianId}"]`);
-        
-        if (kelasSelect) {
-            sekolahSelect.addEventListener('change', function() {
-                handleSekolahChange(this, kelasSelect);
+        if (sekolahSelectTambah && kelasSelectTambah) {
+            sekolahSelectTambah.addEventListener('change', function() {
+                handleSekolahChange(this, kelasSelectTambah);
             });
         }
-    });
 
-    function handleSekolahChange(sekolahSelect, kelasSelect) {
-        const sekolahId = sekolahSelect.value;
-        
-        // Reset dropdown kelas
-        kelasSelect.innerHTML = '<option value="">Memuat kelas...</option>';
-        kelasSelect.disabled = true;
-
-        if (!sekolahId) {
-            kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
-            return;
+        // Handler untuk perubahan kelas di modal tambah
+        if (kelasSelectTambah && jenisUjianSelectTambah) {
+            kelasSelectTambah.addEventListener('change', function() {
+                handleKelasChange(this, jenisUjianSelectTambah);
+            });
         }
 
-        // Fetch kelas berdasarkan sekolah
-        fetch(`<?= base_url('admin/api/kelas-by-sekolah/') ?>${sekolahId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(responseData => {
-                console.log('Response received:', responseData);
-                
-                // Reset dropdown
-                kelasSelect.innerHTML = '';
-                
-                // Tambahkan opsi default
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Pilih Kelas (Kosongkan untuk umum)';
-                kelasSelect.appendChild(defaultOption);
+        // Handler untuk Modal Edit Ujian
+        const sekolahSelectsEdit = document.querySelectorAll('.sekolah-select-edit');
+        sekolahSelectsEdit.forEach(function(sekolahSelect) {
+            const ujianId = sekolahSelect.dataset.ujianId;
+            const kelasSelect = document.querySelector(`.kelas-select-edit[data-ujian-id="${ujianId}"]`);
+            const jenisUjianSelect = sekolahSelect.closest('form').querySelector('select[name="jenis_ujian_id"]');
 
-                // Periksa apakah response valid
-                if (responseData.status === 'success' && Array.isArray(responseData.data)) {
-                    if (responseData.data.length > 0) {
-                        // Tambahkan opsi kelas
-                        responseData.data.forEach(kelas => {
-                            const option = document.createElement('option');
-                            option.value = kelas.kelas_id;
-                            option.textContent = `${kelas.nama_kelas} (${kelas.tahun_ajaran})`;
-                            kelasSelect.appendChild(option);
-                        });
+            if (kelasSelect) {
+                sekolahSelect.addEventListener('change', function() {
+                    handleSekolahChange(this, kelasSelect);
+                });
+            }
+
+            // Handler untuk perubahan kelas di modal edit
+            if (kelasSelect && jenisUjianSelect) {
+                kelasSelect.addEventListener('change', function() {
+                    handleKelasChange(this, jenisUjianSelect);
+                });
+            }
+        });
+
+        function handleSekolahChange(sekolahSelect, kelasSelect) {
+            const sekolahId = sekolahSelect.value;
+
+            // Reset dropdown kelas
+            kelasSelect.innerHTML = '<option value="">Memuat kelas...</option>';
+            kelasSelect.disabled = true;
+
+            // Reset dropdown mata pelajaran juga
+            const jenisUjianSelect = sekolahSelect.closest('.modal').querySelector('select[name="jenis_ujian_id"]');
+            if (jenisUjianSelect) {
+                resetJenisUjianSelect(jenisUjianSelect);
+            }
+
+            if (!sekolahId) {
+                kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
+                return;
+            }
+
+            // Fetch kelas berdasarkan sekolah
+            fetch(`<?= base_url('admin/api/kelas-by-sekolah/') ?>${sekolahId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(responseData => {
+                    console.log('Response received:', responseData);
+
+                    // Reset dropdown
+                    kelasSelect.innerHTML = '';
+
+                    // Tambahkan opsi default
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Pilih Kelas (Kosongkan untuk umum)';
+                    kelasSelect.appendChild(defaultOption);
+
+                    // Periksa apakah response valid
+                    if (responseData.status === 'success' && Array.isArray(responseData.data)) {
+                        if (responseData.data.length > 0) {
+                            // Tambahkan opsi kelas
+                            responseData.data.forEach(kelas => {
+                                const option = document.createElement('option');
+                                option.value = kelas.kelas_id;
+                                option.textContent = `${kelas.nama_kelas}`;
+                                kelasSelect.appendChild(option);
+                            });
+                        } else {
+                            // Tidak ada kelas
+                            const noDataOption = document.createElement('option');
+                            noDataOption.value = '';
+                            noDataOption.textContent = 'Tidak ada kelas tersedia';
+                            noDataOption.disabled = true;
+                            kelasSelect.appendChild(noDataOption);
+                        }
                     } else {
-                        // Tidak ada kelas
-                        const noDataOption = document.createElement('option');
-                        noDataOption.value = '';
-                        noDataOption.textContent = 'Tidak ada kelas tersedia';
-                        noDataOption.disabled = true;
-                        kelasSelect.appendChild(noDataOption);
+                        throw new Error('Format response tidak valid');
                     }
-                } else {
-                    throw new Error('Format response tidak valid');
-                }
 
-                // Aktifkan dropdown
-                kelasSelect.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error fetching kelas:', error);
-                
-                kelasSelect.innerHTML = '<option value="">Gagal memuat kelas</option>';
-                kelasSelect.disabled = false;
-                
-                // Tampilkan pesan error
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-2';
-                alertDiv.innerHTML = `
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Gagal memuat data kelas. Silakan coba lagi atau hubungi administrator.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                // Insert alert setelah dropdown kelas
-                kelasSelect.parentNode.insertBefore(alertDiv, kelasSelect.nextSibling);
-                
-                // Auto remove alert after 5 seconds
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
-                }, 5000);
-            });
-    }
+                    // Aktifkan dropdown
+                    kelasSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching kelas:', error);
 
-    // Form validation
-    const forms = document.querySelectorAll('form[id^="formTambahUjian"], form[action*="ujian/edit"]');
-    forms.forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            const requiredFields = form.querySelectorAll('[required]');
-            let hasErrors = false;
+                    kelasSelect.innerHTML = '<option value="">Gagal memuat kelas</option>';
+                    kelasSelect.disabled = false;
 
-            requiredFields.forEach(function(field) {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    hasErrors = true;
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-
-            if (hasErrors) {
-                e.preventDefault();
-                
-                // Scroll to first error
-                const firstError = form.querySelector('.is-invalid');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    firstError.focus();
-                }
-
-                // Show error message
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <i class="bi bi-exclamation-circle me-2"></i>
-                    Harap lengkapi semua field yang wajib diisi.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                const modalBody = form.querySelector('.modal-body');
-                modalBody.insertBefore(alertDiv, modalBody.firstChild);
-
-                // Auto remove after 5 seconds
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
-                }, 5000);
-            }
-        });
-    });
-
-    // Clear form validation on input
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('is-invalid')) {
-            if (e.target.value.trim()) {
-                e.target.classList.remove('is-invalid');
-            }
+                    showErrorAlert(kelasSelect, 'Gagal memuat data kelas. Silakan coba lagi atau hubungi administrator.');
+                });
         }
-    });
 
-    // Reset form when modal is closed
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(function(modal) {
-        modal.addEventListener('hidden.bs.modal', function() {
-            const form = modal.querySelector('form');
-            if (form) {
-                // Remove validation classes
-                const invalidFields = form.querySelectorAll('.is-invalid');
-                invalidFields.forEach(field => field.classList.remove('is-invalid'));
-                
-                // Remove alert messages
-                const alerts = form.querySelectorAll('.alert');
-                alerts.forEach(alert => alert.remove());
-                
-                // Reset form if it's tambah form
-                if (form.id === 'formTambahUjian') {
-                    form.reset();
-                    
-                    // Reset dropdowns
-                    const kelasSelect = form.querySelector('#kelas-select-tambah');
-                    if (kelasSelect) {
-                        kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
-                        kelasSelect.disabled = true;
+        function handleKelasChange(kelasSelect, jenisUjianSelect) {
+            const kelasId = kelasSelect.value;
+
+            // Reset dropdown mata pelajaran
+            jenisUjianSelect.innerHTML = '<option value="">Memuat mata pelajaran...</option>';
+            jenisUjianSelect.disabled = true;
+
+            if (!kelasId) {
+                // Jika tidak ada kelas dipilih, tampilkan semua mata pelajaran umum
+                resetJenisUjianSelect(jenisUjianSelect);
+                jenisUjianSelect.disabled = false;
+                return;
+            }
+
+            // Fetch mata pelajaran berdasarkan kelas
+            fetch(`<?= base_url('admin/api/jenis-ujian-by-kelas/') ?>${kelasId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    return response.json();
+                })
+                .then(responseData => {
+                    console.log('Jenis ujian response:', responseData);
+
+                    // Reset dropdown
+                    jenisUjianSelect.innerHTML = '';
+
+                    // Tambahkan opsi default
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Pilih Mata Pelajaran';
+                    jenisUjianSelect.appendChild(defaultOption);
+
+                    // Periksa apakah response valid
+                    if (responseData.status === 'success' && Array.isArray(responseData.data)) {
+                        if (responseData.data.length > 0) {
+                            // Tambahkan opsi mata pelajaran
+                            responseData.data.forEach(jenisUjian => {
+                                const option = document.createElement('option');
+                                option.value = jenisUjian.jenis_ujian_id;
+
+                                let optionText = jenisUjian.nama_jenis;
+                                if (jenisUjian.nama_kelas) {
+                                    optionText += ` - ${jenisUjian.nama_kelas}`;
+                                } else {
+                                    optionText += ' (Umum)';
+                                }
+                                if (jenisUjian.nama_sekolah) {
+                                    optionText += ` (${jenisUjian.nama_sekolah})`;
+                                }
+
+                                option.textContent = optionText;
+                                jenisUjianSelect.appendChild(option);
+                            });
+                        } else {
+                            // Tidak ada mata pelajaran
+                            const noDataOption = document.createElement('option');
+                            noDataOption.value = '';
+                            noDataOption.textContent = 'Tidak ada mata pelajaran tersedia';
+                            noDataOption.disabled = true;
+                            jenisUjianSelect.appendChild(noDataOption);
+                        }
+                    } else {
+                        throw new Error('Format response tidak valid');
+                    }
+
+                    // Aktifkan dropdown
+                    jenisUjianSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching jenis ujian:', error);
+
+                    jenisUjianSelect.innerHTML = '<option value="">Gagal memuat mata pelajaran</option>';
+                    jenisUjianSelect.disabled = false;
+
+                    showErrorAlert(jenisUjianSelect, 'Gagal memuat data mata pelajaran. Silakan coba lagi atau hubungi administrator.');
+                });
+        }
+
+        function resetJenisUjianSelect(jenisUjianSelect) {
+            // Kembalikan ke opsi default dengan semua mata pelajaran umum
+            jenisUjianSelect.innerHTML = '<option value="">Pilih Mata Pelajaran</option>';
+
+            // Tambahkan mata pelajaran umum (yang tidak terikat kelas spesifik)
+            <?php if (!empty($jenis_ujian)): ?>
+                <?php foreach ($jenis_ujian as $ju): ?>
+                    <?php if (empty($ju['kelas_id'])): // Hanya mata pelajaran umum 
+                    ?>
+                        const option<?= $ju['jenis_ujian_id'] ?> = document.createElement('option');
+                        option<?= $ju['jenis_ujian_id'] ?>.value = '<?= $ju['jenis_ujian_id'] ?>';
+                        option<?= $ju['jenis_ujian_id'] ?>.textContent = '<?= esc($ju['nama_jenis']) ?> (Umum)';
+                        jenisUjianSelect.appendChild(option<?= $ju['jenis_ujian_id'] ?>);
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        }
+
+        function showErrorAlert(element, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-2';
+            alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+            // Insert alert setelah element
+            element.parentNode.insertBefore(alertDiv, element.nextSibling);
+
+            // Auto remove alert after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Form validation (kode yang sudah ada sebelumnya)
+        const forms = document.querySelectorAll('form[id^="formTambahUjian"], form[action*="ujian/edit"]');
+        forms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                const requiredFields = form.querySelectorAll('[required]');
+                let hasErrors = false;
+
+                requiredFields.forEach(function(field) {
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        hasErrors = true;
+                    } else {
+                        field.classList.remove('is-invalid');
+                    }
+                });
+
+                if (hasErrors) {
+                    e.preventDefault();
+
+                    // Scroll to first error
+                    const firstError = form.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        firstError.focus();
+                    }
+
+                    showErrorAlert(form.querySelector('.modal-body'), 'Harap lengkapi semua field yang wajib diisi.');
+                }
+            });
+        });
+
+        // Clear form validation on input
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('is-invalid')) {
+                if (e.target.value.trim()) {
+                    e.target.classList.remove('is-invalid');
                 }
             }
         });
+
+        // Reset form when modal is closed
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(function(modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                const form = modal.querySelector('form');
+                if (form) {
+                    // Remove validation classes
+                    const invalidFields = form.querySelectorAll('.is-invalid');
+                    invalidFields.forEach(field => field.classList.remove('is-invalid'));
+
+                    // Remove alert messages
+                    const alerts = form.querySelectorAll('.alert');
+                    alerts.forEach(alert => alert.remove());
+
+                    // Reset form if it's tambah form
+                    if (form.id === 'formTambahUjian') {
+                        form.reset();
+
+                        // Reset dropdowns
+                        const kelasSelect = form.querySelector('#kelas-select-tambah');
+                        if (kelasSelect) {
+                            kelasSelect.innerHTML = '<option value="">Pilih Sekolah Terlebih Dahulu</option>';
+                            kelasSelect.disabled = true;
+                        }
+
+                        const jenisUjianSelect = form.querySelector('select[name="jenis_ujian_id"]');
+                        if (jenisUjianSelect) {
+                            resetJenisUjianSelect(jenisUjianSelect);
+                        }
+                    }
+                }
+            });
+        });
     });
-});
 </script>
 
 <?= $this->endSection() ?>
